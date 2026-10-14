@@ -1,0 +1,527 @@
+/* Reset e fundo arcade */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  background-color: #05050f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Container 16:9 travado e sem o mouse padrão do sistema */
+#game-container {
+  position: relative;
+  width: min(100vw, calc(100vh * (16 / 9)));
+  height: min(100vh, calc(100vw * (9 / 16)));
+  
+  background-image: url('assets/menu_bg.jpg');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  cursor: none; /* Esconde o mouse comum para usar o cursor do jogo */
+}
+
+/* =========================================================
+   PATCH DA CAVERNA (Esconde os textos estáticos de fundo)
+   ========================================================= */
+#cave-button-patch {
+  position: absolute;
+  left: 6.8%;
+  top: 39.2%;
+  width: 21.5%;
+  height: 29.8%;
+  /* Mesma cor escura da parede da caverna atrás dos botões */
+  background: radial-gradient(
+    ellipse at center,
+    #06071c 65%,
+    rgba(6, 7, 28, 0.92) 85%,
+    transparent 100%
+  );
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* =========================================================
+   TÍTULO ANIMADO (Recorte Sprite + Efeito de Luz nas Letras)
+   ========================================================= */
+#title-sprite {
+  position: absolute;
+  background-image: url('assets/menu_bg.jpg');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 6;
+  cursor: none;
+  /* Recorte suave acompanhando o formato do logo e cristais do título */
+  clip-path: polygon(
+    6% 12%, 22% 2%, 82% 2%, 97% 15%,
+    98% 52%, 93% 96%, 8% 96%, 2% 48%
+  );
+  animation: titleFloat 4s ease-in-out infinite;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+#title-sprite:hover {
+  filter: brightness(1.18) drop-shadow(0 0 14px rgba(0, 242, 254, 0.65));
+}
+
+#title-sprite.title-pulse {
+  animation: titleClickPop 0.45s ease;
+}
+
+/* Feixe de luz que atravessa o título periodicamente */
+.title-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 48%,
+    rgba(0, 242, 254, 0.35) 52%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  mix-blend-mode: overlay;
+  animation: shimmerSweep 5.5s infinite;
+  pointer-events: none;
+}
+
+@keyframes titleFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  }
+  50% {
+    transform: translateY(-5px) scale(1.025);
+    filter: brightness(1.1) drop-shadow(0 8px 16px rgba(0, 225, 255, 0.45));
+  }
+}
+
+@keyframes titleClickPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.09) rotate(-1deg); filter: brightness(1.35) drop-shadow(0 0 20px #ff2a85); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmerSweep {
+  0% { background-position: 200% 0; }
+  45%, 100% { background-position: -150% 0; }
+}
+
+/* =========================================================
+   BOTÕES COMO ASSETS REAIS (Sprites Recortados da Arte)
+   ========================================================= */
+#menu-buttons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.menu-btn {
+  position: absolute;
+  pointer-events: auto;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  background-image: url('assets/menu_bg.jpg');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  cursor: none;
+
+  /* Recorte orgânico sem aparência de caixa retangular */
+  clip-path: polygon(3% 8%, 96% 8%, 100% 50%, 96% 92%, 3% 92%, 0% 50%);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+  animation: btnIdleFloat 3.2s ease-in-out infinite;
+}
+
+#btn-jogar { animation-delay: 0s; }
+#btn-opcoes { animation-delay: 0.4s; }
+#btn-creditos { animation-delay: 0.8s; }
+
+@keyframes btnIdleFloat {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(2px) translateY(-2px); }
+}
+
+/* Joia/Cristal indicador que aparece ao lado do botão no Hover */
+.btn-gem {
+  position: absolute;
+  left: -8%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%) rotate(45deg) scale(0);
+  background: #00f2fe;
+  box-shadow: 0 0 10px #00f2fe, 0 0 18px #ffffff;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+/* Hover individualizado: o próprio botão cresce, desliza e brilha na sua cor */
+#btn-jogar:hover {
+  animation: none;
+  transform: translateX(14px) scale(1.15);
+  filter: brightness(1.3) contrast(1.1) drop-shadow(0 0 10px rgba(144, 255, 64, 0.9));
+}
+#btn-jogar:hover .btn-gem {
+  background: #90ff40;
+  box-shadow: 0 0 12px #90ff40;
+  transform: translateY(-50%) rotate(45deg) scale(1);
+}
+
+#btn-opcoes:hover {
+  animation: none;
+  transform: translateX(14px) scale(1.15);
+  filter: brightness(1.3) contrast(1.1) drop-shadow(0 0 10px rgba(100, 195, 255, 0.9));
+}
+#btn-opcoes:hover .btn-gem {
+  background: #64c3ff;
+  box-shadow: 0 0 12px #64c3ff;
+  transform: translateY(-50%) rotate(45deg) scale(1);
+}
+
+#btn-creditos:hover {
+  animation: none;
+  transform: translateX(14px) scale(1.15);
+  filter: brightness(1.3) contrast(1.1) drop-shadow(0 0 10px rgba(255, 80, 130, 0.9));
+}
+#btn-creditos:hover .btn-gem {
+  background: #ff5082;
+  box-shadow: 0 0 12px #ff5082;
+  transform: translateY(-50%) rotate(45deg) scale(1);
+}
+
+.menu-btn:active {
+  transform: translateX(8px) scale(0.96) !important;
+}
+
+/* =========================================================
+   AMBIENTE INTERATIVO (Cristais da Caverna, Borboleta e Água)
+   ========================================================= */
+#environment-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+.crystal-node {
+  position: absolute;
+  border-radius: 40% 40% 25% 25%;
+  pointer-events: auto;
+  mix-blend-mode: screen;
+  opacity: 0.35;
+  transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+  animation: crystalBreath 3.5s ease-in-out infinite alternate;
+}
+
+.crystal-node.cyan {
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.55) 0%, rgba(0, 140, 255, 0.2) 45%, transparent 72%);
+}
+
+.crystal-node.pink {
+  background: radial-gradient(circle, rgba(255, 42, 133, 0.55) 0%, rgba(180, 0, 255, 0.2) 45%, transparent 72%);
+}
+
+.crystal-node:hover {
+  opacity: 0.95;
+  transform: scale(1.08);
+  filter: brightness(1.4);
+}
+
+.crystal-node.crystal-active {
+  opacity: 1 !important;
+  transform: scale(1.18) !important;
+  filter: brightness(1.8) drop-shadow(0 0 20px #ffffff) !important;
+}
+
+/* Borboleta do Portal */
+#portal-butterfly {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle,
+    rgba(255, 230, 100, 0.55) 0%,
+    rgba(0, 242, 254, 0.35) 45%,
+    transparent 72%
+  );
+  opacity: 0.6;
+  animation: crystalBreath 2.2s ease-in-out infinite alternate;
+  transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+}
+
+#portal-butterfly:hover {
+  opacity: 1;
+  transform: scale(1.12);
+  filter: brightness(1.5) drop-shadow(0 0 18px #ffd740);
+}
+
+#water-zone {
+  position: absolute;
+}
+
+/* Ondulações na água */
+.water-ripple {
+  position: absolute;
+  border: 2px solid rgba(0, 242, 254, 0.75);
+  box-shadow: 0 0 10px rgba(255, 42, 133, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.2);
+  pointer-events: none;
+  animation: rippleExpand 1.1s ease-out forwards;
+}
+
+@keyframes rippleExpand {
+  0% {
+    width: 10px;
+    height: 4px;
+    opacity: 0.95;
+  }
+  100% {
+    width: 110px;
+    height: 32px;
+    opacity: 0;
+  }
+}
+
+@keyframes crystalBreath {
+  0% { opacity: 0.25; transform: scale(0.95); }
+  100% { opacity: 0.65; transform: scale(1.04); }
+}
+
+/* =========================================================
+   PARTÍCULAS SAINDO DIRETAMENTE DOS CRISTAIS
+   ========================================================= */
+#particles-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.crystal-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  pointer-events: none;
+  animation: sparkRise linear forwards;
+}
+
+@keyframes sparkRise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(45deg) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-12px) rotate(90deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-75px) rotate(225deg) scale(0.2);
+  }
+}
+
+/* Estilhaços ao clicar num cristal ou botão */
+.burst-shard {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  z-index: 25;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: shardExplode 0.65s ease-out forwards;
+}
+
+@keyframes shardExplode {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.2) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0.2) rotate(180deg);
+  }
+}
+
+/* =========================================================
+   CURSOR CUSTOMIZADO DO JOGO (Cristal Mágico + Rastro)
+   ========================================================= */
+#custom-cursor {
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 36px;
+  height: 36px;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-4px, -4px);
+  transition: transform 0.08s ease;
+}
+
+.cursor-ring {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(0, 242, 254, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Quando o mouse está sobre algo clicável (botão ou cristal) */
+#custom-cursor.cursor-hover svg {
+  transform: scale(1.18) rotate(-8deg);
+  filter: drop-shadow(0 0 8px #ffd740);
+}
+
+#custom-cursor.cursor-hover .cursor-body {
+  fill: #ffd740;
+}
+
+#custom-cursor.cursor-hover .cursor-ring {
+  transform: translate(-50%, -50%) scale(1.4);
+  border-color: #ffd740;
+}
+
+#custom-cursor.cursor-click svg {
+  transform: scale(0.85);
+}
+
+/* Rastro de poeira estelar do cursor */
+.cursor-trail {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99;
+  animation: trailFade 0.5s linear forwards;
+}
+
+@keyframes trailFade {
+  0% { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.1) translateY(8px); }
+}
+
+/* Modo Debug (para visualizar onde estão todos os hotspots) */
+#game-container.debug-mode .menu-btn,
+#game-container.debug-mode .crystal-node,
+#game-container.debug-mode #portal-butterfly,
+#game-container.debug-mode #title-sprite {
+  outline: 2px dashed #00ffcc;
+}
+
+/* =========================================================
+   MODAIS E TRANSIÇÃO
+   ========================================================= */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 20, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 40;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.hidden,
+#transition-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-box {
+  background: linear-gradient(145deg, #12153a, #090a1f);
+  border: 2px solid #00e1ff;
+  box-shadow: 0 0 25px rgba(0, 225, 255, 0.45), inset 0 0 15px rgba(255, 0, 200, 0.2);
+  border-radius: 16px;
+  padding: 3% 4%;
+  width: 44%;
+  color: #ffffff;
+  text-align: center;
+}
+
+.modal-box h2 {
+  font-size: clamp(1.2rem, 2.2vw, 2rem);
+  color: #00e1ff;
+  text-shadow: 0 0 10px rgba(0, 225, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+.modal-content {
+  font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.modal-content hr {
+  border: none;
+  border-top: 1px solid rgba(0, 225, 255, 0.3);
+  margin: 0.8rem 0;
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.7rem 0;
+  cursor: none;
+}
+
+.close-modal-btn {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  color: #fff;
+  font-weight: bold;
+  font-size: clamp(0.85rem, 1.2vw, 1.1rem);
+  border: none;
+  border-radius: 8px;
+  padding: 0.55em 1.6em;
+  cursor: none;
+  box-shadow: 0 0 12px rgba(0, 198, 255, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.close-modal-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(0, 198, 255, 0.9);
+}
+
+#transition-screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, #1a0b36 0%, #05050f 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  transition: opacity 0.6s ease;
+}
+
+.loading-text {
+  color: #00ffcc;
+  font-size: clamp(1.2rem, 2.5vw, 2.2rem);
+  font-weight: bold;
+  text-shadow: 0 0 15px rgba(0, 255, 204, 0.8);
+}
