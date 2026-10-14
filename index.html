@@ -3,122 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crystal Math Mania — Sinfonia dos Cristais</title>
+  <title>Sinfonia dos Cristais</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Container principal do jogo (proporção 16:9 travada) -->
+  <!-- Container principal 16:9 travado -->
   <main id="game-container">
-    
-    <!-- Camada que oculta os botões originais estáticos do fundo para que os sprites se movam livres -->
-    <div id="cave-button-patch" aria-hidden="true"></div>
 
-    <!-- Camada de Cristais Interativos do Cenário (mapeados sobre a arte) -->
-    <div id="environment-layer">
-      <!-- Cristais da Caverna (cada um toca uma nota da escala musical) -->
-      <div class="crystal-node cyan" data-note="0" data-color="#00f2fe" style="left: 16.5%; top: 67.5%; width: 20.5%; height: 29%;" title="Cristal Ciano Maior"></div>
-      <div class="crystal-node cyan" data-note="1" data-color="#00f2fe" style="left: 7.5%; top: 84.0%; width: 9.0%; height: 15%;" title="Cristal Ciano Base"></div>
-      <div class="crystal-node pink" data-note="2" data-color="#ff2a85" style="left: 35.8%; top: 50.5%; width: 8.8%; height: 17.5%;" title="Cristal Magenta"></div>
-      <div class="crystal-node pink" data-note="3" data-color="#ff2a85" style="left: 46.8%; top: 32.5%; width: 5.5%; height: 11.5%;" title="Cristal Rosa Alto"></div>
-      <div class="crystal-node cyan" data-note="4" data-color="#00f2fe" style="left: 46.8%; top: 60.5%; width: 6.5%; height: 13.0%;" title="Cristal Ciano Portal"></div>
-      <div class="crystal-node cyan" data-note="5" data-color="#00f2fe" style="left: 49.5%; top: 76.5%; width: 5.5%; height: 10.0%;" title="Cristal da Margem"></div>
-      <div class="crystal-node cyan" data-note="6" data-color="#00f2fe" style="left: 84.5%; top: 51.0%; width: 9.5%; height: 19.0%;" title="Cristal Ciano Direito"></div>
-      <div class="crystal-node pink" data-note="7" data-color="#ff2a85" style="left: 91.0%; top: 50.0%; width: 9.0%; height: 44.0%;" title="Cristal Magenta Maior"></div>
-      <div class="crystal-node pink" data-note="8" data-color="#ff2a85" style="left: 88.5%; top: 25.0%; width: 10.5%; height: 19.0%;" title="Cristais Superiores"></div>
-      <div class="crystal-node pink" data-note="9" data-color="#ff2a85" style="left: 79.5%; top: 80.0%; width: 8.5%; height: 13.0%;" title="Cristais da Água"></div>
-
-      <!-- Borboleta de Cristal do Portal -->
-      <div id="portal-butterfly" data-color="#ffd740" style="left: 61.5%; top: 26.5%; width: 13.5%; height: 22.0%;" title="Borboleta Ancestral"></div>
-
-      <!-- Água reflexiva interativa -->
-      <div id="water-zone" style="left: 40%; top: 80%; width: 45%; height: 20%;"></div>
-    </div>
-
-    <!-- Camada de partículas que saem diretamente dos cristais -->
-    <div id="particles-container" aria-hidden="true"></div>
-
-    <!-- Título Animado como Sprite Recortado -->
-    <div id="title-sprite" title="Crystal Math Mania">
-      <div class="title-shimmer"></div>
-    </div>
-
-    <!-- Botões como Assets Reais (Sprites Recortados da Arte + Indicador de Cristal) -->
-    <nav id="menu-buttons">
-      <button id="btn-jogar" class="menu-btn" aria-label="Jogar">
-        <span class="btn-gem"></span>
+    <!-- 1. PALAVRAS DO TÍTULO SEPARADAS (Sinfonia / dos / Cristais) -->
+    <div id="title-layer">
+      <button id="word-sinfonia" class="title-word" aria-label="Sinfonia">
+        <span class="word-sprite"></span>
       </button>
-      <button id="btn-opcoes" class="menu-btn" aria-label="Opções">
-        <span class="btn-gem"></span>
+
+      <button id="word-dos" class="title-word" aria-label="dos">
+        <span class="word-sprite"></span>
       </button>
-      <button id="btn-creditos" class="menu-btn" aria-label="Créditos">
-        <span class="btn-gem"></span>
+
+      <button id="word-cristais" class="title-word" aria-label="Cristais">
+        <span class="word-sprite"></span>
       </button>
-    </nav>
-
-    <!-- Modal de Opções -->
-    <section id="modal-opcoes" class="modal-overlay hidden" role="dialog" aria-labelledby="titulo-opcoes">
-      <div class="modal-box">
-        <h2 id="titulo-opcoes">⚙️ Opções</h2>
-        <div class="modal-content">
-          <label class="control-row">
-            <span>Efeitos Sonoros (SFX)</span>
-            <input type="checkbox" id="toggle-sfx" checked>
-          </label>
-          <label class="control-row">
-            <span>Volume Geral</span>
-            <input type="range" id="slider-volume" min="0" max="100" value="75">
-          </label>
-          <label class="control-row">
-            <span>Mostrar Hotspots (Debug)</span>
-            <input type="checkbox" id="toggle-debug">
-          </label>
-        </div>
-        <button class="close-modal-btn" data-close="modal-opcoes">Voltar</button>
-      </div>
-    </section>
-
-    <!-- Modal de Créditos -->
-    <section id="modal-creditos" class="modal-overlay hidden" role="dialog" aria-labelledby="titulo-creditos">
-      <div class="modal-box">
-        <h2 id="titulo-creditos">❤️ Créditos</h2>
-        <div class="modal-content">
-          <p><strong>Crystal Math Mania</strong></p>
-          <p><em>Sinfonia dos Cristais</em></p>
-          <hr>
-          <p>Desenvolvimento & Arquitetura:<br><strong>Italoviski</strong></p>
-          <p>Interaja com os cristais da caverna para tocar a sinfonia!</p>
-        </div>
-        <button class="close-modal-btn" data-close="modal-creditos">Voltar</button>
-      </div>
-    </section>
-
-    <!-- Tela de Transição Jogar -->
-    <div id="transition-screen" class="hidden">
-      <p class="loading-text">Despertando a Sinfonia dos Cristais...</p>
     </div>
 
-    <!-- Cursor Customizado do Jogo (Cristal Mágico) -->
-    <div id="custom-cursor" aria-hidden="true">
-      <svg viewBox="0 0 36 36" width="36" height="36">
-        <defs>
-          <filter id="crystal-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- Corpo do Cristal Cursor -->
-        <polygon class="cursor-body" points="4,4 16,28 20,19 29,15" fill="#00f2fe" stroke="#ffffff" stroke-width="1.5" filter="url(#crystal-glow)" />
-        <!-- Faceta Interna Brilhante -->
-        <polygon class="cursor-facet" points="4,4 20,19 16,28" fill="#0099ff" opacity="0.75" />
-        <!-- Joia Central -->
-        <polygon class="cursor-core" points="7,7 18,16 14,20" fill="#ffffff" opacity="0.9" />
-      </svg>
-      <div class="cursor-ring"></div>
+    <!-- 2. CRISTAIS INTERATIVOS DA CAVERNA (Nenhum cristal da porta incluído) -->
+    <div id="crystals-layer">
+      <!-- Cristais colados nas laterais do título -->
+      <button class="crystal-hitbox" data-note="0" style="left: 1.8%; top: 14.0%; width: 6.0%; height: 13.5%;" aria-label="Cristal do Título Esquerdo"></button>
+      <button class="crystal-hitbox" data-note="1" style="left: 37.0%; top: 14.0%; width: 6.0%; height: 13.5%;" aria-label="Cristal do Título Direito"></button>
+
+      <!-- Cristais do lado esquerdo da caverna -->
+      <button class="crystal-hitbox" data-note="2" style="left: 43.2%; top: 6.8%; width: 6.2%; height: 13.5%;" aria-label="Cristais Superiores Esquerda"></button>
+      <button class="crystal-hitbox" data-note="3" style="left: 48.0%; top: 34.5%; width: 4.3%; height: 9.8%;" aria-label="Cristal Rosa Parede Esquerda"></button>
+      <button class="crystal-hitbox" data-note="4" style="left: 34.2%; top: 50.0%; width: 9.0%; height: 17.5%;" aria-label="Cristal Rosa Rocha Esquerda"></button>
+      <button class="crystal-hitbox" data-note="5" style="left: 47.4%; top: 60.2%; width: 5.5%; height: 11.8%;" aria-label="Cristal Ciano Médio Esquerda"></button>
+      <button class="crystal-hitbox" data-note="6" style="left: 50.0%; top: 77.2%; width: 4.5%; height: 9.0%;" aria-label="Cristal da Margem Esquerda"></button>
+      <button class="crystal-hitbox" data-note="7" style="left: 8.8%; top: 83.5%; width: 7.4%; height: 16.0%;" aria-label="Cristal Inferior Esquerdo"></button>
+      <button class="crystal-hitbox" data-note="8" style="left: 17.5%; top: 64.5%; width: 19.5%; height: 35.0%;" aria-label="Cristal Ciano Gigante Frontal"></button>
+
+      <!-- Cristais do lado direito da caverna -->
+      <button class="crystal-hitbox" data-note="9"  style="left: 89.2%; top: 25.0%; width: 8.5%; height: 17.5%;" aria-label="Cristais Superiores Direita"></button>
+      <button class="crystal-hitbox" data-note="10" style="left: 84.8%; top: 53.0%; width: 9.0%; height: 17.0%;" aria-label="Cristal Ciano Médio Direita"></button>
+      <button class="crystal-hitbox" data-note="11" style="left: 83.5%; top: 65.8%; width: 4.2%; height: 9.2%;" aria-label="Cristal Rosa Pequeno Direita"></button>
+      <button class="crystal-hitbox" data-note="12" style="left: 81.2%; top: 80.5%; width: 6.2%; height: 11.5%;" aria-label="Cristais na Água Direita"></button>
+      <button class="crystal-hitbox" data-note="13" style="left: 91.8%; top: 50.5%; width: 8.2%; height: 44.0%;" aria-label="Cristal Rosa Gigante Direita"></button>
     </div>
+
+    <!-- Botão discreto para ver/ocultar as caixas de clique no telemóvel -->
+    <button id="btn-debug-mobile" title="Mostrar/Ocultar Áreas de Clique">🔧</button>
 
   </main>
 
