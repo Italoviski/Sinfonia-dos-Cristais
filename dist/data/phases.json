@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "game": "Sinfonia dos Cristais",
+  "phases": [{
+    "id": 1,
+    "title": "O eco da mata",
+    "theme": "Nordeste brasileiro",
+    "steps": [
+      {"title":"Primeiro silêncio","instruction":"Leve o cristal azul até sua sombra para anular o par.","pairs":[{"color":"blue","size":1}]},
+      {"title":"Cores em equilíbrio","instruction":"Cada cristal procura apenas a sombra da mesma cor.","pairs":[{"color":"gold","size":1},{"color":"blue","size":1}]},
+      {"title":"Ritmo escondido","instruction":"Anule os três pares. A ordem é você quem escolhe.","pairs":[{"color":"coral","size":1},{"color":"green","size":1},{"color":"blue","size":1}]},
+      {"title":"Metades da luz","instruction":"Observe também o tamanho: cada parte deve encontrar sua sombra exata.","pairs":[{"color":"gold","size":0.72},{"color":"gold","size":0.72},{"color":"green","size":1},{"color":"blue","size":1}]},
+      {"title":"Círculo completo","instruction":"Anule toda a formação para abrir o show final.","pairs":[{"color":"blue","size":1},{"color":"gold","size":0.82},{"color":"coral","size":0.82},{"color":"green","size":1},{"color":"violet","size":0.72}]}
+    ]
+  }]
+}

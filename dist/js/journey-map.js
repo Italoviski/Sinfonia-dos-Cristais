@@ -1,0 +1,23 @@
+(() => {
+ const coordinates=[[12.6,24],[14.6,28],[17.2,31],[20.5,33],[24.5,32],[26.2,55],[29.7,62],[32.7,67],[38.1,70],[44,69],[59,72],[66,70],[67,62],[68,56],[71,50],[73.4,32],[76.8,28],[84,30],[88,27],[93.3,27]];
+ const route=[...coordinates.slice(0,5),[25,43],...coordinates.slice(5,10),[49,72],[53,73],...coordinates.slice(10,15),[71,43],[72,38],...coordinates.slice(15)];
+ const screen=document.getElementById('map'),root=document.createElement('div');root.className='journey-map';screen.append(root);
+ const fairy=document.createElement('div');fairy.className='journey-fairy';fairy.setAttribute('aria-hidden','true');root.append(fairy);
+ const dialog=document.createElement('dialog');dialog.className='journey-dialog';dialog.setAttribute('aria-labelledby','journey-title');document.body.append(dialog);
+ let state,selected=null,at=0,travel=null,position=coordinates[0],last=0;
+ const setPosition=(p)=>{position=p;fairy.style.left=p[0]+'%';fairy.style.top=p[1]+'%';};setPosition(position);
+ function panel(level){const w=level.world,record=state.records?.[level.id];dialog.dataset.world=w;dialog.style.setProperty('--panel-x',(w%2)*100+'%');dialog.style.setProperty('--panel-y',Math.floor(w/2)*100+'%');dialog.replaceChildren();
+  const title=document.createElement('h2');title.id='journey-title';title.textContent=level.name;const stars=document.createElement('div');stars.className='journey-stars';stars.setAttribute('aria-label',`${record?.stars||0} de 3 estrelas`);stars.textContent=Array.from({length:3},(_,i)=>i<(record?.stars||0)?'★':'☆').join(' ');
+  const info=document.createElement('p');info.textContent=record?`Melhor desempenho: ${record.points} pontos`:'Fase inédita · conquiste suas estrelas';
+  const start=document.createElement('button');start.className='journey-begin';start.textContent='Começar';start.onclick=()=>{dialog.close();state.start(level.id);};const back=document.createElement('button');back.className='journey-back';back.textContent='Voltar';back.onclick=()=>dialog.close();dialog.append(title,stars,info,start,back);dialog.showModal();start.focus();
+ }
+ function select(level){if(travel)return;if(selected===level.id){panel(level);return;}selected=level.id;
+  const target=level.id===21?0:route.findIndex(p=>p===coordinates[level.id-1]);const points=[position];const direction=target>=at?1:-1;for(let i=at+direction;direction>0?i<=target:i>=target;i+=direction)points.push(route[i]);if(level.id===21)points.push([7.8,20]);at=target;
+  if(state.reduced||points.length<2){setPosition(points.at(-1));state.notify('A Fada chegou. Selecione a fase novamente para abrir.');return;}
+  travel={points,index:0,progress:0};state.notify('A Fada está seguindo o caminho.');
+ }
+ function frame(now){const dt=Math.min(.04,(now-(last||now))/1000);last=now;if(!screen.hidden&&!document.hidden){if(travel){const a=travel.points[travel.index],b=travel.points[travel.index+1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);travel.progress+=dt*22/Math.max(.1,length);const f=Math.min(1,travel.progress);setPosition([a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]);if(f===1){travel.index++;travel.progress=0;if(travel.index===travel.points.length-1){travel=null;state.notify('A Fada chegou. Clique novamente na fase para abrir.');}}}fairy.style.backgroundPosition=`${Math.floor(now/170)%4/3*100}% ${travel?100:0}%`;}requestAnimationFrame(frame);}requestAnimationFrame(frame);
+ window.CrystalJourney={render(options){state=options;travel=null;selected=null;root.querySelectorAll('button').forEach(b=>b.remove());const index=Math.min(19,Math.max(0,(options.current||1)-1));at=route.findIndex(p=>p===coordinates[index]);setPosition(coordinates[index]);
+  for(const level of CrystalCampaign.levels){const point=level.id===21?[7.8,20]:coordinates[level.id-1];const button=document.createElement('button');button.className='journey-node';button.dataset.level=level.id;button.style.left=point[0]+'%';button.style.top=point[1]+'%';const locked=level.id===21?![5,10,15,20].every(n=>options.completed.includes(n)):level.id>options.unlocked;button.classList.toggle('locked',locked);button.classList.toggle('done',options.completed.includes(level.id));button.classList.toggle('current',level.id===options.unlocked);button.setAttribute('aria-label',`${level.id===21?'Fase final':`Fase ${level.id}`}: ${level.name}. ${locked?'Bloqueada':options.completed.includes(level.id)?'Concluída':'Disponível'}`);button.setAttribute('aria-disabled',String(locked));button.onclick=()=>locked?options.notify(level.id===21?'Reúna as quatro gemas primordiais para abrir a fase final.':'Complete a fase anterior para seguir pelo caminho.'):select(level);root.append(button);}
+ },get moving(){return !!travel;},close(){travel=null;if(dialog.open)dialog.close();}};
+})();

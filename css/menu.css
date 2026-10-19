@@ -1,0 +1,33 @@
+/* Hotspots follow the supplied 1280 × 720 film, including its baked-in labels. */
+.home-screen{min-height:100dvh;background:#080f25}
+.home-screen .cave-backdrop{filter:blur(15px) brightness(.45);transform:scale(1.05)}
+.menu-film-frame{position:absolute;width:var(--film-width,100vw);height:var(--film-height,56.25vw);left:var(--film-left,0);top:50%;transform:translateY(-50%);isolation:isolate}
+.menu-video{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;pointer-events:none;opacity:0;transition:opacity .35s;background:#0a1431}
+.menu-video.ready{opacity:1}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.home-screen .home-menu{display:block;position:absolute;inset:0;width:auto;max-width:none;margin:0;pointer-events:none}
+.home-screen .menu-choice{--menu-color:#9feaff;position:absolute;left:5.6%;top:42.9%;width:22.3%;height:7.7%;padding:0 2.3%;border:1px solid transparent;border-left:2px solid transparent;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:space-between;gap:0;pointer-events:auto;overflow:visible;font-family:'Segoe UI',Arial,sans-serif;font-size:var(--menu-font,28px);font-weight:300;line-height:1;transform:none;transition:background .16s,border-color .16s,box-shadow .16s}
+.home-screen .menu-choice:nth-child(2){top:52.1%;--menu-color:#a7c9ff}
+.home-screen .menu-choice:nth-child(3){top:60.8%;--menu-color:#f0bbff}
+.home-screen .menu-choice:nth-child(4){top:70%;--menu-color:#c4cde5}
+.home-screen .menu-choice span{color:transparent;width:auto;display:block;transform:translateX(0);text-shadow:none;transition:color .15s,transform .24s cubic-bezier(.2,.9,.3,1),text-shadow .2s}
+.home-screen .menu-choice i{font-size:.66em;color:var(--menu-color);font-style:normal;opacity:0;transform:scale(.5) rotate(-30deg);transition:opacity .2s,transform .3s}
+.home-screen .menu-choice.menu-exit span{color:#a9bdd0;font-size:.83em}
+.home-screen .menu-choice:focus-visible{outline:2px solid var(--menu-color);outline-offset:4px}
+.home-screen .menu-choice:is(:focus-visible,:active){background:#09283f;border-color:#b4e9ff35;border-left-color:var(--menu-color);box-shadow:0 0 24px #79dfff20,inset 0 0 20px #70dfff09;transition:border-color .16s,box-shadow .16s}
+.home-screen .menu-choice:is(:focus-visible,:active) span{color:var(--menu-color);transform:translateX(6px);text-shadow:0 0 14px #a9f1ff66}
+.home-screen .menu-choice:is(:focus-visible,:active) i{opacity:1;transform:scale(1) rotate(0)}
+@media(hover:hover) and (pointer:fine){
+ .home-screen .menu-choice:hover{background:#09283f;border-color:#b4e9ff35;border-left-color:var(--menu-color);box-shadow:0 0 24px #79dfff20,inset 0 0 20px #70dfff09;transition:border-color .16s,box-shadow .16s}
+ .home-screen .menu-choice:hover span{color:var(--menu-color);transform:translateX(8px);text-shadow:0 0 14px #a9f1ff66}
+ .home-screen .menu-choice:hover i{opacity:1;transform:scale(1) rotate(0)}
+}
+.menu-motion-button{position:absolute;right:22px;bottom:20px;z-index:3;width:42px;height:42px;background:#091930b8;color:#c2efff;border:1px solid #8ecce477;border-radius:4px;font-size:16px;transition:background .2s}
+.menu-motion-button:hover{background:#214967}.menu-motion-button:disabled{opacity:.6;cursor:default}
+.menu-film-frame.video-error .menu-choice span,.menu-film-frame:not(.video-ready) .menu-choice span{color:#dcf3ff}
+.menu-film-frame.video-error .menu-choice,.menu-film-frame:not(.video-ready) .menu-choice{background:#0a1d36e8}
+.high-contrast .home-screen .menu-choice{background:#06152afa;border:1px solid #bfeaff}
+.high-contrast .home-screen .menu-choice span{color:white}
+.reduce-motion .home-screen .menu-choice span,.reduce-motion .home-screen .menu-choice i{transform:none!important}
+@media(prefers-reduced-motion:reduce){.home-screen .menu-choice span,.home-screen .menu-choice i{transform:none!important}.menu-video{transition:none}}
+@media(max-width:600px){.menu-motion-button{right:14px;bottom:14px}.home-screen .menu-choice{font-size:clamp(22px,var(--menu-font),34px)}}
