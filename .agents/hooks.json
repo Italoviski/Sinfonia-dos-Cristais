@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "replace_file_content|multi_replace_file_content|write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:\\Users\\heito\\AppData\\Local\\Programs\\nodejs\\node.exe C:\\Users\\heito\\OneDrive\\Documentos\\GitHub\\Sinfonia-dos-Cristais\\.agents\\scripts\\post-tool-hook.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

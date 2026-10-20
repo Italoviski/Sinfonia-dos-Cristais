@@ -1,0 +1,12 @@
+{
+  "name": "crystal-studio-pro",
+  "displayName": "Crystal Math Studio Pro (Pixel Art & AI Playtest)",
+  "version": "1.0.0",
+  "description": "Suite profissional de Pixel Art verdadeiro, auditoria de animações, balanceamento de fases e Playtest Autônomo para Sinfonia dos Cristais.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Execute um playtest completo da campanha e gere o relatório de FPS e acessibilidade",
+    "Audite todos os sprites do jogo quanto à grade de Pixel Art verdadeiro",
+    "Verifique o balanceamento matemático das 21 fases da campanha"
+  ]
+}

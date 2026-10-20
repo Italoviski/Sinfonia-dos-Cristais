@@ -1,0 +1,4 @@
+node_modules/
+playtest-artifacts/.tmp-profile-*/
+.DS_Store
+Thumbs.db

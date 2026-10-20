@@ -39,6 +39,7 @@
  function startLevel(id,imported=null,snapshot=null){
   if(!imported&&(id===21?![5,10,15,20].every(n=>completed.includes(n)):id>unlocked())){notify('Siga as luzes na ordem para aprender cada movimento.');return;}
   current=id;customLevel=imported;const level=imported||campaign.levels[id-1];if(!level)return;
+  CrystalStory.close();CrystalRhythm.stop();
   CrystalScenery.load(level.final?'door':level.scene);CrystalStage.load(level,settings);CrystalScore.start(()=>notify(level.hint));
   screen='game';for(const s of ['home','map','game'])$(s).hidden=s!=='game';document.body.dataset.screen='game';document.body.classList.remove('musical-show');
   $('levelTitle').textContent=level.name;$('worldName').textContent=campaign.worlds[level.world].name;$('levelNumber').textContent=id===21?'FINAL':String(id).padStart(2,'0')+' / 20';$('hintText').textContent=level.hint;$('worldBackdrop').dataset.world=level.world;
@@ -62,8 +63,8 @@
  }
  function recordCompletion(result){engine.rewardCompletion();if(!customLevel&&!completed.includes(current))completed.push(current);if(result&&(!records[current]||records[current].points<result.points))records[current]=result;checkpoint=null;persist();}
  async function completeLevel(){
-  engine.paused=true;CrystalMusic.reset();
-  if(engine.level.boss){await CrystalStory.beforeMusic(current,{speak});CrystalRhythm.start({volume:settings.music,assist:settings.assist,hard:current>=15,onCancel:()=>goto('map'),onProgress:ratio=>{CrystalScenery.setProgress(.5+ratio*.5);CrystalStage.restore(.5+ratio*.5);},gems:[...new Set(engine.level.pieces.map(p=>p.kind))]},async music=>{const result=CrystalScore.result(music);CrystalScenery.setProgress(1);CrystalStage.restore(1);recordCompletion(result);await CrystalStory.afterMusic(current,{speak});showResult(result);});}
+  const id=current;engine.paused=true;CrystalMusic.reset();
+  if(engine.level.boss){await CrystalStory.beforeMusic(id,{speak});if(current!==id||screen!=='game')return;CrystalRhythm.start({volume:settings.music,assist:settings.assist,hard:id>=15,onCancel:()=>goto('map'),onProgress:ratio=>{CrystalScenery.setProgress(.5+ratio*.5);CrystalStage.restore(.5+ratio*.5);},gems:[...new Set(engine.level.pieces.map(p=>p.kind))]},async music=>{if(current!==id)return;const result=CrystalScore.result(music);CrystalScenery.setProgress(1);CrystalStage.restore(1);recordCompletion(result);await CrystalStory.afterMusic(id,{speak});if(current===id&&screen==='game')showResult(result);});}
   else{const result=CrystalScore.result();recordCompletion(result);showResult(result);}
  }
  function showResult(result){$('resultTitle').textContent=current===21?'As quatro gemas cantam juntas!':'Mais um pedaço do mundo despertou!';$('resultText').textContent=campaign.worlds[engine.level.world].healed+(result?` ${result.points} pontos · ${result.stars} de 3 estrelas.`:'');$('nextLevel').textContent=current>=20?'Voltar ao mapa':'Continuar jornada';$('resultDialog').showModal();}
@@ -100,5 +101,5 @@
  const freshStart=startLevel;
  $('playButton').onclick=()=>{if(CrystalEntrance.active)return;unlockAudio();CrystalShowdown.unlock();CrystalAudio.start();CrystalEntrance.play(()=>{freshStart(unlocked());engine.paused=true;CrystalMusic.pause();},()=>{beginIntro();});};
  $('homeSave').textContent=completed.length?completed.length+' de 20 fases restauradas. Seu caminho está salvo.':'Sua jornada começa com um pequeno brilho.';
- window.CrystalApp={get state(){return {completed:[...completed],current,screen,settings:{...settings}};}};
+ window.CrystalApp={goto,startLevel:freshStart,openSettings,unlockAll(){completed=Array.from({length:20},(_,i)=>i+1);persist();renderMap();},get state(){return {completed:[...completed],current,screen,settings:{...settings}};}};
 })();

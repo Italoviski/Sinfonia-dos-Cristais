@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" shape-rendering="crispEdges">
+  <rect width="128" height="128" fill="none"/>
+  <!-- Pixel Art Crystal Emblem with 10% margin -->
+  <path fill="#111338" d="M56 12h16v8h8v8h8v16h8v40h-8v16h-8v8h-8v8H56v-8h-8v-8h-8V84h-8V44h8V28h8v-8h8z"/>
+  <path fill="#7aeaff" d="M56 20h16v8h8v16h8v40h-8v16h-8v8H56v-8h-8V84h-8V44h8V28h8z"/>
+  <path fill="#c4f9ff" d="M56 20h8v8h8v16h-8v40h-8V44h-8V28h8z"/>
+  <path fill="#4588d6" d="M64 28h8v16h8v40h-8v16h-8V84h8V44h-8z"/>
+  <path fill="#e98aff" d="M56 44h16v40H56z"/>
+  <path fill="#fbe17c" d="M60 52h8v24h-8z"/>
+</svg>
