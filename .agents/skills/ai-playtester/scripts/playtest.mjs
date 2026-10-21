@@ -11,7 +11,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -164,7 +164,15 @@ async function runViaDirectCDP(browserPath) {
     // 1. Home Screen inspection & screenshot
     const homeState = await evalJS('window.CrystalTestAPI.getState()');
     report.screensTested.push(homeState.screen);
+    await new Promise(r => setTimeout(r, 150));
     await takeScreenshot('01-home-screen.png');
+
+    // 1b. Intro Cutscene inspection & screenshot
+    await evalJS('void window.CrystalEntrance.play(() => {}, () => {})');
+    await new Promise(r => setTimeout(r, 1200));
+    await takeScreenshot('01b-intro-cutscene.png');
+    await evalJS('document.getElementById("entrySkipBtn")?.click()');
+    await new Promise(r => setTimeout(r, 80));
 
     // 2. Map Screen inspection & screenshot
     await evalJS('window.CrystalTestAPI.goto("map")');
@@ -176,10 +184,12 @@ async function runViaDirectCDP(browserPath) {
     // 3. Play through all 21 levels via CrystalTestAPI
     for (let lvl = 1; lvl <= 21; lvl++) {
       await evalJS(`window.CrystalTestAPI.startLevel(${lvl}, true)`);
-      await new Promise(r => setTimeout(r, 80));
+      await evalJS('window.CrystalScenery?.ready');
+      await new Promise(r => setTimeout(r, 120));
       await evalJS('window.CrystalTestAPI.skipStory()');
 
-      if ([1, 5, 6, 11, 16, 21].includes(lvl)) {
+      if ([1, 2, 3, 4, 5, 6, 11, 16, 21].includes(lvl)) {
+        await new Promise(r => setTimeout(r, 120));
         await takeScreenshot(`level-${String(lvl).padStart(2, '0')}-start.png`);
       }
 
@@ -217,6 +227,8 @@ async function runViaDirectCDP(browserPath) {
     return report;
   } finally {
     browserProc.kill();
+    await new Promise(r => setTimeout(r, 350));
+    await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 

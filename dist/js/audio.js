@@ -26,4 +26,67 @@
   error(){cue([220,165],.065,'triangle');},finale(){cue([262,330,392,523,659,784],.1,'triangle');},
   get enabled(){return enabled;}
  };
+
+ const hasAudio = typeof Audio !== 'undefined';
+ const menuTrack = hasAudio ? new Audio('assets/audio/musica-menu.mp3') : null;
+ if (menuTrack) {
+  menuTrack.loop = true;
+  menuTrack.preload = 'auto';
+ }
+ let menuVol = 0.65;
+ if (menuTrack) menuTrack.volume = menuVol;
+
+ window.CrystalMenuAudio = {
+  get track() { return menuTrack; },
+  get playing() { return Boolean(menuTrack && !menuTrack.paused); },
+  play() {
+   if (!menuTrack) return Promise.resolve();
+   if (typeof document !== 'undefined' && document.body?.dataset?.screen && document.body.dataset.screen !== 'home') {
+    return Promise.resolve();
+   }
+   return menuTrack.play().catch(() => {});
+  },
+  pause() {
+   if (menuTrack) menuTrack.pause();
+  },
+  stop() {
+   if (menuTrack) {
+    menuTrack.pause();
+    menuTrack.currentTime = 0;
+   }
+  },
+  setVolume(v) {
+   menuVol = Math.max(0, Math.min(1, Number(v) || 0));
+   if (menuTrack) menuTrack.volume = menuVol;
+  },
+  autoStart() {
+   if (!menuTrack) return;
+   menuTrack.volume = menuVol;
+   const p = menuTrack.play();
+   if (p && typeof p.catch === 'function') {
+    p.catch(() => {
+     if (typeof window === 'undefined') return;
+     const unblock = () => {
+      if (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') {
+       menuTrack.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', unblock);
+      window.removeEventListener('keydown', unblock);
+      window.removeEventListener('touchstart', unblock);
+     };
+     window.addEventListener('pointerdown', unblock, { once: true });
+     window.addEventListener('keydown', unblock, { once: true });
+     window.addEventListener('touchstart', unblock, { once: true });
+    });
+   }
+  }
+ };
+
+ if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+   window.addEventListener('DOMContentLoaded', () => window.CrystalMenuAudio?.autoStart?.());
+  } else {
+   window.CrystalMenuAudio?.autoStart?.();
+  }
+ }
 })();

@@ -27,3 +27,16 @@ for(const level of CrystalCampaign.levels)test(`fase ${level.id}: solução mate
  }
  annul();assert.equal(b.pieces.size,0,'Todas as peças e equações devem poder ser anuladas');assert.ok(existsSync(new URL(`../assets/story/cenarios/${level.scene}-quatro-estados.png`,import.meta.url)));assert.ok(!level.tools.includes('launch'));
 });
+test('CrystalChallenges permite alterar desafios das fases 1 a 5 sem alterar as animações da cena',()=>{
+ assert.ok(globalThis.CrystalChallenges,'CrystalChallenges deve estar exposto globalmente');
+ const orig=CrystalChallenges.getLevelChallenge(1);
+ const origLevel=CrystalCampaign.levels[0];
+ assert.equal(origLevel.scene,'C1');
+ assert.equal(origLevel.landmark,'door-outcrop');
+ const updated=CrystalChallenges.updateChallenge(1,{hint:'Nova dica de teste na Caverna.'});
+ assert.equal(updated.hint,'Nova dica de teste na Caverna.');
+ assert.equal(updated.scene,'C1','A cena de animação deve permanecer intacta');
+ assert.equal(updated.landmark,'door-outcrop','O landmark de animação deve permanecer intacto');
+ assert.deepEqual(updated.whispers,origLevel.whispers,'Os sussurros da cena devem permanecer intactos');
+ CrystalChallenges.updateChallenge(1,{hint:orig.hint});
+});

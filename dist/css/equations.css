@@ -1,13 +1,18 @@
-.gem.selected .gem-visual{filter:drop-shadow(0 0 5px #b476ff) drop-shadow(0 0 12px #bd88ff);animation:selection-aura 1.4s ease-in-out infinite alternate}
-.gem.boosted .gem-visual{filter:drop-shadow(0 0 9px #6eff9f) hue-rotate(12deg)}
-.equation-handle{position:absolute;left:0;top:0;z-index:15;min-width:40px;min-height:32px;border:1px solid #b697e9;background:#231439c9;color:#e5ceff;border-radius:8px;cursor:grab;touch-action:none;will-change:transform}
-.equation-handle{pointer-events:auto}
+.gem.selected .gem-visual{filter:drop-shadow(0 0 4px #b476ff) drop-shadow(0 0 10px #9ef0ff);animation:selection-aura .8s steps(2,end) infinite alternate}
+.gem.boosted .gem-visual{filter:drop-shadow(0 0 8px #6eff9f) hue-rotate(12deg)}
+.gem.breaking-flash .gem-visual{filter:brightness(6) contrast(2) drop-shadow(0 0 12px #ffffff)!important}
+.equation-handle{position:absolute;left:0;top:0;z-index:15;min-width:40px;min-height:32px;border:2px solid #9ef0ff;background:#1e1238eb;color:#ffffff;border-radius:0;box-shadow:3px 3px 0 #080416;cursor:grab;touch-action:none;will-change:transform;pointer-events:auto;font-weight:700}
+.equation-handle:hover,.equation-handle:focus-visible{background:#342060;border-color:#ffd35a}
 .equation-handle:active{cursor:grabbing}
 #diamondTool{min-width:76px;font-size:16px;touch-action:none}
-@keyframes selection-aura{to{filter:drop-shadow(0 0 12px #be91ff) drop-shadow(0 0 18px #9265df)}}
+.gem-pips{background:#0b0824e6!important;border:2px solid #5a49c4;box-shadow:2px 2px 0 #04020e;padding:3px 5px!important;gap:4px!important}
+.gem-pips i{width:6px!important;height:6px!important;background:#ffffff!important;border:1px solid #3fc6f0;box-shadow:0 0 4px #9ef0ff!important}
+.gem.dark .gem-pips{border-color:#8a4fd0}
+.gem.dark .gem-pips i{background:#f2d8ff!important;border-color:#b070ff;box-shadow:0 0 4px #b070ff!important}
+@keyframes selection-aura{to{filter:drop-shadow(0 0 10px #c77dff) drop-shadow(0 0 16px #3fc6f0)}}
 .reduce-motion .gem.selected .gem-visual{animation:none}
-.restoration-scene{position:absolute;inset:0;pointer-events:none;z-index:0;background:#20152e}
-.restoration-layer{position:absolute;inset:0;background-size:200% 200%;background-repeat:no-repeat;image-rendering:pixelated;opacity:0;transition:opacity 1.4s ease;will-change:opacity}
-.restoration-scene:after{content:'';position:absolute;inset:0;background:#21123333}
+.restoration-scene{position:absolute;inset:0;pointer-events:none;z-index:0;background:#140c28}
+.restoration-layer{position:absolute;inset:0;background-size:200% 200%;background-repeat:no-repeat;image-rendering:pixelated;image-rendering:crisp-edges;opacity:0;transition:opacity .4s steps(6,end);will-change:opacity}
+.restoration-scene:after{content:'';position:absolute;inset:0;background:#160b2826;z-index:2;pointer-events:none}
 .game-screen #worldBackdrop,.game-screen #ecology,.game-screen #pollution{display:none}
 .reduce-motion .restoration-layer{transition:none}

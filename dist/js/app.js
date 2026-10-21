@@ -15,6 +15,8 @@
   timeout(){notify('O tempo acabou. Vamos tentar de novo? Você também pode ativar Ritmo tranquilo.');$('retryButton').focus();}
  });
  CrystalMusic.init();applySettings();renderMap();
+ window.CrystalMenuAudio?.setVolume?.(settings.music);
+ window.CrystalMenuAudio?.autoStart?.();
  const stepsToggle=document.createElement('button');stepsToggle.className='steps-toggle';stepsToggle.textContent='Etapas';stepsToggle.setAttribute('aria-expanded','false');stepsToggle.setAttribute('aria-controls','phaseSteps');$('resolvedSteps').closest('aside').id='phaseSteps';$('game').append(stepsToggle);stepsToggle.onclick=()=>{const expanded=document.body.classList.toggle('steps-open');stepsToggle.setAttribute('aria-expanded',String(expanded));};
  function cleanSettings(s){const out={};for(const k of ['music','fx'])if(Number.isFinite(s?.[k]))out[k]=Math.max(0,Math.min(1,s[k]));for(const k of ['voice','contrast','motion','assist'])if(typeof s?.[k]==='boolean')out[k]=s[k];return out;}
  function cleanProgress(list){return Array.isArray(list)?[...new Set(list.filter(n=>Number.isInteger(n)&&n>=1&&n<=21))]:[];}
@@ -26,21 +28,23 @@
  }
  function goto(name){
   CrystalStory.close();CrystalRhythm.stop();
+  if(name!=='home')window.CrystalMenuAudio?.pause?.();
   if(name!=='map')CrystalJourney.close();
   if(screen==='game'&&name!=='game'){persist();engine.stop();CrystalMusic.reset();}
   screen=name;document.body.dataset.screen=name;for(const id of ['home','map','game'])$(id).hidden=id!==name;
   if(name==='map'){renderMap();setTimeout(()=>$('levelNodes').querySelector('.current')?.focus(),0);}
-  if(name==='home'){$('homeSave').textContent=completed.length?completed.length+' de 20 fases restauradas. Seu caminho está salvo.':'Sua jornada começa com um pequeno brilho.';$('playButton').focus();}
+  if(name==='home'){$('homeSave').textContent=completed.length?completed.length+' de 20 fases restauradas. Seu caminho está salvo.':'Sua jornada começa com um pequeno brilho.';$('playButton').focus();window.CrystalMenuAudio?.play?.();}
  }
  function renderMap(){
   CrystalJourney.render({completed,current,unlocked:unlocked(),records,reduced:settings.motion,start:startLevel,notify});
   $('mapProgress').textContent=completed.filter(id=>id<=20).length+' / 20 fases restauradas';
  }
  function startLevel(id,imported=null,snapshot=null){
+  window.CrystalMenuAudio?.pause?.();
   if(!imported&&(id===21?![5,10,15,20].every(n=>completed.includes(n)):id>unlocked())){notify('Siga as luzes na ordem para aprender cada movimento.');return;}
   current=id;customLevel=imported;const level=imported||campaign.levels[id-1];if(!level)return;
   CrystalStory.close();CrystalRhythm.stop();
-  CrystalScenery.load(level.final?'door':level.scene);CrystalStage.load(level,settings);CrystalScore.start(()=>notify(level.hint));
+  CrystalScenery.load(level.final?'door':level.scene,level);CrystalStage.load(level,settings);CrystalScore.start(()=>notify(level.hint));
   screen='game';for(const s of ['home','map','game'])$(s).hidden=s!=='game';document.body.dataset.screen='game';document.body.classList.remove('musical-show');
   $('levelTitle').textContent=level.name;$('worldName').textContent=campaign.worlds[level.world].name;$('levelNumber').textContent=id===21?'FINAL':String(id).padStart(2,'0')+' / 20';$('hintText').textContent=level.hint;$('worldBackdrop').dataset.world=level.world;
   $('stepLights').replaceChildren();$('resolvedSteps').replaceChildren();level.goals.forEach(goal=>{const e=document.createElement('span');e.className='step-light';e.title=goal;$('stepLights').append(e);const item=document.createElement('li');item.textContent=goal;$('resolvedSteps').append(item);});$('timer').hidden=!level.time||settings.assist;makeEcology(level.world);
@@ -77,7 +81,7 @@
  function finishShow(){if(!document.body.classList.contains('musical-show'))return;clearTimeout(showFallback);CrystalShowdown.stop();CrystalMusic.stopShow();CrystalMusic.setLayers(0);CrystalMusic.resume();document.body.classList.remove('musical-show');$('playfield').inert=false;
   $('resultTitle').textContent=current===20?'O céu encontrou sua canção!':'Mais um pedaço do mundo despertou!';$('resultText').textContent=campaign.worlds[engine.level.world].healed;$('nextLevel').textContent=current===20||customLevel?'Voltar ao mapa':'Continuar jornada';$('resultDialog').showModal();
  }
- function applySettings(){document.body.classList.toggle('high-contrast',settings.contrast);document.body.classList.toggle('reduce-motion',settings.motion);engine.options=settings;CrystalAudio.setVolume(settings.fx);CrystalMusic.setVolume(settings.music);CrystalShowdown.setVolume(settings.music);
+ function applySettings(){document.body.classList.toggle('high-contrast',settings.contrast);document.body.classList.toggle('reduce-motion',settings.motion);engine.options=settings;CrystalAudio.setVolume(settings.fx);CrystalMusic.setVolume(settings.music);CrystalShowdown.setVolume(settings.music);window.CrystalMenuAudio?.setVolume?.(settings.music);
   for(const [id,k]of [['voiceToggle','voice'],['contrastToggle','contrast'],['motionToggle','motion'],['assistToggle','assist']])$(id).checked=settings[k];for(const k of ['music','fx']){$(k+'Volume').value=Math.round(settings[k]*100);$(k+'Value').textContent=Math.round(settings[k]*100)+'%';}
   if(engine.level)$('timer').hidden=!engine.level.time||settings.assist;
  }
@@ -99,7 +103,7 @@
  window.addEventListener('pagehide',persist);setInterval(()=>{if(screen==='game'&&engine.active&&!engine.paused)persist();},3000);
  // No phase file import/export. Only campaign progress is stored locally.
  const freshStart=startLevel;
- $('playButton').onclick=()=>{if(CrystalEntrance.active)return;unlockAudio();CrystalShowdown.unlock();CrystalAudio.start();CrystalEntrance.play(()=>{freshStart(unlocked());engine.paused=true;CrystalMusic.pause();},()=>{beginIntro();});};
+ $('playButton').onclick=()=>{if(CrystalEntrance.active)return;window.CrystalMenuAudio?.pause?.();unlockAudio();CrystalShowdown.unlock();CrystalAudio.start();CrystalEntrance.play(()=>{freshStart(1);engine.paused=true;CrystalMusic.pause();},()=>{beginIntro();});};
  $('homeSave').textContent=completed.length?completed.length+' de 20 fases restauradas. Seu caminho está salvo.':'Sua jornada começa com um pequeno brilho.';
  window.CrystalApp={goto,startLevel:freshStart,openSettings,unlockAll(){completed=Array.from({length:20},(_,i)=>i+1);persist();renderMap();},get state(){return {completed:[...completed],current,screen,settings:{...settings}};}};
 })();
