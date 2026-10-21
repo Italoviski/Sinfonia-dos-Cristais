@@ -27,14 +27,55 @@
   get enabled(){return enabled;}
  };
 
+ function getAssetUrl(relPath) {
+  try {
+   const base = (typeof document !== 'undefined' && (document.querySelector('base')?.href || document.baseURI)) || (typeof location !== 'undefined' ? location.href : '');
+   if (base) return new URL(relPath, base).href;
+  } catch {}
+  return relPath;
+ }
+
  const hasAudio = typeof Audio !== 'undefined';
- const menuTrack = hasAudio ? new Audio('assets/audio/musica-menu.mp3') : null;
+ const menuTrack = hasAudio ? new Audio(getAssetUrl('assets/audio/musica-menu.mp3')) : null;
  if (menuTrack) {
   menuTrack.loop = true;
   menuTrack.preload = 'auto';
+  menuTrack.setAttribute?.('playsinline', '');
+  menuTrack.playsInline = true;
  }
  let menuVol = 0.65;
  if (menuTrack) menuTrack.volume = menuVol;
+
+ let unlockActive = false;
+ function setupInteractionUnlock() {
+  if (unlockActive || typeof window === 'undefined') return;
+  unlockActive = true;
+  const events = ['click', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown'];
+  const handler = () => {
+   ensure();
+   if (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') {
+    if (menuTrack && menuTrack.paused) {
+     menuTrack.volume = menuVol;
+     menuTrack.play().then(() => { teardown(); }).catch(() => {});
+     return;
+    }
+   }
+   if (menuTrack && !menuTrack.paused) {
+    teardown();
+   }
+  };
+  function teardown() {
+   unlockActive = false;
+   events.forEach(ev => {
+    window.removeEventListener(ev, handler, true);
+    document.removeEventListener(ev, handler, true);
+   });
+  }
+  events.forEach(ev => {
+   window.addEventListener(ev, handler, { capture: true, passive: true });
+   document.addEventListener(ev, handler, { capture: true, passive: true });
+  });
+ }
 
  window.CrystalMenuAudio = {
   get track() { return menuTrack; },
@@ -44,7 +85,10 @@
    if (typeof document !== 'undefined' && document.body?.dataset?.screen && document.body.dataset.screen !== 'home') {
     return Promise.resolve();
    }
-   return menuTrack.play().catch(() => {});
+   menuTrack.volume = menuVol;
+   return menuTrack.play().catch(() => {
+    setupInteractionUnlock();
+   });
   },
   pause() {
    if (menuTrack) menuTrack.pause();
@@ -65,24 +109,14 @@
    const p = menuTrack.play();
    if (p && typeof p.catch === 'function') {
     p.catch(() => {
-     if (typeof window === 'undefined') return;
-     const unblock = () => {
-      if (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') {
-       menuTrack.play().catch(() => {});
-      }
-      window.removeEventListener('pointerdown', unblock);
-      window.removeEventListener('keydown', unblock);
-      window.removeEventListener('touchstart', unblock);
-     };
-     window.addEventListener('pointerdown', unblock, { once: true });
-     window.addEventListener('keydown', unblock, { once: true });
-     window.addEventListener('touchstart', unblock, { once: true });
+     setupInteractionUnlock();
     });
    }
   }
  };
 
  if (typeof window !== 'undefined') {
+  setupInteractionUnlock();
   if (document.readyState === 'loading') {
    window.addEventListener('DOMContentLoaded', () => window.CrystalMenuAudio?.autoStart?.());
   } else {

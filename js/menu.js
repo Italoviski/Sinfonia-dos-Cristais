@@ -298,11 +298,13 @@
   const buttons = [...frame.querySelectorAll('.menu-choice')];
   buttons.forEach((btn, idx) => {
     btn.addEventListener('pointerenter', () => {
+      window.CrystalMenuAudio?.play?.();
       hoveredChoice = idx;
       setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
       if (idx === 0) doorPulse = Math.max(doorPulse, 1);
     });
     btn.addEventListener('focus', () => {
+      window.CrystalMenuAudio?.play?.();
       hoveredChoice = idx;
       setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
       if (idx === 0) doorPulse = Math.max(doorPulse, 1);
@@ -317,6 +319,7 @@
 
   // Interactive click on the Ancient Door or Cavern Crystals in the Menu
   frame.addEventListener('pointerdown', e => {
+    window.CrystalMenuAudio?.play?.();
     if (e.target.closest('button')) return;
     const rect = frame.getBoundingClientRect();
     const px = ((e.clientX - rect.left) / rect.width) * W;
