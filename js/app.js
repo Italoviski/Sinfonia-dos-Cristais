@@ -94,7 +94,15 @@
  for(const k of ['music','fx'])$(k+'Volume').oninput=e=>{settings[k]=Number(e.target.value)/100;applySettings();persist();};
  $('testSound').onclick=()=>CrystalAudio.shatter();
  $('playButton').onclick=()=>{unlockAudio();goto('map');};$('creditsButton').onclick=()=>$('creditsDialog').showModal();$('exitButton').onclick=()=>{const ok=persist();$('exitDialog').querySelector('p').textContent=ok?'Seu progresso foi guardado neste navegador. O estoque de Diamantes vale apenas nesta sessão.':'O navegador não permitiu salvar o progresso. Ele será perdido ao fechar esta aba.';$('exitDialog').showModal();};
- $('mapButton').onclick=()=>goto('map');$('retryButton').onclick=()=>startLevel(current,customLevel);$('leaveShow').onclick=finishShow;window.addEventListener('crystal-show-ended',finishShow);
+ $('mapButton').onclick=()=>goto('map');
+ $('retryButton').onclick=()=>{
+  if(window.CaveChapter1&&(window.CaveChapter1.running||document.body.dataset.screen==='game')){
+   window.CaveChapter1.restartCurrentPhase();
+   return;
+  }
+  startLevel(current,customLevel);
+ };
+ $('leaveShow').onclick=finishShow;window.addEventListener('crystal-show-ended',finishShow);
  $('nextLevel').onclick=()=>{$('resultDialog').close();if(current>=20||customLevel)goto('map');else startLevel(current+1);};$('resultMap').onclick=()=>{$('resultDialog').close();goto('map');};$('watchShow').onclick=()=>{$('resultDialog').close();startShow();};
  $('resultDialog').addEventListener('cancel',()=>goto('map'));
  document.addEventListener('pointerdown',()=>{if(!$('settingsDialog').open)unlockAudio();},{once:true});
@@ -103,7 +111,7 @@
  window.addEventListener('pagehide',persist);setInterval(()=>{if(screen==='game'&&engine.active&&!engine.paused)persist();},3000);
  // No phase file import/export. Only campaign progress is stored locally.
  const freshStart=startLevel;
- $('playButton').onclick=()=>{if(CrystalEntrance.active)return;window.CrystalMenuAudio?.pause?.();unlockAudio();CrystalShowdown.unlock();CrystalAudio.start();CrystalEntrance.play(()=>{freshStart(1);engine.paused=true;CrystalMusic.pause();},()=>{beginIntro();});};
+ $('playButton').onclick=()=>{if(CrystalEntrance.active)return;if(window.CrystalAssetsReady===false)return;window.CrystalMenuAudio?.pause?.();unlockAudio();CrystalShowdown.unlock();CrystalAudio.start();CrystalEntrance.play(()=>{freshStart(1);engine.paused=true;CrystalMusic.pause();},()=>{beginIntro();});};
  $('homeSave').textContent=completed.length?completed.length+' de 20 fases restauradas. Seu caminho está salvo.':'Sua jornada começa com um pequeno brilho.';
  window.CrystalApp={goto,startLevel:freshStart,openSettings,unlockAll(){completed=Array.from({length:20},(_,i)=>i+1);persist();renderMap();},get state(){return {completed:[...completed],current,screen,settings:{...settings}};}};
 })();

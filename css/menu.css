@@ -31,3 +31,7 @@
 .reduce-motion .home-screen .menu-choice span,.reduce-motion .home-screen .menu-choice i{transform:none!important}
 @media(prefers-reduced-motion:reduce){.home-screen .menu-choice span,.home-screen .menu-choice i{transform:none!important}.menu-video{transition:none}}
 @media(max-width:600px){.menu-motion-button{right:14px;bottom:14px}.home-screen .menu-choice{font-size:clamp(22px,var(--menu-font),34px)}}
+
+/* Preloader Funcional em True Pixel Art */
+#preloaderScreen{position:fixed;inset:0;z-index:99999;background:#05030f;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;cursor:pointer;overflow:hidden}
+#preloaderCanvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#05030f}

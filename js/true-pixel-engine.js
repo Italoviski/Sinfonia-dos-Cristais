@@ -621,9 +621,32 @@
 
 
   // ============================================================================
-  // RETRATOS DE DIÁLOGO (PORTRAIT / TALKING HEADS EM LOOP — 28x28 SOMENTE ROSTO)
-  // Mais detalhados que os sprites normais de jogo!
+  // RETRATOS DE DIALOGO PROCEDURAIS ESTILO OWLBOY (fillOvalPainterly - TONS TERROSOS SUAVES)
+  // Paleta quente e naturalista inspirada em Owlboy, sem contornos pretos duros,
+  // com sombreamento volumetrico eliptico suave e dithering Bayer.
   // ============================================================================
+  function fillOvalPainterly(ctx, cx, cy, rx, ry, pal) {
+    const [cEdge, cDark, cMid, cLight, cHi] = pal;
+    const x0 = Math.floor(cx - rx - 1), x1 = Math.ceil(cx + rx + 1);
+    const y0 = Math.floor(cy - ry - 1), y1 = Math.ceil(cy + ry + 1);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const nx = (x - cx) / rx, ny = (y - cy) / ry;
+        const d = nx * nx + ny * ny;
+        if (d > 1.0) continue;
+        // Luz vinda da esquerda-topo (estilo Owlboy)
+        const light = -nx * 0.55 - ny * 0.45 + (bay(x, y) / 16 - 0.5) * 0.22;
+        let col = cMid;
+        if (d > 0.84) col = nx < -0.2 && ny < -0.2 ? cMid : cEdge;
+        else if (light > 0.36) col = cHi || cLight;
+        else if (light > 0.10) col = cLight;
+        else if (light < -0.22) col = cDark;
+        ctx.fillStyle = col;
+        ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+      }
+    }
+  }
+
   function buildProtagonistPortrait(mouthOpen, blink) {
     const [c, x] = mk(28, 28);
     const put = (px, py, col) => {
@@ -632,89 +655,49 @@
         x.fillRect(px, py, 1, 1);
       }
     };
-    // Fundo circular/moldura interna
     for (let j = 0; j < 28; j++) {
       for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#171136' : '#120d2b');
+        put(i, j, ((i + j) & 1) ? '#2e2420' : '#241c18');
       }
     }
-    // Cabelo de trás e contorno da cabeça
-    for (let j = 3; j <= 24; j++) {
-      for (let i = 5; i <= 22; i++) {
-        const dx = (i - 13.5) / 8.5, dy = (j - 13.5) / 10;
-        const d = dx * dx + dy * dy;
-        if (d <= 1.05) {
-          if (d > 0.86) put(i, j, '#140d2e');
-          else if (j < 10 || i < 8 || i > 19) {
-            put(i, j, (j < 7 && i < 16) ? '#684ca6' : (j < 9 ? '#4b357a' : '#2c1d4c'));
-          } else {
-            put(i, j, (j > 19 || i > 17) ? '#d49972' : '#f2c29b');
-          }
-        }
-      }
+    fillOvalPainterly(x, 14, 13, 9, 10, ['#3d2217', '#593424', '#784832', '#965d42', '#bd815e']);
+    fillOvalPainterly(x, 14, 15, 7, 7.5, ['#784e38', '#ab7456', '#cf9b7a', '#e8bfa0', '#f5dac4']);
+    // Topete e tufos de cabelo estilo Otus
+    for (let i = 6; i <= 21; i++) {
+      put(i, 6, i < 14 ? '#bd815e' : '#784832');
+      put(i, 7, i < 14 ? '#965d42' : '#593424');
+      if (i % 3 === 0) put(i, 8, '#593424');
     }
-    // Franja detalhada em pixel art
-    const bangs = [
-      [8, 8], [9, 8], [9, 9], [10, 8], [11, 8], [12, 9], [13, 10],
-      [14, 8], [15, 9], [16, 8], [17, 9], [18, 10], [19, 9]
-    ];
-    for (const [bx, by] of bangs) put(bx, by, '#4b357a');
-
-    // Sobrancelhas expressivas
-    for (let dx = 0; dx < 3; dx++) {
-      put(9 + dx, 11, '#2c1d4c');
-      put(16 + dx, 11, '#2c1d4c');
-    }
-
-    // Olhos grandes detalhados (somente rosto)
     if (blink) {
       for (let dx = 0; dx < 4; dx++) {
-        put(9 + dx, 14, '#140d2e');
-        put(15 + dx, 14, '#140d2e');
+        put(9 + dx, 14, '#4d2d20');
+        put(15 + dx, 14, '#4d2d20');
       }
     } else {
       for (const ox of [9, 15]) {
         for (let dy = 0; dy < 3; dy++) {
-          for (let dx = 0; dx < 3; dx++) {
-            put(ox + dx, 13 + dy, '#120824');
-          }
+          for (let dx = 0; dx < 3; dx++) put(ox + dx, 13 + dy, dx === 0 && dy > 0 ? '#f5efe4' : '#261712');
         }
-        put(ox, 13, '#ffffff');
-        put(ox + 2, 15, '#3fc6f0');
+        put(ox + 1, 13, '#ffffff');
       }
     }
-
-    // Nariz e bochechas
-    put(13, 16, '#d49972');
-    put(8, 16, '#eb9696');
-    put(19, 16, '#eb9696');
-
-    // Boca (loop de fala!)
+    put(8, 16, '#d98a7c');
+    put(19, 16, '#d98a7c');
     if (mouthOpen === 0) {
-      put(12, 19, '#8c4856');
-      put(13, 19, '#8c4856');
-      put(14, 19, '#8c4856');
-    } else if (mouthOpen === 1) {
-      for (let dx = 12; dx <= 15; dx++) {
-        put(dx, 18, '#6e2737');
-        put(dx, 19, '#ff72e0');
-        put(dx, 20, '#6e2737');
-      }
-      put(13, 18, '#ffffff');
+      put(12, 19, '#784533'); put(13, 19, '#784533'); put(14, 19, '#784533');
     } else {
-      for (let dx = 12; dx <= 14; dx++) {
-        put(dx, 18, '#6e2737');
-        put(dx, 19, '#d44a6a');
+      for (let dx = 12; dx <= 15; dx++) {
+        put(dx, 18, '#592824');
+        put(dx, 19, mouthOpen === 1 ? '#d96b62' : '#b8524c');
       }
     }
-
-    // Gola/Cachecol ciano na base do queixo
-    for (let i = 7; i <= 20; i++) {
-      put(i, 23, '#140d2e');
-      put(i, 24, i < 14 ? '#3fc6f0' : '#1d70a8');
-      put(i, 25, i < 14 ? '#9ef0ff' : '#3fc6f0');
-      put(i, 26, '#140d2e');
+    // Manto marrom-terracota e fecho dourado no pescoco
+    for (let i = 6; i <= 21; i++) {
+      put(i, 23, i < 14 ? '#9c5b42' : '#5c3222');
+      put(i, 24, i < 14 ? '#bd7456' : '#7d4632');
+      put(i, 25, '#422318');
     }
+    put(13, 23, '#f0d28c'); put(14, 23, '#cca252');
     return c;
   }
 
@@ -728,38 +711,17 @@
     };
     for (let j = 0; j < 28; j++) {
       for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#0c0820' : '#080518');
+        put(i, j, ((i + j) & 1) ? '#171c26' : '#12161f');
       }
     }
-    // Ondas sonoras misteriosas ao fundo quando fala
     if (pulseStep > 0) {
-      const r = 10 + pulseStep * 2;
-      drawRing(x, 14, 14, r, pulseStep === 1 ? '#3fc6f0' : '#7b3fd0');
+      drawRing(x, 14, 14, 10 + pulseStep * 2, pulseStep === 1 ? '#7ba1bf' : '#cca252');
     }
-    // Silhueta pura do rosto misterioso (coroa/tiara, cabelos e perfil em sombra absoluta)
-    for (let j = 4; j <= 25; j++) {
-      for (let i = 5; i <= 22; i++) {
-        const dx = (i - 13.5) / 8, dy = (j - 14) / 10;
-        const d = dx * dx + dy * dy;
-        if (d <= 1.0) {
-          const isRim = d > 0.82;
-          put(i, j, isRim ? (pulseStep ? '#9ef0ff' : '#5a49c4') : '#04020c');
-        }
-      }
-    }
-    // Silhueta da coroa cristalina no topo da cabeça
+    fillOvalPainterly(x, 14, 14, 8, 9.5, ['#527394', '#161d29', '#1c2533', '#283647', '#9eb8cc']);
     const crown = [[11, 3], [13, 2], [14, 2], [16, 3], [12, 4], [15, 4]];
-    for (const [cx, cy] of crown) put(cx, cy, pulseStep ? '#9ef0ff' : '#4a36a8');
-
-    // Brilho sutil de voz na região da boca/olhos em silhueta
-    if (pulseStep === 1) {
-      put(13, 19, '#9ef0ff');
-      put(14, 19, '#9ef0ff');
-    } else if (pulseStep === 2) {
-      put(12, 19, '#3fc6f0');
-      put(13, 18, '#ffffff');
-      put(14, 18, '#ffffff');
-      put(15, 19, '#3fc6f0');
+    for (const [cx, cy] of crown) put(cx, cy, pulseStep ? '#f0d28c' : '#7ba1bf');
+    if (pulseStep > 0) {
+      put(13, 18, '#f5efe2'); put(14, 18, '#f5efe2');
     }
     return c;
   }
@@ -774,62 +736,33 @@
     };
     for (let j = 0; j < 28; j++) {
       for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#1a1244' : '#120c32');
+        put(i, j, ((i + j) & 1) ? '#26303d' : '#1d2530');
       }
     }
-    // Cabelo castanho-dourado e rosto detalhado da Ordem / Fada
-    for (let j = 4; j <= 25; j++) {
-      for (let i = 4; i <= 23; i++) {
-        const dx = (i - 13.5) / 8.5, dy = (j - 14) / 10;
-        const d = dx * dx + dy * dy;
-        if (d <= 1.05) {
-          if (d > 0.86) put(i, j, '#1a0f14');
-          else if (j < 10 || i < 8 || i > 19) {
-            put(i, j, (j < 8 && i < 16) ? '#6b3a1c' : '#3b1d0e');
-          } else {
-            put(i, j, (j > 19 || i > 17) ? '#55301a' : '#7a4426');
-          }
-        }
-      }
-    }
-    // Tiara dourada com Gema Ciano da Fada
-    for (let i = 9; i <= 18; i++) put(i, 7, '#ffd35a');
-    put(13, 6, '#ffffff');
-    put(14, 6, '#3fc6f0');
-    put(13, 7, '#3fc6f0');
-    put(14, 7, '#9ef0ff');
-
-    // Olhos expressivos luminosos
+    fillOvalPainterly(x, 14, 14, 9, 10, ['#2b1a14', '#42281e', '#613c2d', '#82533f', '#a66e56']);
+    fillOvalPainterly(x, 14, 15, 7, 7.5, ['#4f3021', '#6e4531', '#915f46', '#b37b5e', '#cfa084']);
+    for (let i = 9; i <= 18; i++) put(i, 6, '#e0b865');
+    put(13, 5, '#fae3a2'); put(14, 5, '#7ba1bf');
     if (blink) {
       for (let dx = 0; dx < 3; dx++) {
-        put(9 + dx, 14, '#3b1d0e');
-        put(16 + dx, 14, '#3b1d0e');
+        put(9 + dx, 14, '#42281e');
+        put(16 + dx, 14, '#42281e');
       }
     } else {
       for (const ox of [9, 16]) {
         for (let dy = 0; dy < 3; dy++) {
-          for (let dx = 0; dx < 3; dx++) put(ox + dx, 13 + dy, '#120806');
+          for (let dx = 0; dx < 3; dx++) put(ox + dx, 13 + dy, dx === 0 ? '#f5efe2' : '#261712');
         }
-        put(ox, 13, '#ffffff');
-        put(ox + 2, 15, '#9ef0ff');
+        put(ox + 1, 13, '#ffffff');
       }
     }
-    // Boca falando em loop
     if (mouthOpen === 0) {
-      put(12, 19, '#ffb8e6');
-      put(13, 19, '#ffb8e6');
-      put(14, 19, '#ffb8e6');
-    } else if (mouthOpen === 1) {
-      for (let dx = 12; dx <= 15; dx++) {
-        put(dx, 18, '#552030');
-        put(dx, 19, '#ff72e0');
-        put(dx, 20, '#552030');
-      }
-      put(13, 18, '#ffffff');
+      put(12, 19, '#6e4531'); put(13, 19, '#6e4531'); put(14, 19, '#6e4531');
     } else {
-      put(12, 19, '#ff72e0');
-      put(13, 18, '#ff72e0');
-      put(14, 19, '#ff72e0');
+      for (let dx = 12; dx <= 15; dx++) {
+        put(dx, 18, '#592422');
+        put(dx, 19, '#c95b54');
+      }
     }
     return c;
   }
@@ -1190,7 +1123,9 @@
         ? clamp(f12, 0, frames.length - 1)
         : ((f12 % frames.length) + frames.length) % frames.length;
       let spr = frames[idx];
+      if (!spr) return;
       if (opts.flipX) spr = mirrorCanvas(spr);
+      if (!spr) return;
 
       const scale = spr.hib ? 0.5 : 1;
       const w = spr.width * scale;
@@ -1407,6 +1342,14 @@
       this.charProgress = 0;
       this.isOpen = this.queue.length > 0;
       this.onComplete = onComplete;
+    },
+
+    close() {
+      this.isOpen = false;
+      this.queue = [];
+      this.currentIndex = 0;
+      this.charProgress = 0;
+      this.onComplete = null;
     },
 
     advance() {
@@ -1858,8 +1801,8 @@
     onGoMap: null,
     onMuteChange: null,
 
-    inRect(x, y, r, padY = 0) {
-      return x >= r.x && x <= r.x + r.w && y >= (r.y - padY) && y <= (r.y + r.h + padY);
+    inRect(x, y, r, padX = 2, padY = 2) {
+      return x >= (r.x - padX) && x <= (r.x + r.w + padX) && y >= (r.y - padY) && y <= (r.y + r.h + padY);
     },
 
     syncAudio() {
@@ -1938,6 +1881,8 @@
       this.playSfx('click');
       if (typeof this.onRestart === 'function') {
         this.onRestart();
+      } else if (global.CaveChapter1 && typeof global.CaveChapter1.restartCurrentPhase === 'function') {
+        global.CaveChapter1.restartCurrentPhase();
       }
     },
 

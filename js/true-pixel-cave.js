@@ -1528,8 +1528,10 @@
 
     restartCurrentPhase() {
       this.prepareCanvasForGame();
-      DialogueBox.close();
-      TutorialModal.close();
+      if (typeof DialogueBox.close === 'function') DialogueBox.close();
+      if (typeof TutorialModal.close === 'function') TutorialModal.close();
+      GameHUD.paused = false;
+      GameHUD.settingsOpen = false;
       this.draggedPiece = null;
       this.equationPointer = null;
       this.magneticAnim = null;
@@ -1562,12 +1564,18 @@
 
       this.setupLevelStep(lvl, 1);
       // Garante entrada direta na jogabilidade da Etapa 1 ao clicar em Recomeçar Fase
-      TutorialModal.close();
+      if (typeof TutorialModal.close === 'function') TutorialModal.close();
       this.phase = 'gameplay';
       this.phaseTime = 0;
       this.spawnShatter(160, 90, 'pure', 14);
       GameHUD.playSfx('start');
       IrisTransition.start('in', 160, 90, 0.45);
+
+      if (!this.running) {
+        this.running = true;
+        this.lastNow = (typeof performance !== 'undefined' ? performance.now() : 0);
+        requestAnimationFrame((now) => this.loop(now));
+      }
     },
 
     ensureCanvas() {
@@ -1597,14 +1605,18 @@
         cv.height = HH;
       }
       this.fitCanvas(cv);
-      window.addEventListener('resize', () => this.fitCanvas(cv));
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function' && !cv._resizeHooked) {
+        cv._resizeHooked = true;
+        window.addEventListener('resize', () => this.fitCanvas(cv));
+      }
       return cv;
     },
 
     fitCanvas(cv) {
+      if (!cv || !cv.style) return;
       // Enquadramento 16:9 exato ocupando a área total da janela sem bordas desalinhadas
-      const vw = Math.max(320, window.innerWidth);
-      const vh = Math.max(180, window.innerHeight);
+      const vw = typeof window !== 'undefined' && window.innerWidth ? Math.max(320, window.innerWidth) : 320;
+      const vh = typeof window !== 'undefined' && window.innerHeight ? Math.max(180, window.innerHeight) : 180;
       const scale = Math.min(vw / W, vh / H);
       cv.style.width = Math.round(W * scale) + 'px';
       cv.style.height = Math.round(H * scale) + 'px';
@@ -1797,9 +1809,24 @@
         }
       };
 
-      this.canvas.addEventListener('pointerdown', onDown);
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
+      const onKeyDown = (e) => {
+        if (e.key === 'r' || e.key === 'R') {
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (this.running || (typeof document !== 'undefined' && document.body.dataset.screen === 'game')) {
+            e.preventDefault();
+            this.restartCurrentPhase();
+          }
+        }
+      };
+
+      if (this.canvas && typeof this.canvas.addEventListener === 'function') {
+        this.canvas.addEventListener('pointerdown', onDown);
+      }
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('keydown', onKeyDown);
+      }
     },
 
     clearTrembleStates() {
@@ -3371,6 +3398,7 @@
       playBtn.addEventListener('click', (ev) => {
         ev.stopImmediatePropagation();
         ev.preventDefault();
+        if (global.CrystalAssetsReady === false) return;
         CaveChapter1.startCutsceneAndFase1();
       }, true);
     }
