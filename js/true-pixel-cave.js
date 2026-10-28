@@ -1453,6 +1453,15 @@
     opalStepInterval: 0.55,
     shards: [],
 
+    // Parâmetros de colisão física circular sólida e limites visíveis do cenário (320x180 lógico)
+    CRYSTAL_RADIUS: 9,
+    SOLID_MIN_DIST: 18,       // 2 * CRYSTAL_RADIUS (impede sobreposição, mantendo alcance <= 26 da Opala de Fogo)
+    ANNUL_CONTACT_DIST: 19,   // distância de toque das bordas para anulação imediata Puro + Sombrio
+    STAGE_MIN_X: 16,
+    STAGE_MAX_X: W - 16,
+    STAGE_MIN_Y: 38,          // abaixo do HUD superior (0..20), mantendo as bolinhas externas visíveis
+    STAGE_MAX_Y: 128,         // acima do piso de pedra/musgo (y >= 138)
+
     completeBtnRect: { x: 112, y: 112, w: 96, h: 16 },
     gameOverBtnRect: { x: 96, y: 120, w: 128, h: 16 },
     onChapterFinish: null,
@@ -1723,6 +1732,10 @@
             GameHUD.playSfx(p.type === 'opal' ? 'opalGrab' : (p.type === 'rose' ? 'roseGrab' : 'quartzGrab'));
             this.draggedPiece = p;
             p.dragging = true;
+            const immediateHit = this.findTouchingCompatibleShadow(p, p.x, p.y);
+            if (immediateHit) {
+              this.triggerImmediateAnnulment(p, immediateHit);
+            }
             return;
           }
         }
@@ -1741,12 +1754,22 @@
       const onMove = (e) => {
         if (!this.running) return;
         const pt = e.touches ? e.touches[0] : e;
+        if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
 
         if (this.draggedPiece) {
-          this.draggedPiece.x = clamp(x, 24, W - 24);
-          this.draggedPiece.y = clamp(y, 24, 134);
-          if (this.pureEquation && !this.pureEquation.broken) {
+          if (this.phase !== 'gameplay' || this.draggedPiece.broken || this.draggedPiece.value <= 0) {
+            this.draggedPiece.dragging = false;
+            this.draggedPiece = null;
+            return;
+          }
+
+          const res = this.moveDraggedPieceWithCollision(this.draggedPiece, x, y);
+          if (res && res.annulled) {
+            return;
+          }
+
+          if (this.draggedPiece && this.pureEquation && !this.pureEquation.broken) {
             const overEq = this.isInsideEquationAura(this.pureEquation, this.draggedPiece.x, this.draggedPiece.y, true);
             this.pureEquation.dropHover = overEq && this.draggedPiece.inEquation !== 'pure';
             this.pureEquation.removeHover = !overEq && this.draggedPiece.inEquation === 'pure';
@@ -1760,18 +1783,9 @@
             this.equationPointer.moved = true;
           }
           if (this.equationPointer.moved) {
-            const nx = clamp(this.equationPointer.origX + (x - this.equationPointer.startX), 44, W - 44);
-            const ny = clamp(this.equationPointer.origY + (y - this.equationPointer.startY), 38, 128);
-            const dx = nx - this.pureEquation.x;
-            const dy = ny - this.pureEquation.y;
-            this.pureEquation.x = nx;
-            this.pureEquation.y = ny;
-            for (const p of this.pieces) {
-              if (p.inEquation === 'pure' && !p.broken) {
-                p.x += dx;
-                p.y += dy;
-              }
-            }
+            const rawEqX = this.equationPointer.origX + (x - this.equationPointer.startX);
+            const rawEqY = this.equationPointer.origY + (y - this.equationPointer.startY);
+            this.moveEquationWithCollision(rawEqX, rawEqY);
           }
         }
       };
@@ -1802,10 +1816,13 @@
             this.pureEquation.removeHover = false;
           }
           this.clearTrembleStates();
+          if (p.broken || p.value <= 0 || this.phase !== 'gameplay') return;
           GameHUD.playSfx(p.type === 'opal' ? 'opalDrop' : (p.type === 'rose' ? 'roseDrop' : 'quartzDrop'));
           this.checkPieceDrop(p);
-          this.checkEquationSolved();
-          this.triggerDefeatIfImpossible();
+          if (this.phase === 'gameplay') {
+            this.checkEquationSolved();
+            this.triggerDefeatIfImpossible();
+          }
         }
       };
 
@@ -1825,6 +1842,7 @@
       if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
         window.addEventListener('keydown', onKeyDown);
       }
     },
@@ -1834,15 +1852,326 @@
       for (const p of this.pieces) p.trembling = false;
     },
 
+    clampCrystalPos(x, y) {
+      return {
+        x: clamp(x, this.STAGE_MIN_X, this.STAGE_MAX_X),
+        y: clamp(y, this.STAGE_MIN_Y, this.STAGE_MAX_Y)
+      };
+    },
+
+    isCompatibleShadowTarget(purePiece, candidate, px = purePiece.x, py = purePiece.y) {
+      if (this.phase !== 'gameplay') return false;
+      if (!purePiece || purePiece.shadow || purePiece.broken || purePiece.value <= 0) return false;
+      if (!candidate || !candidate.shadow || candidate.broken || candidate.value <= 0 || candidate.inEquation) return false;
+      if (
+        purePiece.inEquation === 'pure' &&
+        this.pureEquation &&
+        !this.pureEquation.broken &&
+        this.isInsideEquationAura(this.pureEquation, px, py, true)
+      ) {
+        return false;
+      }
+      return candidate.type === purePiece.type && candidate.value === purePiece.value;
+    },
+
+    findTouchingCompatibleShadow(purePiece, px = purePiece.x, py = purePiece.y) {
+      if (!purePiece || purePiece.shadow || purePiece.broken || purePiece.value <= 0) return null;
+      let best = null;
+      let bestDist = this.ANNUL_CONTACT_DIST;
+      for (let i = 0; i < this.pieces.length; i++) {
+        const k = this.pieces[i];
+        if (!this.isCompatibleShadowTarget(purePiece, k, px, py)) continue;
+        const d = Math.hypot(px - k.x, py - k.y);
+        if (d <= bestDist) {
+          bestDist = d;
+          best = k;
+        }
+      }
+      return best;
+    },
+
+    triggerImmediateAnnulment(purePiece, shadowTarget) {
+      if (!purePiece || !shadowTarget || purePiece.broken || shadowTarget.broken) return false;
+
+      // Cancela imediatamente o estado de arrasto para evitar ponteiros fantasmas
+      purePiece.dragging = false;
+      if (this.draggedPiece === purePiece) {
+        this.draggedPiece = null;
+      }
+
+      const wasInPureEq = purePiece.inEquation === 'pure';
+      purePiece.inEquation = null;
+      if (this.pureEquation) {
+        this.pureEquation.dropHover = false;
+        this.pureEquation.removeHover = false;
+        if (wasInPureEq && !this.pureEquation.broken) {
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+        }
+      }
+      this.clearTrembleStates();
+
+      purePiece.broken = true;
+      shadowTarget.broken = true;
+      GameHUD.playSfx('shatter');
+      GameHUD.playSfx('reward');
+      const shardSet = purePiece.type === 'rose' ? 'rose' : (purePiece.type === 'opal' ? 'opal' : 'pure');
+      this.spawnShatter(shadowTarget.x, shadowTarget.y, shardSet, 12);
+      this.spawnShatter(shadowTarget.x, shadowTarget.y, 'shadow', 12);
+
+      this.checkIfAllStepTargetsCleared(shadowTarget.x, shadowTarget.y);
+      if (this.phase === 'gameplay') {
+        this.checkEquationSolved();
+        this.triggerDefeatIfImpossible();
+      }
+      return true;
+    },
+
+    moveDraggedPieceWithCollision(piece, rawX, rawY) {
+      if (!piece || piece.broken || piece.value <= 0) return { annulled: false };
+
+      const clampedTarget = this.clampCrystalPos(rawX, rawY);
+      let curX = clamp(piece.x, this.STAGE_MIN_X, this.STAGE_MAX_X);
+      let curY = clamp(piece.y, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+
+      const initialHit = this.findTouchingCompatibleShadow(piece, curX, curY);
+      if (initialHit) {
+        piece.x = curX;
+        piece.y = curY;
+        this.triggerImmediateAnnulment(piece, initialHit);
+        return { annulled: true };
+      }
+
+      const totalDx = clampedTarget.x - curX;
+      const totalDy = clampedTarget.y - curY;
+      const totalDist = Math.hypot(totalDx, totalDy);
+      if (totalDist < 1e-4) {
+        piece.x = curX;
+        piece.y = curY;
+        return { annulled: false };
+      }
+
+      const minD = this.SOLID_MIN_DIST;
+      const steps = Math.max(1, Math.ceil(totalDist / 1.25));
+      const stepDx = totalDx / steps;
+      const stepDy = totalDy / steps;
+
+      for (let s = 0; s < steps; s++) {
+        let nx = clamp(curX + stepDx, this.STAGE_MIN_X, this.STAGE_MAX_X);
+        let ny = clamp(curY + stepDy, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+
+        // 1. Cristais compatíveis disparam anulação imediata ao tocarem suas bordas de colisão
+        const shadowHit = this.findTouchingCompatibleShadow(piece, nx, ny);
+        if (shadowHit) {
+          piece.x = nx;
+          piece.y = ny;
+          this.triggerImmediateAnnulment(piece, shadowHit);
+          return { annulled: true };
+        }
+
+        // 2. Cristais incompatíveis possuem colisão sólida circular (sem sobreposição nem travessia)
+        let blockedDead = false;
+        for (let iter = 0; iter < 6; iter++) {
+          let anyOverlap = false;
+          for (let i = 0; i < this.pieces.length; i++) {
+            const other = this.pieces[i];
+            if (
+              other === piece ||
+              other.broken ||
+              other.value <= 0 ||
+              this.isCompatibleShadowTarget(piece, other, nx, ny)
+            ) {
+              continue;
+            }
+            const dx = nx - other.x;
+            const dy = ny - other.y;
+            const d = Math.hypot(dx, dy);
+            if (d < minD) {
+              anyOverlap = true;
+              let ux, uy;
+              if (d > 1e-4) {
+                ux = dx / d;
+                uy = dy / d;
+              } else {
+                const fdx = curX - other.x;
+                const fdy = curY - other.y;
+                const fd = Math.hypot(fdx, fdy);
+                ux = fd > 1e-4 ? fdx / fd : 1;
+                uy = fd > 1e-4 ? fdy / fd : 0;
+              }
+
+              if (iter === 0) {
+                const mvX = nx - curX;
+                const mvY = ny - curY;
+                const vn = mvX * ux + mvY * uy;
+                if (vn < 0) {
+                  const vtX = mvX - vn * ux;
+                  const vtY = mvY - vn * uy;
+                  if (Math.hypot(vtX, vtY) <= Math.abs(vn) * 0.25) {
+                    const od = Math.hypot(curX - other.x, curY - other.y);
+                    if (od <= minD + 0.05) {
+                      blockedDead = true;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              nx = other.x + ux * minD;
+              ny = other.y + uy * minD;
+            }
+          }
+          nx = clamp(nx, this.STAGE_MIN_X, this.STAGE_MAX_X);
+          ny = clamp(ny, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+          if (blockedDead || !anyOverlap) break;
+        }
+
+        if (blockedDead) break;
+
+        let valid = true;
+        for (let i = 0; i < this.pieces.length; i++) {
+          const other = this.pieces[i];
+          if (
+            other === piece ||
+            other.broken ||
+            other.value <= 0 ||
+            this.isCompatibleShadowTarget(piece, other, nx, ny)
+          ) {
+            continue;
+          }
+          if (Math.hypot(nx - other.x, ny - other.y) < minD - 0.04) {
+            valid = false;
+            break;
+          }
+        }
+        if (!valid) break;
+
+        curX = nx;
+        curY = ny;
+
+        const postHit = this.findTouchingCompatibleShadow(piece, curX, curY);
+        if (postHit) {
+          piece.x = curX;
+          piece.y = curY;
+          this.triggerImmediateAnnulment(piece, postHit);
+          return { annulled: true };
+        }
+      }
+
+      piece.x = curX;
+      piece.y = curY;
+      return { annulled: false };
+    },
+
+    moveEquationWithCollision(rawEqX, rawEqY) {
+      const eq = this.pureEquation;
+      if (!eq || eq.broken) return;
+      const members = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation === 'pure');
+      const spacing = eq.expanded ? 24 : 18;
+      const halfSpan = members.length > 1 ? ((members.length - 1) * spacing) * 0.5 : 0;
+      const minEqX = Math.max(44, this.STAGE_MIN_X + halfSpan);
+      const maxEqX = Math.min(W - 44, this.STAGE_MAX_X - halfSpan);
+      const targetX = clamp(rawEqX, minEqX, maxEqX);
+      const targetY = clamp(rawEqY, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+
+      const totalDx = targetX - eq.x;
+      const totalDy = targetY - eq.y;
+      const totalDist = Math.hypot(totalDx, totalDy);
+      if (totalDist < 1e-4) return;
+
+      const minD = this.SOLID_MIN_DIST;
+      const others = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation !== 'pure');
+      const canShiftBy = (dx, dy) => {
+        for (let m = 0; m < members.length; m++) {
+          const mx = members[m].x + dx;
+          const my = members[m].y + dy;
+          if (mx < this.STAGE_MIN_X || mx > this.STAGE_MAX_X || my < this.STAGE_MIN_Y || my > this.STAGE_MAX_Y) {
+            return false;
+          }
+          for (let o = 0; o < others.length; o++) {
+            if (Math.hypot(mx - others[o].x, my - others[o].y) < minD - 0.04) {
+              return false;
+            }
+          }
+        }
+        return true;
+      };
+
+      const steps = Math.max(1, Math.ceil(totalDist / 1.5));
+      const sdx = totalDx / steps;
+      const sdy = totalDy / steps;
+      for (let s = 0; s < steps; s++) {
+        let appliedDx = 0;
+        let appliedDy = 0;
+        if (canShiftBy(sdx, sdy)) {
+          appliedDx = sdx;
+          appliedDy = sdy;
+        } else if (Math.abs(sdx) > 1e-4 && canShiftBy(sdx, 0)) {
+          appliedDx = sdx;
+        } else if (Math.abs(sdy) > 1e-4 && canShiftBy(0, sdy)) {
+          appliedDy = sdy;
+        } else {
+          break;
+        }
+        eq.x += appliedDx;
+        eq.y += appliedDy;
+        for (let m = 0; m < members.length; m++) {
+          members[m].x += appliedDx;
+          members[m].y += appliedDy;
+        }
+      }
+    },
+
+    resolveFreeCrystalCollisions() {
+      const minD = this.SOLID_MIN_DIST;
+      for (let iter = 0; iter < 6; iter++) {
+        for (let i = 0; i < this.pieces.length; i++) {
+          const p = this.pieces[i];
+          if (p.broken || p.value <= 0 || p.shadow || p.inEquation) continue;
+          p.x = clamp(p.x, this.STAGE_MIN_X, this.STAGE_MAX_X);
+          p.y = clamp(p.y, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+          for (let j = 0; j < this.pieces.length; j++) {
+            if (i === j) continue;
+            const o = this.pieces[j];
+            if (o.broken || o.value <= 0) continue;
+            const dx = p.x - o.x;
+            const dy = p.y - o.y;
+            const d = Math.hypot(dx, dy);
+            if (d < minD) {
+              const ux = d > 1e-4 ? dx / d : 0;
+              const uy = d > 1e-4 ? dy / d : -1;
+              if (!o.shadow && !o.inEquation) {
+                const push = (minD - d) * 0.5;
+                p.x = clamp(p.x + ux * push, this.STAGE_MIN_X, this.STAGE_MAX_X);
+                p.y = clamp(p.y + uy * push, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+                o.x = clamp(o.x - ux * push, this.STAGE_MIN_X, this.STAGE_MAX_X);
+                o.y = clamp(o.y - uy * push, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+              } else {
+                p.x = clamp(o.x + ux * minD, this.STAGE_MIN_X, this.STAGE_MAX_X);
+                p.y = clamp(o.y + uy * minD, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+              }
+            }
+          }
+        }
+      }
+    },
+
     layoutEquationPieces(eq, tag) {
       if (!eq || eq.broken) return;
       const members = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation === tag);
       const spacing = eq.expanded ? 24 : 18;
-      const startX = eq.x - ((members.length - 1) * spacing) * 0.5;
+      const halfSpan = members.length > 1 ? ((members.length - 1) * spacing) * 0.5 : 0;
+      if (this.phase !== 'equation_magnetic') {
+        eq.x = clamp(eq.x, this.STAGE_MIN_X + halfSpan, this.STAGE_MAX_X - halfSpan);
+        eq.y = clamp(eq.y, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+      }
+      const startX = eq.x - halfSpan;
       members.forEach((m, idx) => {
         m.x = R(startX + idx * spacing);
         m.y = R(eq.y);
       });
+      if (this.phase === 'gameplay') {
+        this.resolveFreeCrystalCollisions();
+      }
     },
 
     // ==========================================================================
@@ -2340,6 +2669,21 @@
           GameHUD.playSfx('shatter');
           this.clearTrembleStates();
         }
+        // Se a subtração da Opala de Fogo igualar o cristal a um sombrio já encostado, dispara anulação imediata
+        if (!activeTarget.broken && activeTarget.value > 0) {
+          const hit = this.findTouchingCompatibleShadow(activeTarget, activeTarget.x, activeTarget.y);
+          if (hit) {
+            this.triggerImmediateAnnulment(activeTarget, hit);
+            return;
+          }
+        }
+        if (!activeOpal.broken && activeOpal.value > 0) {
+          const opalHit = this.findTouchingCompatibleShadow(activeOpal, activeOpal.x, activeOpal.y);
+          if (opalHit) {
+            this.triggerImmediateAnnulment(activeOpal, opalHit);
+            return;
+          }
+        }
         this.checkEquationSolved();
         this.triggerDefeatIfImpossible();
       }
@@ -2347,6 +2691,11 @@
 
     checkPieceDrop(dropped) {
       if (!dropped || dropped.broken || dropped.value <= 0) return;
+
+      // Garante limites do cenário e separação sólida ao soltar livremente pelo campo
+      const clamped = this.clampCrystalPos(dropped.x, dropped.y);
+      dropped.x = clamped.x;
+      dropped.y = clamped.y;
 
       // 1. Verifica fusão entre Quartzos da mesma cor primeiro (dentro ou fora da equação)
       if (dropped.type !== 'opal') {
@@ -2363,6 +2712,7 @@
               dropped.rejectUntil = this.t + 0.35;
               other.rejectUntil = this.t + 0.35;
               GameHUD.playSfx('error');
+              this.resolveFreeCrystalCollisions();
               return;
             }
             other.value += dropped.value;
@@ -2372,6 +2722,10 @@
             this.spawnShatter(other.x, other.y, other.type === 'rose' ? 'rose' : 'pure', 8);
             if (this.pureEquation && !this.pureEquation.broken) {
               this.layoutEquationPieces(this.pureEquation, 'pure');
+            }
+            const mergedShadowHit = this.findTouchingCompatibleShadow(other, other.x, other.y);
+            if (mergedShadowHit) {
+              this.triggerImmediateAnnulment(other, mergedShadowHit);
             }
             return;
           }
@@ -2394,23 +2748,13 @@
         }
       }
 
-      if (dropped.type === 'opal') return;
+      this.resolveFreeCrystalCollisions();
 
-      // 3. Anulação direta contra um cristal sombrio isolado equivalente
+      // 3. Salvaguarda caso o cristal solto tenha ficado em contato de borda com sombrio compatível
       if (!dropped.inEquation) {
-        const shadowTarget = this.pieces.find(
-          k => k.shadow && !k.broken && !k.inEquation && k.type === dropped.type && k.value === dropped.value &&
-          Math.hypot(dropped.x - k.x, dropped.y - k.y) <= 22
-        );
+        const shadowTarget = this.findTouchingCompatibleShadow(dropped, dropped.x, dropped.y);
         if (shadowTarget) {
-          dropped.broken = true;
-          shadowTarget.broken = true;
-          GameHUD.playSfx('shatter');
-          GameHUD.playSfx('reward');
-          this.spawnShatter(shadowTarget.x, shadowTarget.y, dropped.type === 'rose' ? 'rose' : 'pure', 12);
-          this.spawnShatter(shadowTarget.x, shadowTarget.y, 'shadow', 12);
-
-          this.checkIfAllStepTargetsCleared(shadowTarget.x, shadowTarget.y);
+          this.triggerImmediateAnnulment(dropped, shadowTarget);
         }
       }
     },
@@ -3348,10 +3692,11 @@
       this.drawShards(ctx);
 
       // HUD Superior Completo (Título da Fase, Etapa + Botões de Pause, Recomeçar, Mudo e Configurações)
-      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps);
+      const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
+      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical);
 
       // Botão Pular >> no topo durante o show musical, enquadrado ao lado dos 4 botões do HUD
-      if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
+      if (inMusical) {
         const sb = this.skipMusicalBtnRect;
         ctx.fillStyle = '#3d2b24';
         ctx.fillRect(sb.x, sb.y, sb.w, sb.h);

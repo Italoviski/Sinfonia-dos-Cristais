@@ -649,21 +649,17 @@
 
   function buildProtagonistPortrait(mouthOpen, blink) {
     const [c, x] = mk(28, 28);
+    c._isDiamondBust = true;
     const put = (px, py, col) => {
       if (px >= 0 && py >= 0 && px < 28 && py < 28) {
         x.fillStyle = col;
         x.fillRect(px, py, 1, 1);
       }
     };
-    for (let j = 0; j < 28; j++) {
-      for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#2e2420' : '#241c18');
-      }
-    }
-    fillOvalPainterly(x, 14, 13, 9, 10, ['#3d2217', '#593424', '#784832', '#965d42', '#bd815e']);
-    fillOvalPainterly(x, 14, 15, 7, 7.5, ['#784e38', '#ab7456', '#cf9b7a', '#e8bfa0', '#f5dac4']);
+    fillOvalPainterly(x, 14, 13, 9, 9.5, ['#3d2217', '#593424', '#784832', '#965d42', '#bd815e']);
+    fillOvalPainterly(x, 14, 15, 7, 7, ['#784e38', '#ab7456', '#cf9b7a', '#e8bfa0', '#f5dac4']);
     // Topete e tufos de cabelo estilo Otus
-    for (let i = 6; i <= 21; i++) {
+    for (let i = 7; i <= 20; i++) {
       put(i, 6, i < 14 ? '#bd815e' : '#784832');
       put(i, 7, i < 14 ? '#965d42' : '#593424');
       if (i % 3 === 0) put(i, 8, '#593424');
@@ -691,34 +687,39 @@
         put(dx, 19, mouthOpen === 1 ? '#d96b62' : '#b8524c');
       }
     }
-    // Manto marrom-terracota e fecho dourado no pescoco
-    for (let i = 6; i <= 21; i++) {
-      put(i, 23, i < 14 ? '#9c5b42' : '#5c3222');
-      put(i, 24, i < 14 ? '#bd7456' : '#7d4632');
+    // Manto marrom-terracota afunilado nos ombros e fecho dourado no pescoco
+    for (let i = 8; i <= 19; i++) {
+      put(i, 22, i < 14 ? '#9c5b42' : '#5c3222');
+    }
+    for (let i = 7; i <= 20; i++) {
+      put(i, 23, i < 14 ? '#bd7456' : '#7d4632');
+    }
+    for (let i = 9; i <= 18; i++) {
+      put(i, 24, i < 14 ? '#9c5b42' : '#5c3222');
+    }
+    for (let i = 11; i <= 16; i++) {
       put(i, 25, '#422318');
     }
-    put(13, 23, '#f0d28c'); put(14, 23, '#cca252');
+    put(13, 22, '#f0d28c'); put(14, 22, '#cca252');
     return c;
   }
 
   function buildMysterySilhouettePortrait(pulseStep) {
     const [c, x] = mk(28, 28);
+    c._isDiamondBust = true;
     const put = (px, py, col) => {
       if (px >= 0 && py >= 0 && px < 28 && py < 28) {
         x.fillStyle = col;
         x.fillRect(px, py, 1, 1);
       }
     };
-    for (let j = 0; j < 28; j++) {
-      for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#171c26' : '#12161f');
-      }
-    }
     if (pulseStep > 0) {
-      drawRing(x, 14, 14, 10 + pulseStep * 2, pulseStep === 1 ? '#7ba1bf' : '#cca252');
+      drawRing(x, 14, 14, 9 + pulseStep, pulseStep === 1 ? '#7ba1bf' : '#cca252');
     }
-    fillOvalPainterly(x, 14, 14, 8, 9.5, ['#527394', '#161d29', '#1c2533', '#283647', '#9eb8cc']);
-    const crown = [[11, 3], [13, 2], [14, 2], [16, 3], [12, 4], [15, 4]];
+    fillOvalPainterly(x, 14, 14, 7.5, 9, ['#527394', '#161d29', '#1c2533', '#283647', '#9eb8cc']);
+    for (let i = 9; i <= 18; i++) put(i, 23, '#1c2533');
+    for (let i = 11; i <= 16; i++) put(i, 24, '#161d29');
+    const crown = [[11, 4], [13, 3], [14, 3], [16, 4], [12, 5], [15, 5]];
     for (const [cx, cy] of crown) put(cx, cy, pulseStep ? '#f0d28c' : '#7ba1bf');
     if (pulseStep > 0) {
       put(13, 18, '#f5efe2'); put(14, 18, '#f5efe2');
@@ -728,19 +729,15 @@
 
   function buildOrdemPortrait(mouthOpen, blink) {
     const [c, x] = mk(28, 28);
+    c._isDiamondBust = true;
     const put = (px, py, col) => {
       if (px >= 0 && py >= 0 && px < 28 && py < 28) {
         x.fillStyle = col;
         x.fillRect(px, py, 1, 1);
       }
     };
-    for (let j = 0; j < 28; j++) {
-      for (let i = 0; i < 28; i++) {
-        put(i, j, ((i + j) & 1) ? '#26303d' : '#1d2530');
-      }
-    }
-    fillOvalPainterly(x, 14, 14, 9, 10, ['#2b1a14', '#42281e', '#613c2d', '#82533f', '#a66e56']);
-    fillOvalPainterly(x, 14, 15, 7, 7.5, ['#4f3021', '#6e4531', '#915f46', '#b37b5e', '#cfa084']);
+    fillOvalPainterly(x, 14, 13.5, 8.5, 9.5, ['#2b1a14', '#42281e', '#613c2d', '#82533f', '#a66e56']);
+    fillOvalPainterly(x, 14, 15, 6.8, 7, ['#4f3021', '#6e4531', '#915f46', '#b37b5e', '#cfa084']);
     for (let i = 9; i <= 18; i++) put(i, 6, '#e0b865');
     put(13, 5, '#fae3a2'); put(14, 5, '#7ba1bf');
     if (blink) {
@@ -764,6 +761,10 @@
         put(dx, 19, '#c95b54');
       }
     }
+    // Gola real turquesa/dourada contida na base do busto
+    for (let i = 8; i <= 19; i++) put(i, 22, i < 14 ? '#68b8c4' : '#3d7c8a');
+    for (let i = 9; i <= 18; i++) put(i, 23, i < 14 ? '#f2cc6b' : '#b88d3d');
+    for (let i = 11; i <= 16; i++) put(i, 24, '#2b4f59');
     return c;
   }
 
@@ -1145,15 +1146,136 @@
       }
     },
 
+    _externalPortraitCache: new Map(),
+
+    isDrawablePortraitSource(src) {
+      if (!src || typeof src !== 'object' || src._failed) return false;
+      const isImg =
+        src.tagName === 'IMG' ||
+        (typeof HTMLImageElement !== 'undefined' && src instanceof HTMLImageElement) ||
+        ('complete' in src && src.tagName !== 'CANVAS');
+      if (isImg) {
+        if (!src.complete) return false;
+        const nw = src.naturalWidth !== undefined ? src.naturalWidth : src.width;
+        const nh = src.naturalHeight !== undefined ? src.naturalHeight : src.height;
+        return Number(nw) > 0 && Number(nh) > 0;
+      }
+      return Number(src.width) > 0 && Number(src.height) > 0;
+    },
+
     /**
-     * Desenha um retrato (Talking Head 28x28 — somente o rosto) em loop.
+     * Resolve o quadro válido do retrato do falante.
+     * Retorna `null` se o retrato for nulo, inexistente, inválido ou falhar ao carregar.
      */
-    drawPortrait(ctx, portraitKey, isTalking, x, y, t) {
-      const pSet = SpriteBank.portraits[portraitKey] || SpriteBank.portraits.portrait_protagonist;
-      const frames = isTalking ? pSet.talk : pSet.idle;
-      const f12 = Math.floor(t * (isTalking ? 10 : 4));
-      const frame = frames[((f12 % frames.length) + frames.length) % frames.length];
-      ctx.drawImage(frame, R(x), R(y));
+    resolvePortraitFrame(portraitRef, isTalking, t) {
+      if (!portraitRef || portraitRef === 'none') return null;
+
+      if (typeof portraitRef === 'string') {
+        const key = portraitRef.trim();
+        if (!key || key === 'none') return null;
+
+        const pSet = SpriteBank.portraits && SpriteBank.portraits[key];
+        if (pSet) {
+          const frames = isTalking ? pSet.talk : pSet.idle;
+          if (!Array.isArray(frames) || frames.length === 0) return null;
+          const f12 = Math.floor(t * (isTalking ? 10 : 4));
+          const frame = frames[((f12 % frames.length) + frames.length) % frames.length];
+          return this.isDrawablePortraitSource(frame) ? frame : null;
+        }
+
+        const cachedMap = global.CrystalAssetCache && global.CrystalAssetCache.images;
+        if (cachedMap) {
+          const cached = typeof cachedMap.get === 'function' ? cachedMap.get(key) : cachedMap[key];
+          if (cached) {
+            return this.isDrawablePortraitSource(cached) ? cached : null;
+          }
+        }
+
+        if (key.includes('/') || /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(key) || key.startsWith('data:image/')) {
+          let extImg = this._externalPortraitCache.get(key);
+          if (!extImg && typeof Image !== 'undefined') {
+            extImg = new Image();
+            extImg._failed = false;
+            extImg.onerror = () => {
+              extImg._failed = true;
+            };
+            extImg.src = key;
+            this._externalPortraitCache.set(key, extImg);
+          }
+          return this.isDrawablePortraitSource(extImg) ? extImg : null;
+        }
+
+        return null;
+      }
+
+      if (typeof portraitRef === 'object') {
+        if (Array.isArray(portraitRef.idle) || Array.isArray(portraitRef.talk)) {
+          const frames = (isTalking ? portraitRef.talk : portraitRef.idle) || portraitRef.idle || portraitRef.talk;
+          if (!Array.isArray(frames) || frames.length === 0) return null;
+          const f12 = Math.floor(t * (isTalking ? 10 : 4));
+          const frame = frames[((f12 % frames.length) + frames.length) % frames.length];
+          return this.isDrawablePortraitSource(frame) ? frame : null;
+        }
+        return this.isDrawablePortraitSource(portraitRef) ? portraitRef : null;
+      }
+
+      return null;
+    },
+
+    /**
+     * Desenha um retrato válido em loop, perfeitamente centralizado e contido quando solicitado.
+     */
+    drawPortrait(ctx, portraitKey, isTalking, x, y, t, opts = {}) {
+      const frame = opts.resolvedFrame || this.resolvePortraitFrame(portraitKey, isTalking, t);
+      if (!this.isDrawablePortraitSource(frame)) return false;
+
+      const rawW = frame.naturalWidth || frame.width || 0;
+      const rawH = frame.naturalHeight || frame.height || 0;
+      if (rawW <= 0 || rawH <= 0) return false;
+
+      const baseScale = frame.hib ? 0.5 : 1;
+      let dw = rawW * baseScale;
+      let dh = rawH * baseScale;
+
+      if (opts.diamondRadius) {
+        const dIn = opts.diamondRadius;
+        if (frame._isDiamondBust) {
+          const maxBox = Math.max(8, dIn * 2 - 4);
+          if (dw > maxBox || dh > maxBox) {
+            const fit = Math.min(maxBox / dw, maxBox / dh);
+            dw = Math.max(1, Math.floor(dw * fit));
+            dh = Math.max(1, Math.floor(dh * fit));
+          }
+        } else {
+          // Inscreve imagens retangulares dentro da área útil do losango (dw/2 + dh/2 <= dIn - 1)
+          const maxSum = Math.max(6, (dIn - 1) * 2);
+          if (dw + dh > maxSum) {
+            const fit = maxSum / (dw + dh);
+            dw = Math.max(1, Math.round(dw * fit));
+            dh = Math.max(1, Math.round(dh * fit));
+          }
+        }
+      }
+
+      const drawX = opts.center ? RH(x - dw / 2) : (opts.anchor === 'bottom' ? RH(x - dw / 2) : R(x));
+      const drawY = opts.center ? RH(y - dh / 2) : (opts.anchor === 'bottom' ? RH(y - dh) : R(y));
+
+      if (opts.flipX) {
+        if (typeof ctx.save === 'function' && typeof ctx.translate === 'function' && typeof ctx.scale === 'function') {
+          ctx.save();
+          ctx.translate(drawX + dw, drawY);
+          ctx.scale(-1, 1);
+          ctx.drawImage(frame, 0, 0, dw, dh);
+          ctx.restore();
+        } else if (frame.tagName === 'CANVAS') {
+          ctx.drawImage(mirrorCanvas(frame), drawX, drawY, dw, dh);
+        } else {
+          ctx.drawImage(frame, drawX, drawY, dw, dh);
+        }
+      } else {
+        ctx.drawImage(frame, drawX, drawY, dw, dh);
+      }
+      return true;
     },
 
     /**
@@ -1382,48 +1504,37 @@
       }
     },
 
-    drawSocketCrest(ctx, cx, cy, f12) {
-      // Brasão de madeira esculpida/bronze encaixado na borda superior do balão estilo Owlboy
-      const cw = 92, ch = 10;
-      const x0 = R(cx - cw / 2), y0 = R(cy - ch + 1);
+    drawSocketCrest(ctx, cx, by, f12) {
+      // Barra compacta e simétrica dos 4 encaixes, assentada sobre a borda superior da caixa sem invadir o cenário
+      const cw = 54, ch = 9;
+      const x0 = R(cx - cw / 2), y0 = R(by - 5);
       ctx.fillStyle = '#2c221e';
-      ctx.fillRect(x0 - 1, y0 - 1, cw + 2, ch + 1);
+      ctx.fillRect(x0 - 1, y0 - 1, cw + 2, ch + 2);
       ctx.fillStyle = '#4a3830';
       ctx.fillRect(x0, y0, cw, ch);
       ctx.fillStyle = '#bfa36f';
       ctx.fillRect(x0 + 1, y0, cw - 2, 1);
+      ctx.fillStyle = '#8c7d70';
+      ctx.fillRect(x0 + 1, y0 + ch - 1, cw - 2, 1);
 
-      // 4 Encaixes das Gemas Primordiais bem espaçados e centralizados no topo:
-      const s1x = R(cx - 30), s1y = y0 + 5;
-      const lit1 = this.sockets.fairy;
-      ctx.fillStyle = '#bfa36f';
-      ctx.fillRect(s1x - 4, s1y - 3, 9, 6);
-      ctx.fillStyle = lit1 ? '#68b8c4' : '#211815';
-      ctx.fillRect(s1x - 3, s1y - 2, 7, 4);
-      if (lit1) P1(ctx, s1x, s1y - 1, '#ffffff');
-
-      const s2x = R(cx - 10), s2y = y0 + 5;
-      const lit2 = this.sockets.forest;
-      ctx.fillStyle = '#bfa36f';
-      ctx.fillRect(s2x - 3, s2y - 3, 7, 6);
-      ctx.fillStyle = lit2 ? '#539e43' : '#211815';
-      ctx.fillRect(s2x - 2, s2y - 2, 5, 4);
-
-      const s3x = R(cx + 10), s3y = y0 + 5;
-      const lit3 = this.sockets.river;
-      ctx.fillStyle = '#bfa36f';
-      ctx.fillRect(s3x - 3, s3y - 3, 7, 6);
-      ctx.fillStyle = lit3 ? '#4da6b8' : '#211815';
-      ctx.fillRect(s3x - 2, s3y - 2, 5, 4);
-
-      const s4x = R(cx + 30), s4y = y0 + 5;
-      const lit4 = this.sockets.caatinga;
-      ctx.fillStyle = '#bfa36f';
-      ctx.fillRect(s4x - 3, s4y - 3, 7, 6);
-      ctx.fillStyle = lit4 ? '#d96538' : '#211815';
-      ctx.fillRect(s4x - 2, s4y - 2, 5, 4);
-
-      if ((f12 & 3) === 0 && lit1) P1(ctx, s1x - 1, s1y - 1, '#ffffff');
+      const slots = [
+        [this.sockets.fairy, '#68b8c4'],
+        [this.sockets.forest, '#539e43'],
+        [this.sockets.river, '#4da6b8'],
+        [this.sockets.caatinga, '#d96538']
+      ];
+      for (let i = 0; i < slots.length; i++) {
+        const [lit, gemCol] = slots[i];
+        const sx = x0 + 5 + i * 12;
+        const sy = y0 + 2;
+        ctx.fillStyle = '#bfa36f';
+        ctx.fillRect(sx, sy, 8, 5);
+        ctx.fillStyle = lit ? gemCol : '#211815';
+        ctx.fillRect(sx + 1, sy + 1, 6, 3);
+        if (lit) {
+          P1(ctx, sx + 2 + (((f12 >> 2) + i) & 1), sy + 1, '#ffffff');
+        }
+      }
     },
 
     render(ctx, t) {
@@ -1432,41 +1543,65 @@
       if (!cur) return;
 
       const f12 = Math.floor(t * SPRITE_FPS);
-      const portraitKey = cur.portrait || 'portrait_protagonist';
-      // Retrato Hi-Bit em moldura losango: Protagonista à esquerda (olhando para a direita),
-      // demais personagens à direita (olhando para a esquerda), sempre voltados para o texto.
-      const portraitLeft = portraitKey === 'portrait_protagonist';
-      const D = 46;                                   // meia-diagonal do losango (lógico)
-      const pcx = portraitLeft ? 50 : 270, pcy = 134;  // centro do losango
-      const bw = 236, bh = 48, by = 128;
-      const bx = portraitLeft ? pcx + D - 14 : pcx - D + 14 - bw;
-      const tailX = portraitLeft ? 68 : 176;
-
       const fullText = cur.text || '';
       const visibleCount = Math.floor(this.charProgress);
       const isTalking = visibleCount < fullText.length;
 
+      const portraitRef = cur.portrait !== undefined
+        ? cur.portrait
+        : (cur.sprite !== undefined ? cur.sprite : cur.image);
+      const portraitFrame = ActorAnimator.resolvePortraitFrame(portraitRef, isTalking, t);
+      const hasPortrait = Boolean(portraitFrame);
+
+      const by = 132, bh = 44;
+      let bx, bw, nx, crestCx, textX, textW, arrowX;
+      let portraitLeft = true;
+      const D = 25;
+      let pcx = 34;
+      const pcy = 151;
+
+      if (hasPortrait) {
+        portraitLeft = cur.side
+          ? cur.side === 'left'
+          : (portraitRef === 'portrait_protagonist' || cur.speaker === 'Protagonista');
+        pcx = portraitLeft ? 34 : W - 34;
+        bx = portraitLeft ? 46 : 10;
+        bw = 264;
+        nx = portraitLeft ? 66 : 24;
+        crestCx = portraitLeft ? bx + bw - 38 : 218;
+        textX = portraitLeft ? 65 : 20;
+        textW = portraitLeft ? (bx + bw - 12 - textX) : 235;
+        arrowX = portraitLeft ? bx + bw - 12 : 249;
+      } else {
+        // Fallback limpo: sem retrato válido -> oculta completamente o losango e expande a caixa de diálogo
+        bx = 16;
+        bw = W - 32;
+        nx = bx + 14;
+        crestCx = bx + bw - 38;
+        textX = bx + 12;
+        textW = bw - 24;
+        arrowX = bx + bw - 12;
+      }
+
       // Balão de Diálogo em Pergaminho (#f4eedf com borda dupla #2c221e e #8c7d70)
-      drawParchmentBox(ctx, bx, by, bw, bh, { tailX, tailDir: 'up' });
+      drawParchmentBox(ctx, bx, by, bw, bh);
 
-      // Brasão das 4 Gemas encaixado no topo (centralizado na área livre do balão)
-      this.drawSocketCrest(ctx, portraitLeft ? bx + bw - 60 : bx + bw - 70, by, f12);
+      // Barra simétrica dos 4 encaixes alinhada na borda superior direita da caixa
+      this.drawSocketCrest(ctx, crestCx, by, f12);
 
-      // Plaqueta do nome com pontas em losango (estilo da referência)
+      // Plaqueta do nome alinhada na mesma linha de base superior (sem colidir com os slots)
       const speaker = cur.speaker || 'Protagonista';
-      const nameW = Math.min(110, measurePixelText(speaker, 9) + 18);
-      const nx = portraitLeft ? bx + 18 : bx + 12, ny = by - 13;
-      this.drawNamePlate(ctx, nx, ny, nameW, speaker);
+      const maxNameW = Math.max(54, R(crestCx - 34 - nx));
+      const nameW = Math.min(112, maxNameW, measurePixelText(speaker, 9) + 18);
+      this.drawNamePlate(ctx, nx, by - 6, nameW, speaker);
 
       // Texto com tipografia Owlboy (maiúsculas, minúsculas e acentos)
-      const textX = portraitLeft ? bx + 16 : bx + 10;
-      const textW = bw - 28;
       drawPixelText(ctx, fullText.slice(0, visibleCount), textX, by + 9, '#2c221e', null, textW, 10);
 
       // Setinha indicadora no canto inferior direito quando o texto terminou
       if (!isTalking) {
         const bob = (f12 & 1) ? 1 : 0;
-        const ax = bx + bw - (portraitLeft ? 13 : 20), ay = by + bh - 10 + bob;
+        const ax = arrowX, ay = by + bh - 10 + bob;
         ctx.fillStyle = '#8c2d1f';
         ctx.fillRect(ax, ay, 1, 7);
         ctx.fillRect(ax + 1, ay + 1, 1, 5);
@@ -1474,23 +1609,26 @@
         ctx.fillRect(ax + 3, ay + 3, 1, 1);
       }
 
-      // Moldura losango + retrato por cima da borda do balão
-      this.drawDiamondPortrait(ctx, portraitKey, isTalking, pcx, pcy, D, t, portraitLeft);
+      // Exibe a moldura em losango SOMENTE quando houver imagem/sprite válido carregado
+      if (hasPortrait) {
+        const flipX = cur.flipX !== undefined ? Boolean(cur.flipX) : !portraitLeft;
+        this.drawDiamondPortrait(ctx, portraitRef, isTalking, pcx, pcy, D, t, flipX, portraitFrame);
+      }
     },
 
     drawNamePlate(ctx, x, y, w, name) {
       x = R(x); y = R(y);
-      const h = 14, mid = y + h / 2;
+      const h = 12, mid = y + h / 2;
       // Pontas em losango nas laterais
-      for (let i = 0; i <= 7; i++) {
-        const half = 7 - i;
+      for (let i = 0; i <= 6; i++) {
+        const half = 6 - i;
         ctx.fillStyle = '#2c221e';
-        ctx.fillRect(x - 8 + i, R(mid - half - 0.5), 1, half * 2 + 1);
-        ctx.fillRect(x + w + 7 - i, R(mid - half - 0.5), 1, half * 2 + 1);
+        ctx.fillRect(x - 7 + i, R(mid - half - 0.5), 1, half * 2 + 1);
+        ctx.fillRect(x + w + 6 - i, R(mid - half - 0.5), 1, half * 2 + 1);
         if (i > 1 && half > 0) {
           ctx.fillStyle = '#bfa36f';
-          ctx.fillRect(x - 8 + i, R(mid - half + 0.5), 1, Math.max(1, half * 2 - 1));
-          ctx.fillRect(x + w + 7 - i, R(mid - half + 0.5), 1, Math.max(1, half * 2 - 1));
+          ctx.fillRect(x - 7 + i, R(mid - half + 0.5), 1, Math.max(1, half * 2 - 1));
+          ctx.fillRect(x + w + 6 - i, R(mid - half + 0.5), 1, Math.max(1, half * 2 - 1));
         }
       }
       // Corpo da plaqueta em madeira escura com filete dourado
@@ -1504,10 +1642,14 @@
       ctx.fillRect(x, y + h - 3, w, 2);
       ctx.fillStyle = '#d9bf86';
       ctx.fillRect(x, y + 1, w, 1);
-      drawPixelTextCentered(ctx, name, x + w / 2, y + 3, '#fbf3df', '#2c221e', w - 4, 9);
+      drawPixelTextCentered(ctx, name, x + w / 2, y + 2, '#fbf3df', '#2c221e', w - 4, 9);
     },
 
-    drawDiamondPortrait(ctx, portraitKey, isTalking, cx, cy, D, t, faceRight) {
+    drawDiamondPortrait(ctx, portraitKey, isTalking, cx, cy, D, t, flipX, resolvedFrame = null) {
+      const frame = resolvedFrame || ActorAnimator.resolvePortraitFrame(portraitKey, isTalking, t);
+      if (!frame) return;
+
+      const dInner = D - 3;
       const diamond = (d) => {
         ctx.beginPath();
         ctx.moveTo(cx, cy - d);
@@ -1528,19 +1670,26 @@
       fillDiamond(D + 1, '#d9bf86');       // filete dourado
       fillDiamond(D, '#5c4938');           // moldura de madeira
       fillDiamond(D - 2, '#2c221e');       // contorno interno
-      fillDiamond(D - 3, '#3b4a3a');       // fundo do retrato (verde-musgo escuro)
+      fillDiamond(dInner, '#3b4a3a');      // fundo do retrato (verde-musgo escuro)
       // Leve gradiente pictórico no fundo
       ctx.fillStyle = '#4a5c46';
-      for (let dy = -(D - 3); dy < -(D - 3) / 3; dy++) {
-        const half = (D - 3) - Math.abs(dy);
+      for (let dy = -dInner; dy < -dInner / 3; dy++) {
+        const half = dInner - Math.abs(dy);
         ctx.fillRect(R(cx - half), R(cy + dy), half * 2 + 1, 1);
       }
 
-      ctx.save();
-      diamond(D - 3);
-      ctx.clip();
-      ActorAnimator.drawPortrait(ctx, portraitKey, isTalking, cx, cy + D - 3, t, { anchor: 'bottom', flipX: faceRight });
-      ctx.restore();
+      if (typeof ctx.save === 'function') ctx.save();
+      if (typeof ctx.clip === 'function') {
+        diamond(dInner);
+        ctx.clip();
+      }
+      ActorAnimator.drawPortrait(ctx, portraitKey, isTalking, cx, cy, t, {
+        center: true,
+        diamondRadius: dInner,
+        flipX: Boolean(flipX),
+        resolvedFrame: frame
+      });
+      if (typeof ctx.restore === 'function') ctx.restore();
     }
   };
 
@@ -2034,7 +2183,7 @@
       }
     },
 
-    renderTopBar(ctx, levelNum, currentStep, totalSteps) {
+    renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false) {
       // Barra Superior Esculpida Estilo Owlboy (0..20)
       ctx.fillStyle = '#241c19';
       ctx.fillRect(0, 0, W, 20);
@@ -2047,16 +2196,18 @@
       // Título da Fase à esquerda (com acentuação e minúsculas legíveis)
       drawPixelText(ctx, `Caverna - Fase ${levelNum}`, 6, 6, '#f7e2b8', '#120d0b', 96, 9);
 
-      // Indicador visual de Etapas no centro-esquerda
-      drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 94, 6, '#a8d8e6', '#120d0b', 62, 9);
-      for (let s = 1; s <= totalSteps; s++) {
-        const dx = 148 + (s - 1) * 10, dy = 9;
-        const done = s < currentStep;
-        const cur = s === currentStep;
-        ctx.fillStyle = done ? '#539e43' : cur ? '#68b8c4' : '#3b3332';
-        ctx.fillRect(dx - 3, dy - 3, 6, 6);
-        ctx.fillStyle = done || cur ? '#ffffff' : '#8c7d70';
-        ctx.fillRect(dx - 1, dy - 1, 2, 2);
+      // Indicador visual de Etapas no centro-esquerda (oculto durante apresentações musicais com botão Pular)
+      if (!hideSteps) {
+        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 94, 6, '#a8d8e6', '#120d0b', 62, 9);
+        for (let s = 1; s <= totalSteps; s++) {
+          const dx = 148 + (s - 1) * 10, dy = 9;
+          const done = s < currentStep;
+          const cur = s === currentStep;
+          ctx.fillStyle = done ? '#539e43' : cur ? '#68b8c4' : '#3b3332';
+          ctx.fillRect(dx - 3, dy - 3, 6, 6);
+          ctx.fillStyle = done || cur ? '#ffffff' : '#8c7d70';
+          ctx.fillRect(dx - 1, dy - 1, 2, 2);
+        }
       }
 
       // 1. Botão PAUSE (❚❚)
