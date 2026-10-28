@@ -9,6 +9,7 @@
     "build": "node scripts/build.mjs",
     "playtest": "node .agents/skills/ai-playtester/scripts/playtest.mjs",
     "audit:pixels": "node .agents/skills/true-pixel-art-pipeline/scripts/audit-sprites.mjs",
-    "verify:campaign": "node .agents/skills/campaign-balancer/scripts/verify-campaign.mjs"
+    "verify:campaign": "node .agents/skills/campaign-balancer/scripts/verify-campaign.mjs",
+    "music:cave": "node scripts/generate-cave-music.mjs"
   }
 }

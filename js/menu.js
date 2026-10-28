@@ -226,12 +226,13 @@
     return el;
   });
 
-  // Pixel dust & fireflies in 320x180 space
+  // Pixel dust & fireflies in 320x180 space — posicoes 2D independentes ja no frame 0 (sem alinhamento diagonal)
   const particles = Array.from({ length: 48 }, (_, i) => ({
-    x: (i * 0.61803398875) % 1,
-    y: (i * 0.381966) % 1,
+    x: hash(i * 19 + 73),
+    y: hash(i * 37 + 211),
+    phase: hash(i * 53 + 409) * Math.PI * 2,
     s: 1 + (i % 2),
-    speed: 0.015 + (i % 6) * 0.0035,
+    speed: 0.015 + hash(i * 11 + 29) * 0.022,
     kind: i % 5 === 0 ? 'gold' : i % 3 === 0 ? 'pink' : 'cyan'
   }));
 
@@ -294,21 +295,22 @@
     });
   }
 
-  // Hook hover & focus interactions on the 4 menu buttons
+  // Hook hover & focus interactions on the 4 menu buttons with immediate visual & audio feedback
   const buttons = [...frame.querySelectorAll('.menu-choice')];
+  function activateMenuHover(idx) {
+    if (hoveredChoice !== idx) {
+      window.CrystalAudio?.unlock?.();
+      window.CrystalAudio?.hover?.();
+    }
+    window.CrystalMenuAudio?.play?.();
+    hoveredChoice = idx;
+    setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
+    doorPulse = Math.max(doorPulse, idx === 0 ? 1.2 : 0.55);
+  }
   buttons.forEach((btn, idx) => {
-    btn.addEventListener('pointerenter', () => {
-      window.CrystalMenuAudio?.play?.();
-      hoveredChoice = idx;
-      setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
-      if (idx === 0) doorPulse = Math.max(doorPulse, 1);
-    });
-    btn.addEventListener('focus', () => {
-      window.CrystalMenuAudio?.play?.();
-      hoveredChoice = idx;
-      setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
-      if (idx === 0) doorPulse = Math.max(doorPulse, 1);
-    });
+    btn.addEventListener('pointerenter', () => activateMenuHover(idx));
+    btn.addEventListener('mouseenter', () => activateMenuHover(idx));
+    btn.addEventListener('focus', () => activateMenuHover(idx));
     btn.addEventListener('pointerleave', () => {
       if (hoveredChoice === idx) hoveredChoice = -1;
     });
@@ -405,17 +407,41 @@
 
   function drawMenuSelector(f12) {
     if (hoveredChoice < 0 || hoveredChoice > 3) return;
-    // Button vertical centers in 320x180 space matching .menu-choice tops (39.3%, 49%, 59.2%, 70%)
-    const ys = [77, 95, 113, 132];
+    // Button vertical centers in 320x180 space matching .menu-choice tops
+    const ys = [76, 94, 112, 131];
+    const cols = ['#a8ff66', '#9ef0ff', '#ff8ae2', '#ffd35a'];
     const cy = ys[hoveredChoice];
+    const col = cols[hoveredChoice] || '#9ef0ff';
     const bob = [0, -1, 0, 1][f12 % 4];
+    const shift = (f12 & 1) ? 1 : 0;
+
+    // Ícone temático em pixel art à esquerda do botão
     const icon = MENU_ICONS[hoveredChoice];
-    if (icon) ctx.drawImage(icon, 13, cy - 5 + bob);
-    // Pixel-art diamond pointer & energy bracket
-    dia(9, cy + bob, 2, '#ffffff', hoveredChoice === 0 ? '#a8ff66' : '#9ef0ff');
-    ctx.fillStyle = hoveredChoice === 0 ? '#a8ff66' : '#9ef0ff';
-    ctx.fillRect(22, cy + 7, 56 + (f12 % 3) * 2, 1);
-    star(80 + (f12 % 3) * 2, cy + 7, 1, '#ffffff', '#9ef0ff');
+    if (icon) ctx.drawImage(icon, 11 + shift, cy - 5 + bob);
+
+    // Seta luminosa em pixel art apontando para a opção sob o mouse
+    dia(6 + shift, cy + bob, 2, '#ffffff', col);
+    P1(9 + shift, cy + bob, '#ffffff');
+
+    // Colchetes de canto em pixel art + trilha energética sob o botão focado
+    const bx = 22, bw = 76, by = cy - 7, bh = 14;
+    ctx.fillStyle = col;
+    // Canto superior esquerdo e inferior esquerdo
+    ctx.fillRect(bx, by, 5, 1);
+    ctx.fillRect(bx, by, 1, 4);
+    ctx.fillRect(bx, by + bh, 5, 1);
+    ctx.fillRect(bx, by + bh - 3, 1, 4);
+    // Canto superior direito e inferior direito
+    ctx.fillRect(bx + bw - 4, by, 5, 1);
+    ctx.fillRect(bx + bw, by, 1, 4);
+    ctx.fillRect(bx + bw - 4, by + bh, 5, 1);
+    ctx.fillRect(bx + bw, by + bh - 3, 1, 4);
+
+    // Linha de energia animada + estrelas nas pontas
+    ctx.fillRect(bx + 4, by + bh, bw - 8, 1);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(bx + 6 + ((f12 * 5) % (bw - 20)), by + bh, 10, 1);
+    star(bx + bw + 4 - shift, cy, (f12 & 1) ? 2 : 1, '#ffffff', col);
   }
 
   function renderStaticFrame() {
@@ -468,11 +494,11 @@
           }
         });
 
-        // Ascending True Pixel Art particles (quantized to integer coordinates)
+        // Ascending True Pixel Art particles (quantized to integer coordinates, scattered from frame 0)
         for (const p of particles) {
           p.y -= dt * p.speed;
           if (p.y < 0) p.y += 1;
-          const px = R((p.x + Math.sin(time * 0.45 + p.x * 18) * 0.008) * W);
+          const px = R((p.x + Math.sin(time * 0.55 + p.phase) * 0.012) * W);
           const py = R(p.y * H);
           const col = p.kind === 'gold' ? '#ffd35a' : p.kind === 'pink' ? '#ff8ae2' : '#9ef0ff';
           ctx.fillStyle = col;

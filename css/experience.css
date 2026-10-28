@@ -23,13 +23,14 @@
 @media(max-width:700px){.game-screen .neon-ensemble{right:145px;left:4px}.tool-palette{right:145px;flex-wrap:wrap}.mission{padding:6px}.equation-rail{bottom:12px}.show-copy{padding:0 16px}}
 .reduce-motion .whisper-char{animation:none!important}
 /* Interactive Pixel Art Menu Buttons over the Sinfonia dos Cristais Sanctuary Backdrop */
-.home-screen .menu-choice{--menu-color:#a8ff66;position:absolute;left:7%;top:38.2%;width:24%;height:7.8%;padding:0!important;border:none!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;display:flex;align-items:center;justify-content:flex-start;cursor:pointer;transition:transform .16s ease,filter .16s ease;z-index:2;isolation:isolate}
+.home-screen .menu-choice{--menu-color:#a8ff66;position:absolute;left:7%;top:38.2%;width:24%;height:7.8%;padding:0!important;border:none!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;display:flex;align-items:center;justify-content:flex-start;cursor:pointer;transition:transform .09s cubic-bezier(.2,.9,.3,1),filter .09s ease;z-index:2;isolation:isolate}
 .home-screen .menu-choice:nth-child(2){top:48.2%;--menu-color:#9feaff}
 .home-screen .menu-choice:nth-child(3){top:58.2%;--menu-color:#ff8ae2}
 .home-screen .menu-choice:nth-child(4){top:68.5%;--menu-color:#ffd35a}
-.home-screen .menu-choice .menu-btn-art{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:left center;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.75));transition:transform .16s ease,filter .16s ease}
-.home-screen .menu-choice:is(:hover,:focus-visible,:active){transform:translateX(8px) scale(1.03)}
-.home-screen .menu-choice:is(:hover,:focus-visible,:active) .menu-btn-art{filter:drop-shadow(0 0 10px var(--menu-color)) drop-shadow(0 0 22px rgba(140,230,255,0.55)) brightness(1.14)}
+.home-screen .menu-choice .menu-btn-art{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:left center;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.75));transition:transform .09s ease,filter .09s ease}
+.home-screen .menu-choice:is(:hover,:focus-visible){transform:translateX(11px) scale(1.07)}
+.home-screen .menu-choice:active{transform:translateX(8px) scale(0.98)}
+.home-screen .menu-choice:is(:hover,:focus-visible,:active) .menu-btn-art{filter:drop-shadow(0 0 8px var(--menu-color)) drop-shadow(0 0 18px var(--menu-color)) brightness(1.28) contrast(1.08)}
 .home-screen .menu-choice:focus-visible{outline:2px solid var(--menu-color);outline-offset:6px;border-radius:4px}
 .reduce-motion .home-screen .menu-choice{transform:none!important}
 @media(prefers-reduced-motion:reduce){.home-screen .menu-choice{transform:none!important}}

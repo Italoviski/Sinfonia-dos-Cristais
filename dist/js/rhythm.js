@@ -2,8 +2,11 @@
   'use strict';
   // True Pixel Art Rhythmic Boss Minigame (osu!-style approach rings & crystalline melody)
   const lead = 1.25;
-  const track = typeof Audio !== 'undefined' ? new Audio('assets/audio/o-que-um-cristal-pode-fazer.mp3') : null;
-  if (track) track.preload = 'auto';
+  const defaultTrack = typeof Audio !== 'undefined' ? new Audio('assets/audio/o-que-um-cristal-pode-fazer.mp3') : null;
+  const caveTrack = typeof Audio !== 'undefined' ? new Audio('assets/audio/era-uma-vez-caverna.mp3') : null;
+  if (defaultTrack) defaultTrack.preload = 'auto';
+  if (caveTrack) caveTrack.preload = 'auto';
+  let track = defaultTrack;
 
   const host = document.createElement('section');
   host.className = 'rhythm-stage';
@@ -268,6 +271,8 @@
       stop();
       const token = ++session;
       options = config || {};
+      track = (options.levelId === 5 || options.world === 0) && caveTrack ? caveTrack : defaultTrack;
+      if (track && Number.isFinite(options.volume)) track.volume = Math.max(0, Math.min(1, options.volume));
       callback = done;
       initContext();
       if (context) await context.resume().catch(() => {});

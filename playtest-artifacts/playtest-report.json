@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-21T14:08:20.949Z",
+  "timestamp": "2026-10-26T20:31:58.391Z",
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "screensTested": [
     "home",
@@ -167,13 +167,13 @@
     }
   },
   "performance": {
-    "samples": 476,
-    "fps": 37.90442669554625,
+    "samples": 356,
+    "fps": 31.48213654050228,
     "frameMsMedian": 16.700000000000728,
-    "frameMsP95": 67.39999999999964,
-    "frameMsP99": 166.60000000000036,
-    "updateMsP95": 0.8000000715255737,
-    "framesOver25ms": 77
+    "frameMsP95": 99.79999999999927,
+    "frameMsP99": 167.60000000000036,
+    "updateMsP95": 0.5,
+    "framesOver25ms": 92
   },
   "consoleErrors": [],
   "pageErrors": []
