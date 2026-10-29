@@ -147,15 +147,88 @@ test('CaveChapter1.restartCurrentPhase reinicia de forma robusta e limpa a fase'
   assert.ok(Cave.pieces.length > 0, 'Peças da Etapa 1 devem ser recriadas');
 });
 
-test('AssetPreloader gerencia carregamento, valida recursos e bloqueia início até prontidão', async () => {
+test('AssetPreloader gerencia carregamento enxuto, valida recursos e bloqueia início até prontidão', async () => {
   setupNodeDOM();
   await import('../js/preloader.js');
   const Preloader = globalThis.AssetPreloader;
   assert.ok(Preloader, 'AssetPreloader deve existir');
   assert.equal(typeof Preloader.preloadAll, 'function', 'preloadAll deve ser função');
   assert.equal(typeof Preloader.finishAndEnterGame, 'function', 'finishAndEnterGame deve ser função');
-  assert.ok(Preloader.totalCount >= 30, 'Deve gerenciar mais de 30 recursos do jogo');
+  assert.equal(Preloader.totalCount, 28, 'Deve gerenciar exatamente os 28 recursos ativos do boot');
+
+  const removedBootAssets = [
+    'assets/scenarios/menu-crystal.png',
+    'assets/sprites/banda-brasileira.png',
+    'assets/story/interface/gemas-primordiais.png',
+    'assets/story/interface/mapa-aprovado.png',
+    'assets/story/transicoes/libertacao-12-quadros-v2.png',
+    'assets/audio/era-uma-vez-ato1-amatore.mp3',
+    'assets/audio/era-uma-vez-ato2-de-nada.mp3'
+  ];
+  for (const src of removedBootAssets) {
+    assert.ok(!(src in Preloader.cache.images), `Imagem removida não deve ser pré-carregada: ${src}`);
+    assert.ok(!(src in Preloader.cache.audios), `Áudio removido não deve ser pré-carregado: ${src}`);
+  }
 
   // Verifica que global.CrystalAssetsReady existe
   assert.ok('CrystalAssetsReady' in globalThis, 'CrystalAssetsReady deve estar exposto globalmente');
+});
+
+test('enterJourneyMapWithIrisIn sincroniza progresso com CrystalApp e não prende níveis >= 5 na Fase 4', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+  const Cave = globalThis.CaveChapter1;
+  const E = globalThis.TruePixelEngine;
+
+  let syncedIds = null;
+  let syncedCurrent = null;
+  let gotoCalledWith = null;
+  let startedLevel = null;
+
+  globalThis.CrystalApp = {
+    syncProgress(ids, nextCurrent) {
+      syncedIds = ids;
+      syncedCurrent = nextCurrent;
+    },
+    goto(screen) {
+      gotoCalledWith = screen;
+      globalThis.document.body.dataset.screen = screen;
+    },
+    startLevel(id) {
+      Cave.deactivateCanvas();
+      startedLevel = id;
+    }
+  };
+
+  Cave.init();
+  Cave.currentLevel = 4;
+  Cave.enterJourneyMapWithIrisIn(true);
+
+  assert.deepEqual(syncedIds, [1, 2, 3, 4, 5], 'Deve sincronizar as fases 1..5 ao concluir a Caverna');
+  assert.equal(syncedCurrent, 5, 'Deve posicionar o foco atual no nível 5');
+  assert.equal(gotoCalledWith, 'map', 'Deve transicionar para a tela #map via CrystalApp');
+  assert.equal(Cave.isActiveGame(), false, 'CaveChapter1 não deve permanecer marcado como jogo ativo sobre o mapa');
+
+  // Conclui o Iris In e garante desativação completa do canvas
+  E.IrisTransition.update(2.0);
+  assert.equal(Cave.running, false, 'Loop da caverna deve encerrar após o Iris In do mapa');
+  assert.equal(Cave.canvas.hidden, true, 'Canvas da caverna deve ficar oculto após abrir o mapa');
+
+  // Testa fallback direto com CrystalJourney (clicar no nó 6 abre startLevel(6) e não startFase4)
+  let renderedJourneyOpts = null;
+  delete globalThis.CrystalApp.goto;
+  globalThis.CrystalJourney = {
+    render(opts) {
+      renderedJourneyOpts = opts;
+    }
+  };
+
+  Cave.enterJourneyMapWithIrisIn(true);
+  assert.ok(renderedJourneyOpts, 'CrystalJourney.render deve receber opções no fallback');
+  assert.equal(renderedJourneyOpts.unlocked, 6, 'Nível 6 (Floresta) deve estar desbloqueado');
+
+  renderedJourneyOpts.start(6);
+  assert.equal(startedLevel, 6, 'Clicar no nível 6 deve abrir startLevel(6) em vez de prender na Fase 4');
+  assert.equal(Cave.running, false, 'Canvas da caverna deve continuar desativado ao iniciar nível 6');
 });

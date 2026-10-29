@@ -12,20 +12,16 @@
 
   // Manifest completo dos recursos essenciais do jogo
   const IMAGE_MANIFEST = [
-    { id: 'menu_crystal', src: 'assets/scenarios/menu-crystal.png', label: 'Santuário dos Cristais' },
     { id: 'pixel_cave', src: 'assets/scenarios/pixel-cave.png', label: 'Cenário da Caverna' },
     { id: 'pixel_worlds', src: 'assets/scenarios/pixel-worlds.png', label: 'Atlas dos 4 Biomas' },
     { id: 'portal_crystal', src: 'assets/scenarios/portal-crystal.png', label: 'Portal Ancestral' },
     { id: 'pixel_gems', src: 'assets/sprites/pixel-gems.png', label: 'Gemas e Cristais' },
     { id: 'pixel_ecology', src: 'assets/sprites/pixel-ecology.png', label: 'Ecologia e Natureza' },
-    { id: 'banda_brasileira', src: 'assets/sprites/banda-brasileira.png', label: 'Ensemble Musical' },
     { id: 'menu_aprovado', src: 'assets/story/interface/menu-aprovado.png', label: 'Pórtico do Menu' },
     { id: 'btn_jogar', src: 'assets/story/interface/btn-jogar.png', label: 'Botão Jogar' },
     { id: 'btn_opcoes', src: 'assets/story/interface/btn-opcoes.png', label: 'Botão Opções' },
     { id: 'btn_creditos', src: 'assets/story/interface/btn-creditos.png', label: 'Botão Créditos' },
     { id: 'btn_sair', src: 'assets/story/interface/btn-sair.png', label: 'Botão Sair' },
-    { id: 'gemas_primordiais', src: 'assets/story/interface/gemas-primordiais.png', label: '4 Gemas Primordiais' },
-    { id: 'mapa_aprovado', src: 'assets/story/interface/mapa-aprovado.png', label: 'Mapa da Jornada' },
     { id: 'paineis_mundos', src: 'assets/story/interface-extra/paineis-mundos.png', label: 'Painéis dos Mundos' },
     { id: 'mapa_sem_personagem', src: 'assets/story/interface-extra/mapa-sem-personagem.png', label: 'Caminho do Mapa' },
     { id: 'porta_abertura', src: 'assets/story/interface-extra/porta-abertura.png', label: 'Porta Ancestral' },
@@ -40,16 +36,13 @@
     { id: 'trans_caverna', src: 'assets/story/transicoes/caverna-20-quadros.png', label: 'Restauração da Caverna' },
     { id: 'trans_floresta', src: 'assets/story/transicoes/floresta-20-quadros.png', label: 'Restauração da Floresta' },
     { id: 'trans_rio', src: 'assets/story/transicoes/rio-20-quadros.png', label: 'Restauração do Rio' },
-    { id: 'trans_caatinga', src: 'assets/story/transicoes/caatinga-20-quadros.png', label: 'Restauração da Caatinga' },
-    { id: 'trans_libertacao', src: 'assets/story/transicoes/libertacao-12-quadros-v2.png', label: 'Clímax da Libertação' }
+    { id: 'trans_caatinga', src: 'assets/story/transicoes/caatinga-20-quadros.png', label: 'Restauração da Caatinga' }
   ];
 
   const AUDIO_MANIFEST = [
     { id: 'musica_menu', src: 'assets/audio/musica-menu.mp3', label: 'Sinfonia do Santuário' },
     { id: 'era_uma_vez_caverna', src: 'assets/audio/era-uma-vez-caverna.mp3', label: 'A Canção da Ordem' },
-    { id: 'o_que_um_cristal_pode_fazer', src: 'assets/audio/o-que-um-cristal-pode-fazer.mp3', label: 'Apresentação Final' },
-    { id: 'era_uma_vez_ato1', src: 'assets/audio/era-uma-vez-ato1-amatore.mp3', label: 'Eco da Harmonia' },
-    { id: 'era_uma_vez_ato2', src: 'assets/audio/era-uma-vez-ato2-de-nada.mp3', label: 'Sopro da Floresta' }
+    { id: 'o_que_um_cristal_pode_fazer', src: 'assets/audio/o-que-um-cristal-pode-fazer.mp3', label: 'Apresentação Final' }
   ];
 
   const TOTAL_RESOURCES = IMAGE_MANIFEST.length + AUDIO_MANIFEST.length;
@@ -220,7 +213,7 @@
 
     onAllLoaded() {
       // Confirmação com ressonância completa
-      this.currentLabel = 'Todos os 35 recursos cristalinos harmonizados!';
+      this.currentLabel = `Todos os ${this.totalCount} recursos cristalinos harmonizados!`;
       global.CrystalAssetsReady = true;
 
       // Mantém a prontidão visível

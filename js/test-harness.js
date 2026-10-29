@@ -348,7 +348,7 @@
 
   function restartLevel() {
     closeDialogs();
-    if (window.CaveChapter1 && (window.CaveChapter1.running || document.body.dataset.screen === 'game')) {
+    if (window.CaveChapter1?.isActiveGame?.()) {
       window.CaveChapter1.restartCurrentPhase();
     } else {
       document.getElementById('retryButton')?.click();

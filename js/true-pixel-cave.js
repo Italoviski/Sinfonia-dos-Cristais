@@ -1481,7 +1481,7 @@
         DialogueBox.close();
         TutorialModal.close();
         this.stopMusicAudio();
-        this.enterJourneyMapWithIrisIn();
+        this.enterJourneyMapWithIrisIn(false);
       };
 
       GameHUD.onMuteChange = (muted, effMus) => {
@@ -1515,6 +1515,27 @@
       GameHUD.syncAudio();
     },
 
+    isActiveGame() {
+      return Boolean(this.running && this.phase !== 'map_iris_in' && this.phase !== 'map_active');
+    },
+
+    deactivateCanvas() {
+      this.stopMusicAudio();
+      this.phase = 'map_active';
+      this.running = false;
+      IrisTransition.active = false;
+      IrisTransition.onDone = null;
+      if (this.canvas) {
+        this.canvas.hidden = true;
+        if (this.canvas.style) {
+          this.canvas.style.display = 'none';
+          this.canvas.style.pointerEvents = 'none';
+          this.canvas.style.background = 'transparent';
+          this.canvas.style.boxShadow = 'none';
+        }
+      }
+    },
+
     prepareCanvasForGame() {
       if (!this.canvas) this.init();
       this.canvas.hidden = false;
@@ -1526,8 +1547,10 @@
 
       if (typeof document !== 'undefined') {
         document.body.dataset.screen = 'game';
-        const homeSec = document.getElementById('home');
-        if (homeSec) homeSec.hidden = true;
+        for (const secId of ['home', 'map', 'game']) {
+          const el = document.getElementById(secId);
+          if (el) el.hidden = true;
+        }
       }
 
       GameHUD.paused = false;
@@ -1829,7 +1852,7 @@
       const onKeyDown = (e) => {
         if (e.key === 'r' || e.key === 'R') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-          if (this.running || (typeof document !== 'undefined' && document.body.dataset.screen === 'game')) {
+          if (this.isActiveGame()) {
             e.preventDefault();
             this.restartCurrentPhase();
           }
@@ -2377,6 +2400,7 @@
       this.stopMusicAudio();
       // Acende a Gema da Caverna no topo da Caixa de Diálogo Global
       DialogueBox.sockets.fairy = true;
+      global.CrystalApp?.syncProgress?.([1, 2, 3, 4, 5], 5);
       this.waveOrigin = { x: 160, y: 90 };
       this.waveActive = true;
       this.waveRadius = 400;
@@ -2415,55 +2439,91 @@
 
     startForestExitTransition() {
       // Os personagens caminham juntos até a entrada para o mundo da Floresta (reutilizando `walk`)
+      this._forestExitIrisStarted = false;
       this.phase = 'walk_to_forest_exit';
       this.phaseTime = 0;
       this.protag.state = 'walk';
       this.ordemActor.state = 'walk';
     },
 
-    enterJourneyMapWithIrisIn() {
-      // Adapta SOMENTE o ícone da fada no círculo da fase no Mapa para o estilo True Pixel Art novo
-      ActorAnimator.adaptMapFairyIcon();
+    enterJourneyMapWithIrisIn(worldCompleted = true) {
+      if (typeof DialogueBox.close === 'function') DialogueBox.close();
+      if (typeof TutorialModal.close === 'function') TutorialModal.close();
+      this.stopMusicAudio();
+      GameHUD.paused = false;
+      GameHUD.settingsOpen = false;
+      this.draggedPiece = null;
+      this.equationPointer = null;
+      this.clearTrembleStates();
 
-      // Mostra a tela de Mapa existente (placeholder intacto)
-      document.body.dataset.screen = 'map';
-      const homeSec = document.getElementById('home');
-      const gameSec = document.getElementById('game');
-      const mapSec = document.getElementById('map');
-      if (homeSec) homeSec.hidden = true;
-      if (gameSec) gameSec.hidden = true;
-      if (mapSec) mapSec.hidden = false;
+      const finishedCave = Boolean(worldCompleted || DialogueBox.sockets.fairy);
+      const completedIds = finishedCave
+        ? [1, 2, 3, 4, 5]
+        : Array.from({ length: Math.max(0, (this.currentLevel || 1) - 1) }, (_, i) => i + 1);
+      const targetCurrent = finishedCave ? 5 : clamp(this.currentLevel || 1, 1, 5);
 
-      if (global.CrystalJourney && typeof global.CrystalJourney.render === 'function') {
-        global.CrystalJourney.render({
-          current: 5,
-          unlocked: 6,
-          completed: [1, 2, 3, 4, 5],
-          records: {},
-          reduced: false,
-          notify: () => {},
-          start: (lvlId) => {
-            this.canvas.style.pointerEvents = 'auto';
-            this.canvas.style.background = '#05030f';
-            this.canvas.style.boxShadow = '0 0 0 100vmax #05030f';
-            if (lvlId === 1) this.startCutsceneAndFase1();
-            else if (lvlId === 2) this.startFase2();
-            else if (lvlId === 3) this.startFase3();
-            else this.startFase4();
-          }
-        });
-        ActorAnimator.adaptMapFairyIcon();
+      if (global.CrystalApp && typeof global.CrystalApp.goto === 'function') {
+        global.CrystalApp.syncProgress?.(completedIds, targetCurrent);
+        global.CrystalApp.goto('map');
+      } else {
+        if (typeof document !== 'undefined') {
+          document.body.dataset.screen = 'map';
+          const homeSec = document.getElementById('home');
+          const gameSec = document.getElementById('game');
+          const mapSec = document.getElementById('map');
+          if (homeSec) homeSec.hidden = true;
+          if (gameSec) gameSec.hidden = true;
+          if (mapSec) mapSec.hidden = false;
+        }
+        if (global.CrystalJourney && typeof global.CrystalJourney.render === 'function') {
+          let unlockedLvl = 1;
+          while (completedIds.includes(unlockedLvl) && unlockedLvl < 20) unlockedLvl++;
+          global.CrystalJourney.render({
+            current: targetCurrent,
+            unlocked: unlockedLvl,
+            completed: completedIds,
+            records: {},
+            reduced: Boolean(GameHUD.reducedMotion),
+            notify: (msg) => global.CrystalApp?.notify?.(msg),
+            start: (lvlId) => {
+              if (lvlId === 1) this.startCutsceneAndFase1();
+              else if (lvlId === 2) this.startFase2();
+              else if (lvlId === 3) this.startFase3();
+              else if (lvlId === 4) this.startFase4();
+              else {
+                this.deactivateCanvas();
+                global.CrystalApp?.startLevel?.(lvlId);
+              }
+            }
+          });
+        }
       }
 
-      // Efeito inverso (Iris In: círculo se abrindo sobre o Mapa!)
-      this.phase = 'map_iris_in';
-      this.phaseTime = 0;
-      this.canvas.style.background = 'transparent';
-      this.canvas.style.boxShadow = 'none';
-      this.canvas.style.pointerEvents = 'none';
-      IrisTransition.start('in', 160, 90, 0.95, () => {
+      // Adapta o ícone da fada no Mapa para o estilo True Pixel Art novo
+      ActorAnimator.adaptMapFairyIcon();
+
+      // Efeito inverso (Iris In: círculo se abrindo sobre o Mapa!) sem bloquear cliques no DOM
+      if (this.canvas) {
+        this.phase = 'map_iris_in';
+        this.phaseTime = 0;
+        this.canvas.hidden = false;
+        if (this.canvas.style) {
+          this.canvas.style.display = 'block';
+          this.canvas.style.background = 'transparent';
+          this.canvas.style.boxShadow = 'none';
+          this.canvas.style.pointerEvents = 'none';
+        }
+        IrisTransition.start('in', 160, 90, 0.95, () => {
+          this.deactivateCanvas();
+        });
+        if (!this.running) {
+          this.running = true;
+          this.lastNow = typeof performance !== 'undefined' ? performance.now() : 0;
+          requestAnimationFrame((now) => this.loop(now));
+        }
+      } else {
         this.phase = 'map_active';
-      });
+      }
     },
 
     setupLevelStep(level, step) {
@@ -2986,6 +3046,7 @@
       this.phaseTime = 0;
 
       if (this.currentLevel === 1) {
+        global.CrystalApp?.syncProgress?.([1], 2);
         this.protag.state = 'talk';
         DialogueBox.open([
           {
@@ -3004,6 +3065,7 @@
           this.protag.state = 'celebrate';
         });
       } else if (this.currentLevel === 2) {
+        global.CrystalApp?.syncProgress?.([1, 2], 3);
         this.protag.state = 'celebrate';
         DialogueBox.open([
           {
@@ -3017,6 +3079,7 @@
           this.protag.state = 'celebrate';
         });
       } else if (this.currentLevel === 3) {
+        global.CrystalApp?.syncProgress?.([1, 2, 3], 4);
         this.protag.state = 'celebrate';
         DialogueBox.open([
           {
@@ -3348,9 +3411,10 @@
         const p = clamp(this.phaseTime / 1.4, 0, 1);
         this.protag.x = R(84 + p * 165);
         this.ordemActor.x = R(148 + p * 115);
-        if (this.phaseTime >= 0.45 && !IrisTransition.active && this.phaseTime < 1.35) {
+        if (this.phaseTime >= 0.45 && !IrisTransition.active && !this._forestExitIrisStarted) {
+          this._forestExitIrisStarted = true;
           IrisTransition.start('out', 250, 118, 0.85, () => {
-            this.enterJourneyMapWithIrisIn();
+            this.enterJourneyMapWithIrisIn(true);
           });
         }
       } else if (this.phase === 'next_step_pause') {
