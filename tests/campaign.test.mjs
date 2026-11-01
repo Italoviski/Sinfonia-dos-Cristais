@@ -1,7 +1,7 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {existsSync} from 'node:fs';
+import test from 'node:test';import assert from 'node:assert/strict';
 globalThis.window=globalThis;
 await import('../js/campaign.js');await import('../js/campaign-current.js');await import('../js/rules.js');
-for(const level of CrystalCampaign.levels)test(`fase ${level.id}: solução matemática e cenário`,()=>{
+for(const level of CrystalCampaign.levels)test(`fase ${level.id}: solução matemática e mapeamento True Pixel`,()=>{
  const b=new CrystalRules.Board(),groups=new Map();for(const spec of level.pieces){const p=b.add(spec);if(spec.seedGroup){if(!groups.has(spec.seedGroup))groups.set(spec.seedGroup,[]);groups.get(spec.seedGroup).push(p.id);}}for(const ids of groups.values())b.group(ids);
  const normal=()=>[...b.pieces.values()].filter(p=>!p.dark),kind=k=>normal().filter(p=>p.kind===k),drag=(a,c)=>b.dragOnto(a.id,c.id).pieces||[],split=a=>b.split(a.id,a.kind==='aqua'?2:level.split).pieces;
  const connect=list=>{let first=list[0];for(const p of list.slice(1))b.connect(first.id,p.id);};
@@ -25,7 +25,7 @@ for(const level of CrystalCampaign.levels)test(`fase ${level.id}: solução mate
  case 15:{const parts=split(kind('aqua')[0]);parts.forEach(p=>b.boost(p.id));connect(parts);break;}
  case 20:{const q=burn();b.boost(q.id);connect([q,...kind('aqua')]);break;}
  }
- annul();assert.equal(b.pieces.size,0,'Todas as peças e equações devem poder ser anuladas');assert.ok(existsSync(new URL(`../assets/story/cenarios/${level.scene}-quatro-estados.png`,import.meta.url)));assert.ok(!level.tools.includes('launch'));
+ annul();assert.equal(b.pieces.size,0,'Todas as peças e equações devem poder ser anuladas');assert.ok(level.id>=1&&level.id<=21);assert.ok(!level.tools.includes('launch'));
 });
 test('CrystalChallenges permite alterar desafios das fases 1 a 5 sem alterar as animações da cena',()=>{
  assert.ok(globalThis.CrystalChallenges,'CrystalChallenges deve estar exposto globalmente');

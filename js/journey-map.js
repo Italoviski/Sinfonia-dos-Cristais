@@ -3,6 +3,7 @@
  const route=[...coordinates.slice(0,5),[25,43],...coordinates.slice(5,10),[49,72],[53,73],...coordinates.slice(10,15),[71,43],[72,38],...coordinates.slice(15)];
  const screen=document.getElementById('map'),root=document.createElement('div');root.className='journey-map';screen.append(root);
  const fairy=document.createElement('div');fairy.className='journey-fairy';fairy.setAttribute('aria-hidden','true');root.append(fairy);
+ window.TruePixelEngine?.ActorAnimator?.adaptMapFairyIcon?.();
  const dialog=document.createElement('dialog');dialog.className='journey-dialog';dialog.setAttribute('aria-labelledby','journey-title');document.body.append(dialog);
  let state,selected=null,at=0,travel=null,position=coordinates[0],last=0;
  const setPosition=(p)=>{position=p;fairy.style.left=p[0]+'%';fairy.style.top=p[1]+'%';};setPosition(position);

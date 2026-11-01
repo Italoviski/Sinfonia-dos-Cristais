@@ -1537,6 +1537,7 @@
     },
 
     prepareCanvasForGame() {
+      global.TruePixelWorlds?.deactivateCanvas?.();
       if (!this.canvas) this.init();
       this.canvas.hidden = false;
       this.canvas.style.display = 'block';
@@ -1553,6 +1554,17 @@
         }
       }
 
+      DialogueBox.syncSocketsFromCompleted?.(global.CrystalApp?.state?.completed);
+      GameHUD.worldLabel = 'Caverna';
+      GameHUD.onRestart = () => {
+        this.restartCurrentPhase();
+      };
+      GameHUD.onGoMap = () => {
+        DialogueBox.close();
+        TutorialModal.close();
+        this.stopMusicAudio();
+        this.enterJourneyMapWithIrisIn(false);
+      };
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
       GameHUD.syncAudio();
@@ -2489,10 +2501,14 @@
               if (lvlId === 1) this.startCutsceneAndFase1();
               else if (lvlId === 2) this.startFase2();
               else if (lvlId === 3) this.startFase3();
-              else if (lvlId === 4) this.startFase4();
+              else if (lvlId === 4 || lvlId === 5) this.startFase4();
               else {
                 this.deactivateCanvas();
-                global.CrystalApp?.startLevel?.(lvlId);
+                if (global.CrystalApp?.startLevel) {
+                  global.CrystalApp.startLevel(lvlId);
+                } else {
+                  global.TruePixelWorlds?.startByCampaignNode?.(lvlId);
+                }
               }
             }
           });

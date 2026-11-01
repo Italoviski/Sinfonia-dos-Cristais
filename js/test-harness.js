@@ -1,332 +1,107 @@
 /* AI Playtest & Telemetry Harness (window.CrystalTestAPI).
- * Enables automated E2E playtesting, state inspection, accessibility auditing,
- * deterministic frame stepping, and semantic puzzle verification.
+ * Inspects and drives True Pixel Art worlds (CaveChapter1 & TruePixelWorlds)
+ * plus Menu/Map navigation for automated E2E playtesting.
  */
 (() => {
   'use strict';
 
-  function getBoard() {
-    return window.CrystalBoard || null;
-  }
-
-  function skipEntrance() {
-    const skipBtn = document.querySelector('#entryCinema button');
-    if (skipBtn) {
-      skipBtn.click();
-      return true;
+  function getActiveWorldModule() {
+    if (window.CaveChapter1?.isActiveGame?.()) {
+      return { kind: 'cave', mod: window.CaveChapter1 };
     }
-    return false;
+    if (window.TruePixelWorlds?.isActiveGame?.()) {
+      return { kind: 'worlds', mod: window.TruePixelWorlds };
+    }
+    return null;
   }
 
   function skipStory() {
     let steps = 0;
-    while (window.CrystalStory?.active && steps < 25) {
-      const btn = document.querySelector('.story-dialog button');
-      if (btn) btn.click();
-      else window.CrystalStory.close();
+    const E = window.TruePixelEngine;
+    const active = getActiveWorldModule();
+    if (active?.mod?.phase === 'cutscene_enter' || active?.mod?.phase === 'cutscene_wake') {
+      for (let i = 0; i < 40 && (active.mod.phase === 'cutscene_enter' || active.mod.phase === 'cutscene_wake'); i++) {
+        active.mod.update?.(0.1);
+      }
+      steps++;
+    }
+    while (E?.DialogueBox?.isOpen && steps < 40) {
+      E.DialogueBox.advance();
+      steps++;
+    }
+    if (E?.TutorialModal?.isOpen) {
+      const done = E.TutorialModal.onDone;
+      E.TutorialModal.close();
+      if (typeof done === 'function') done();
       steps++;
     }
     return steps > 0;
   }
 
   function closeDialogs() {
-    skipEntrance();
     skipStory();
-    window.CrystalRhythm?.stop?.();
-    for (const id of ['resultDialog', 'settingsDialog', 'creditsDialog', 'exitDialog']) {
+    for (const id of ['settingsDialog', 'creditsDialog', 'exitDialog']) {
       const dlg = document.getElementById(id);
       if (dlg?.open) dlg.close();
+    }
+    const E = window.TruePixelEngine;
+    if (E?.GameHUD) {
+      E.GameHUD.paused = false;
+      E.GameHUD.settingsOpen = false;
     }
   }
 
   function getState() {
-    const b = getBoard();
-    const hostRect = b?.host?.getBoundingClientRect() || { left: 0, top: 0, width: 0, height: 0 };
-    const pieces = b
-      ? b.gems
-          .filter(g => !g.dead)
-          .map(g => ({
-            ruleId: g.ruleId,
-            kind: g.kind,
-            value: g.value,
-            dark: !!g.dark,
-            boosted: !!g.boosted,
-            group: b.model?.pieces?.get(g.ruleId)?.group || null,
-            x: Number((g.body.position.x / (b.w || 1)).toFixed(3)),
-            y: Number((g.body.position.y / (b.h || 1)).toFixed(3)),
-            screenX: Math.round(hostRect.left + g.body.position.x),
-            screenY: Math.round(hostRect.top + g.body.position.y),
-            ariaLabel: g.el?.getAttribute('aria-label') || ''
+    const active = getActiveWorldModule();
+    const E = window.TruePixelEngine;
+    const mod = active?.mod || null;
+    const pieces = mod
+      ? (mod.pieces || [])
+          .filter(p => !p.broken && p.value > 0)
+          .map(p => ({
+            id: p.id,
+            type: p.type,
+            value: p.value,
+            shadow: !!p.shadow,
+            inEquation: p.inEquation || null,
+            boosted: !!p.boosted,
+            x: p.x,
+            y: p.y
           }))
       : [];
-
-    const groups = [];
-    if (b?.model?.groups) {
-      for (const [groupId, memberIds] of b.model.groups.entries()) {
-        const terms = memberIds.map(id => b.model.pieces.get(id)).filter(Boolean);
-        groups.push({
-          groupId,
-          members: [...memberIds],
-          signature: window.CrystalRules ? window.CrystalRules.signature(terms) : '',
-          evaluatedValue: window.CrystalRules ? window.CrystalRules.evaluate(terms).value : null
-        });
-      }
-    }
 
     return {
       screen: document.body.dataset.screen || 'home',
       app: window.CrystalApp?.state || null,
-      storyActive: !!window.CrystalStory?.active,
-      entranceActive: !!window.CrystalEntrance?.active,
-      rhythm: window.CrystalRhythm?.state || { active: false },
-      stage: window.CrystalStage?.state || null,
-      performance: window.CrystalPerformance?.report() || null,
-      board: b
+      dialogueOpen: !!E?.DialogueBox?.isOpen,
+      tutorialOpen: !!E?.TutorialModal?.isOpen,
+      sockets: E?.DialogueBox?.sockets ? { ...E.DialogueBox.sockets } : null,
+      performance: window.CrystalPerformance?.report?.() || null,
+      worldRuntime: mod
         ? {
-            levelId: b.level?.id || null,
-            levelName: b.level?.name || '',
-            world: b.level?.world ?? null,
-            paused: !!b.paused,
-            finished: !!b.finished,
-            solved: !!b.model?.solved,
-            diamonds: b.model?.diamonds ?? 0,
-            selected: b.model?.selected || null,
-            earnedGoals: [...(b.earned || [])],
-            totalGoals: b.level?.goals?.length || 0,
-            pieces,
-            groups
+            module: active.kind,
+            worldKey: active.kind === 'cave' ? 'cave' : mod.worldKey,
+            worldLabel: E?.GameHUD?.worldLabel || '',
+            phase: mod.phase,
+            currentLevel: mod.currentLevel,
+            currentStep: mod.currentStep,
+            totalSteps: mod.totalSteps,
+            emeraldAltar: mod.emeraldAltar ? { x: mod.emeraldAltar.x, y: mod.emeraldAltar.y } : null,
+            pureEquation: mod.pureEquation
+              ? { x: mod.pureEquation.x, y: mod.pureEquation.y, expanded: !!mod.pureEquation.expanded, broken: !!mod.pureEquation.broken }
+              : null,
+            shadowEquation: mod.shadowEquation
+              ? { x: mod.shadowEquation.x, y: mod.shadowEquation.y, expanded: !!mod.shadowEquation.expanded, broken: !!mod.shadowEquation.broken }
+              : null,
+            pieces
           }
         : null
     };
   }
 
-  function flushPendingBreaks(b) {
-    if (!b || !b.pendingBreaks?.length) return;
-    b.time += 5;
-    b.updateDevices(0.016);
-  }
-
-  function boostPiece(b, ruleId) {
-    const gem = b.gems.find(g => !g.dead && g.ruleId === ruleId);
-    if (!gem || gem.boosted || gem.dark) return false;
-    if (b.model.boost(ruleId)) {
-      gem.boosted = true;
-      b.setValue(gem, b.model.get(ruleId).value.value);
-      b.flags.portal = true;
-      b.operationCount++;
-      b.syncGroups();
-      b.progress();
-      return true;
-    }
-    return false;
-  }
-
-  function solveCurrentLevel() {
-    skipEntrance();
-    skipStory();
-    const b = getBoard();
-    if (!b || !b.level || !b.model) {
-      return { ok: false, reason: 'Nenhuma fase ativa carregada no tabuleiro.' };
-    }
-    b.paused = false;
-    const level = b.level;
-    const model = b.model;
-
-    const normal = () => [...model.pieces.values()].filter(p => !p.dark);
-    const kind = k => normal().filter(p => p.kind === k);
-    const drag = (a, c) => {
-      b.syncPositions();
-      const res = model.dragOnto(a.id, c.id);
-      b.transact(res);
-      return res.pieces || [];
-    };
-    const split = a => {
-      b.syncPositions();
-      const count = a.kind === 'aqua' ? 2 : level.split || 3;
-      const res = model.split(a.id, count);
-      b.transact(res);
-      return res.pieces || [];
-    };
-    const connect = list => {
-      if (list.length < 2) return;
-      list.forEach((p, idx) => {
-        const g = b.gems.find(gm => !gm.dead && gm.ruleId === p.id);
-        if (g) {
-          Matter.Body.setPosition(g.body, { x: (0.18 + idx * 0.12) * b.w, y: 0.35 * b.h });
-        }
-      });
-      b.syncPositions();
-      const first = list[0];
-      for (const p of list.slice(1)) {
-        b.transact(model.connect(first.id, p.id));
-      }
-    };
-    const burn = () => {
-      const opals = kind('opal');
-      const quartzs = kind('quartz').sort((a, c) => c.value.value - a.value.value);
-      if (!opals.length || !quartzs.length) return null;
-      return drag(opals[0], quartzs[0])[0] || null;
-    };
-    const quarters = () => {
-      const aq = kind('aqua')[0];
-      if (!aq) return;
-      for (const half of split(aq)) split(half);
-    };
-    const annulAll = () => {
-      let changed = true;
-      let guard = 0;
-      while (changed && guard++ < 30) {
-        changed = false;
-        b.syncPositions();
-        for (const a of normal()) {
-          if (!model.pieces.has(a.id)) continue;
-          const target = [...model.pieces.values()].find(p => p.dark && model.matches(a.id, p.id));
-          if (target) {
-            b.transact(model.annul(a.id, target.id));
-            changed = true;
-          }
-        }
-      }
-      flushPendingBreaks(b);
-    };
-
-    try {
-      switch (level.id) {
-        case 1:
-        case 16: {
-          const qs = kind('quartz');
-          if (qs.length >= 2) drag(qs[0], qs[1]);
-          burn();
-          break;
-        }
-        case 2:
-        case 3:
-          connect(normal());
-          break;
-        case 4: {
-          const qs = kind('quartz');
-          if (qs.length >= 3) {
-            const fused = drag(qs[0], qs[1])[0];
-            if (fused) connect([fused, qs[2]]);
-          }
-          break;
-        }
-        case 5:
-        case 17: {
-          const rem = burn();
-          if (rem) connect([rem, ...kind('quartz').filter(p => p.id !== rem.id)]);
-          break;
-        }
-        case 6:
-          if (kind('quartz')[0]) boostPiece(b, kind('quartz')[0].id);
-          break;
-        case 7:
-          if (kind('citrine')[0]) split(kind('citrine')[0]);
-          break;
-        case 8:
-        case 18:
-          if (kind('citrine')[0]) {
-            for (const p of split(kind('citrine')[0])) boostPiece(b, p.id);
-          }
-          break;
-        case 9: {
-          const q = kind('quartz')[0];
-          if (q) {
-            boostPiece(b, q.id);
-            connect(kind('quartz'));
-          }
-          break;
-        }
-        case 10: {
-          if (kind('citrine')[0]) {
-            const parts = split(kind('citrine')[0]);
-            parts.forEach(p => boostPiece(b, p.id));
-            connect(parts);
-          }
-          break;
-        }
-        case 11:
-          if (kind('aqua')[0]) split(kind('aqua')[0]);
-          break;
-        case 12:
-          quarters();
-          break;
-        case 13: {
-          if (kind('aqua')[0]) {
-            const parts = split(kind('aqua')[0]);
-            connect([...parts, ...kind('quartz')]);
-          }
-          break;
-        }
-        case 14:
-        case 19: {
-          quarters();
-          const parts = kind('aqua');
-          if (parts.length >= 3) {
-            let merged = drag(parts[0], parts[1])[0];
-            if (merged) merged = drag(merged, parts[2])[0];
-            annulAll();
-            if (level.id === 19 && merged) connect([merged, ...kind('quartz')]);
-          }
-          break;
-        }
-        case 15: {
-          if (kind('aqua')[0]) {
-            const parts = split(kind('aqua')[0]);
-            parts.forEach(p => boostPiece(b, p.id));
-            connect(parts);
-          }
-          break;
-        }
-        case 20: {
-          const q = burn();
-          if (q) {
-            boostPiece(b, q.id);
-            connect([q, ...kind('aqua')]);
-          }
-          break;
-        }
-        case 21: {
-          b.operationCount = Math.max(1, b.operationCount);
-          b.annulled = Math.max(1, b.annulled);
-          b.progress();
-          b.checkWin();
-          break;
-        }
-      }
-
-      annulAll();
-      b.checkWin();
-      return {
-        ok: model.solved,
-        levelId: level.id,
-        remainingPieces: model.pieces.size,
-        finished: b.finished
-      };
-    } catch (err) {
-      return { ok: false, levelId: level.id, error: String(err?.message || err) };
-    }
-  }
-
   function unlockAllLevelsForTest() {
-    try {
-      const key = 'crystal-campaign-v4';
-      const raw = JSON.parse(localStorage.getItem(key) || '{}');
-      const completed = Array.from({ length: 20 }, (_, i) => i + 1);
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          version: 4,
-          settings: raw.settings || { music: 0.65, fx: 0.65, voice: false, contrast: false, motion: false, assist: false },
-          completed,
-          current: 1,
-          records: raw.records || {}
-        })
-      );
-      return true;
-    } catch {
-      return false;
-    }
+    window.CrystalApp?.unlockAll?.();
+    return true;
   }
 
   function startLevel(id, skipIntroDialog = true) {
@@ -334,7 +109,6 @@
     window.CrystalApp?.unlockAll?.();
     window.CrystalApp?.startLevel?.(id);
     if (skipIntroDialog) {
-      setTimeout(() => skipStory(), 50);
       skipStory();
     }
     return getState();
@@ -350,10 +124,39 @@
     closeDialogs();
     if (window.CaveChapter1?.isActiveGame?.()) {
       window.CaveChapter1.restartCurrentPhase();
-    } else {
-      document.getElementById('retryButton')?.click();
+    } else if (window.TruePixelWorlds?.isActiveGame?.()) {
+      window.TruePixelWorlds.restartCurrentPhase();
     }
     return getState();
+  }
+
+  function solveCurrentLevel() {
+    skipStory();
+    const active = getActiveWorldModule();
+    if (!active) {
+      return { ok: false, reason: 'Nenhuma fase True Pixel ativa no momento.' };
+    }
+    const mod = active.mod;
+    while (mod.currentStep < mod.totalSteps) {
+      if (active.kind === 'cave') {
+        mod.currentStep++;
+        mod.setupLevelStep(mod.currentLevel, mod.currentStep);
+      } else {
+        mod.setupStep(mod.currentStep + 1);
+      }
+    }
+    for (const p of mod.pieces) {
+      if (p.shadow) p.broken = true;
+    }
+    if (mod.shadowEquation) mod.shadowEquation.broken = true;
+    if (mod.pureEquation) mod.pureEquation.broken = true;
+    mod.checkStepCleared?.();
+    return {
+      ok: true,
+      module: active.kind,
+      worldKey: active.kind === 'cave' ? 'cave' : mod.worldKey,
+      phase: mod.phase
+    };
   }
 
   window.CrystalTestAPI = {
@@ -361,7 +164,7 @@
     goto,
     startLevel,
     restartLevel,
-    skipEntrance,
+    skipEntrance: () => false,
     skipStory,
     closeDialogs,
     solveCurrentLevel,

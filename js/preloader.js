@@ -10,33 +10,15 @@
   const R = Math.round;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  // Manifest completo dos recursos essenciais do jogo
+  // Manifest completo dos recursos essenciais ativos do jogo (Menu, Mapa e Trilhas)
   const IMAGE_MANIFEST = [
-    { id: 'pixel_cave', src: 'assets/scenarios/pixel-cave.png', label: 'Cenário da Caverna' },
-    { id: 'pixel_worlds', src: 'assets/scenarios/pixel-worlds.png', label: 'Atlas dos 4 Biomas' },
-    { id: 'portal_crystal', src: 'assets/scenarios/portal-crystal.png', label: 'Portal Ancestral' },
-    { id: 'pixel_gems', src: 'assets/sprites/pixel-gems.png', label: 'Gemas e Cristais' },
-    { id: 'pixel_ecology', src: 'assets/sprites/pixel-ecology.png', label: 'Ecologia e Natureza' },
     { id: 'menu_aprovado', src: 'assets/story/interface/menu-aprovado.png', label: 'Pórtico do Menu' },
     { id: 'btn_jogar', src: 'assets/story/interface/btn-jogar.png', label: 'Botão Jogar' },
     { id: 'btn_opcoes', src: 'assets/story/interface/btn-opcoes.png', label: 'Botão Opções' },
     { id: 'btn_creditos', src: 'assets/story/interface/btn-creditos.png', label: 'Botão Créditos' },
     { id: 'btn_sair', src: 'assets/story/interface/btn-sair.png', label: 'Botão Sair' },
     { id: 'paineis_mundos', src: 'assets/story/interface-extra/paineis-mundos.png', label: 'Painéis dos Mundos' },
-    { id: 'mapa_sem_personagem', src: 'assets/story/interface-extra/mapa-sem-personagem.png', label: 'Caminho do Mapa' },
-    { id: 'porta_abertura', src: 'assets/story/interface-extra/porta-abertura.png', label: 'Porta Ancestral' },
-    { id: 'porta_estados', src: 'assets/story/interface-extra/porta-estados.png', label: 'Fechaduras da Porta' },
-    { id: 'fada_16', src: 'assets/story/personagens/fada-16-quadros-v1.png', label: 'Ordem (Fada)' },
-    { id: 'fada_canto', src: 'assets/story/personagens/fada-canto-12-quadros-v2.png', label: 'Ordem Cantora' },
-    { id: 'fada_mapa', src: 'assets/story/personagens/fada-mapa-8-quadros.png', label: 'Guia do Mapa' },
-    { id: 'araci', src: 'assets/story/personagens/araci-16-quadros.png', label: 'Guardiã Araci' },
-    { id: 'onca', src: 'assets/story/personagens/onca-12-quadros.png', label: 'Onça Protetora' },
-    { id: 'irece', src: 'assets/story/personagens/irece-16-quadros.png', label: 'Guardiã Irecê' },
-    { id: 'jurema', src: 'assets/story/personagens/jurema-16-quadros.png', label: 'Guardiã Jurema' },
-    { id: 'trans_caverna', src: 'assets/story/transicoes/caverna-20-quadros.png', label: 'Restauração da Caverna' },
-    { id: 'trans_floresta', src: 'assets/story/transicoes/floresta-20-quadros.png', label: 'Restauração da Floresta' },
-    { id: 'trans_rio', src: 'assets/story/transicoes/rio-20-quadros.png', label: 'Restauração do Rio' },
-    { id: 'trans_caatinga', src: 'assets/story/transicoes/caatinga-20-quadros.png', label: 'Restauração da Caatinga' }
+    { id: 'mapa_sem_personagem', src: 'assets/story/interface-extra/mapa-sem-personagem.png', label: 'Caminho do Mapa' }
   ];
 
   const AUDIO_MANIFEST = [

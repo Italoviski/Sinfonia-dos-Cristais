@@ -768,6 +768,79 @@
     return c;
   }
 
+  function buildGuardianPortrait(spec, mouthOpen, blink) {
+    const [c, x] = mk(28, 28);
+    c._isDiamondBust = true;
+    const put = (px, py, col) => {
+      if (px >= 0 && py >= 0 && px < 28 && py < 28) {
+        x.fillStyle = col;
+        x.fillRect(px, py, 1, 1);
+      }
+    };
+    fillOvalPainterly(x, 14, 13.5, 8.8, 9.8, spec.hairRamp);
+    fillOvalPainterly(x, 14, 15.2, 6.8, 7.0, spec.skinRamp);
+
+    // Diadema temático da Guardiã (folhas/esmeralda, onda/turmalina ou flor/opala)
+    for (let i = 9; i <= 18; i++) {
+      put(i, 6, (i === 13 || i === 14) ? spec.gemHi : spec.crownMid);
+    }
+    put(13, 5, '#ffffff');
+    put(14, 5, spec.gemHi);
+    put(10, 5, spec.crownAccent);
+    put(17, 5, spec.crownAccent);
+
+    if (blink) {
+      for (let dx = 0; dx < 3; dx++) {
+        put(9 + dx, 14, spec.hairRamp[1]);
+        put(16 + dx, 14, spec.hairRamp[1]);
+      }
+    } else {
+      for (const ox of [9, 16]) {
+        for (let dy = 0; dy < 3; dy++) {
+          for (let dx = 0; dx < 3; dx++) {
+            put(ox + dx, 13 + dy, dx === 0 ? '#f5efe2' : '#241410');
+          }
+        }
+        put(ox + 1, 13, '#ffffff');
+        put(ox + 2, 15, spec.eyeGlint);
+      }
+    }
+
+    if (mouthOpen === 0) {
+      put(12, 19, spec.lipClosed);
+      put(13, 19, spec.lipClosed);
+      put(14, 19, spec.lipClosed);
+    } else {
+      const mh = mouthOpen > 1 ? 2 : 1;
+      for (let dx = 12; dx <= 15; dx++) {
+        put(dx, 18, '#54201e');
+        if (mh > 1) put(dx, 19, '#cf655d');
+      }
+    }
+
+    for (let i = 8; i <= 19; i++) put(i, 22, i < 14 ? spec.collarHi : spec.collarLo);
+    for (let i = 9; i <= 18; i++) put(i, 23, i < 14 ? '#f2cc6b' : '#b88d3d');
+    for (let i = 11; i <= 16; i++) put(i, 24, spec.collarBase);
+    return c;
+  }
+
+  function makePortraitSet(builderFn) {
+    return {
+      idle: [
+        builderFn(0, false),
+        builderFn(0, false),
+        builderFn(0, false),
+        builderFn(0, true)
+      ],
+      talk: [
+        builderFn(0, false),
+        builderFn(1, false),
+        builderFn(2, false),
+        builderFn(1, false)
+      ]
+    };
+  }
+
   // Notas musicais em pixel art para o `music_notes_loop`
   const NOTE_SINGLE = fromMap([
     '..ooo.',
@@ -1017,6 +1090,230 @@
     };
   }
 
+  function buildHiBitGuardian(spec, pose = 'idle0') {
+    const W = 48, H = 68;
+    const [c, x] = mk(W, H);
+    c.hib = true;
+    const put = (px, py, col) => {
+      const ix = Math.round(px), iy = Math.round(py);
+      if (ix >= 0 && iy >= 0 && ix < W && iy < H) {
+        x.fillStyle = col;
+        x.fillRect(ix, iy, 1, 1);
+      }
+    };
+    const fillEll = (cx, cy, rx, ry, fn) => {
+      for (let py = Math.floor(cy - ry - 1); py <= Math.ceil(cy + ry + 1); py++) {
+        for (let px = Math.floor(cx - rx - 1); px <= Math.ceil(cx + rx + 1); px++) {
+          const dx = (px - cx) / rx, dy = (py - cy) / ry;
+          const d = dx * dx + dy * dy;
+          if (d <= 1.0) {
+            const col = fn(px, py, dx, dy, d);
+            if (col) put(px, py, col);
+          }
+        }
+      }
+    };
+
+    const isSil = pose === 'sil0' || pose === 'sil1' || pose === 'sil2';
+    const capeLift = (pose === 'sing1' || pose === 'celeb0' || pose === 'sil1' || pose === 'sil2') ? -3 : 0;
+    const capeSpread = (pose === 'sil2' || pose === 'celeb0') ? 2 : 0;
+    const bobY = (pose === 'walk1' || pose === 'sing1' || pose === 'sil2') ? -1 : 0;
+    const silRim = pose === 'sil2' ? '#f2cc6b' : (pose === 'sil1' ? spec.silRimHi : spec.silRim);
+
+    // 1. Manto / Xale pictórico temático em camadas suaves
+    for (const side of [-1, 1]) {
+      for (let layer = 0; layer < 3; layer++) {
+        const wy = 27 + layer * 6 + capeLift + bobY;
+        const wx = 24 + side * (10 + capeSpread + layer * 2);
+        fillEll(wx, wy, 8.5 - layer, 13.5 - layer * 2, (px, py, dx, dy, d) => {
+          if (isSil) return d > 0.78 ? silRim : (d > 0.55 ? spec.silMid : spec.silCore);
+          if (d > 0.84) return spec.cape[0];
+          const weave = ((px + py) & 1) === 0;
+          if (dy < -0.25) return weave ? spec.cape[3] : spec.cape[2];
+          return weave ? spec.cape[2] : spec.cape[1];
+        });
+      }
+    }
+
+    // 2. Túnica longa esculpida até os pés
+    for (let py = 27 + bobY; py <= 63 + bobY; py++) {
+      const t = (py - (27 + bobY)) / 36;
+      const halfW = Math.round(7 + t * 8.5);
+      for (let px = 24 - halfW; px <= 24 + halfW; px++) {
+        const dx = (px - 24) / Math.max(1, halfW);
+        if (isSil) {
+          put(px, py, Math.abs(dx) > 0.82 || py >= 62 + bobY ? silRim : spec.silCore);
+        } else {
+          let col = spec.robe[1];
+          if (Math.abs(dx) > 0.84 || py === 63 + bobY) col = spec.robe[0];
+          else if (py >= 60 + bobY) col = spec.sash[1];
+          else if (Math.abs(dx) < 0.28) col = Math.abs(dx) < 0.14 ? spec.sash[2] : spec.sash[1];
+          else if (dx < -0.3) col = spec.robe[2];
+          else if (dx > 0.45) col = spec.robe[0];
+          put(px, py, col);
+        }
+      }
+    }
+
+    // 3. Cabelos longos esculpidos
+    fillEll(24, 21 + bobY, 11, 12.2, (px, py, dx, dy, d) => {
+      if (isSil) return d > 0.82 ? silRim : spec.silCore;
+      return d > 0.82 ? spec.hair[0] : (dx < 0 ? spec.hair[2] : spec.hair[1]);
+    });
+
+    // 4. Braços e instrumento musical regional ao cantar/celebrar
+    const armUp = (pose === 'sing1' || pose === 'celeb0' || pose === 'sil2');
+    for (const side of [-1, 1]) {
+      const ax = 24 + side * (armUp ? 12.5 : 9);
+      const ay = (armUp ? 24 : 32) + bobY;
+      fillEll(ax, ay, 3.2, 6, (px, py, dx, dy, d) => {
+        if (isSil) return d > 0.75 ? silRim : spec.silCore;
+        return dy > 0.4 ? spec.skin[1] : (d > 0.8 ? spec.robe[0] : spec.robe[2]);
+      });
+    }
+
+    if (!isSil && (pose === 'sing1' || pose === 'celeb0')) {
+      if (spec.instrument === 'maraca') {
+        fillEll(37, 19 + bobY, 3.2, 3.8, (px, py, dx, dy) => (dx + dy < 0 ? '#f2cc6b' : '#539e43'));
+        put(37, 23 + bobY, '#6e4531');
+        put(37, 24 + bobY, '#6e4531');
+      } else if (spec.instrument === 'flute') {
+        for (let fx = 26; fx <= 37; fx++) {
+          put(fx, 21 + bobY, fx % 3 === 0 ? '#ffffff' : '#9be8f0');
+          put(fx, 22 + bobY, '#367588');
+        }
+      } else if (spec.instrument === 'rabeca') {
+        fillEll(14, 24 + bobY, 3.5, 4.8, (px, py, dx) => (dx < 0 ? '#d98a4e' : '#8c4427'));
+        for (let bx = 11; bx <= 20; bx++) put(bx, 22 + bobY, '#f7e2b8');
+      }
+    }
+
+    // 5. Rosto expressivo Hi-Bit
+    const headY = 16 + bobY;
+    fillEll(24, headY, 7.5, 8.5, (px, py, dx, dy, d) => {
+      if (isSil) return d > 0.8 ? silRim : spec.silCore;
+      if (d > 0.85) return spec.skin[0];
+      if (py < headY - 2) return dx < 0 ? spec.hair[2] : spec.hair[1];
+      return (dx > 0.35 || dy > 0.45) ? spec.skin[1] : spec.skin[2];
+    });
+
+    if (!isSil) {
+      for (const ox of [21, 27]) {
+        for (let dy = -1; dy <= 1; dy++) {
+          put(ox, headY + dy, '#1c1210');
+          put(ox + 1, headY + dy, '#1c1210');
+        }
+        put(ox, headY - 1, '#ffffff');
+        put(ox + 1, headY + 1, spec.eyeGlint);
+      }
+      if (pose === 'sing1' || pose === 'celeb0') {
+        for (let dx = -2; dx <= 2; dx++) {
+          put(24 + dx, headY + 4, '#4a1c24');
+          put(24 + dx, headY + 5, '#d96b7d');
+        }
+      } else {
+        put(23, headY + 4, '#6e352c');
+        put(24, headY + 4, '#6e352c');
+        put(25, headY + 4, '#6e352c');
+      }
+    }
+
+    // 6. Diadema/Coroa com a Gema Primordial da Guardiã
+    for (let dx = -6; dx <= 6; dx++) {
+      const cy = headY - 7;
+      const spike = (dx === -5 || dx === 0 || dx === 5) ? 3 : ((dx === -2 || dx === 2) ? 1 : 0);
+      for (let s = 0; s <= spike; s++) {
+        put(24 + dx, cy - s, isSil ? silRim : (s === spike ? '#ffffff' : (Math.abs(dx) <= 1 ? spec.gemHi : spec.crownLit)));
+      }
+      put(24 + dx, cy + 1, isSil ? spec.silMid : spec.crownDark);
+    }
+
+    return c;
+  }
+
+  function makeGuardianActor(spec) {
+    const sil0 = buildHiBitGuardian(spec, 'sil0');
+    const sil1 = buildHiBitGuardian(spec, 'sil1');
+    const sil2 = buildHiBitGuardian(spec, 'sil2');
+    const idle0 = buildHiBitGuardian(spec, 'idle0');
+    const walk1 = buildHiBitGuardian(spec, 'walk1');
+    const sing1 = buildHiBitGuardian(spec, 'sing1');
+    const celeb0 = buildHiBitGuardian(spec, 'celeb0');
+    return {
+      back_silhouette: [sil0, sil1, sil2, sil1],
+      idle: [idle0, walk1],
+      walk: [idle0, walk1],
+      sing: [idle0, sing1],
+      celebrate: [celeb0, idle0]
+    };
+  }
+
+  const ARACI_SPEC = {
+    instrument: 'maraca',
+    silCore: '#101c15', silMid: '#1d3326', silRim: '#68bd59', silRimHi: '#a5e06c',
+    cape: ['#1d4224', '#316938', '#539e43', '#8ed46a'],
+    robe: ['#36261e', '#523b2e', '#735442'],
+    sash: ['#427834', '#7ec456', '#f2cc6b'],
+    hair: ['#241712', '#3d271e', '#5e3d2f'],
+    skin: ['#6e432c', '#945d3f', '#ba7956'],
+    eyeGlint: '#8ed46a',
+    gemHi: '#7ef08b',
+    crownLit: '#d9be62',
+    crownDark: '#8c6d2b',
+    hairRamp: ['#1f1410', '#36221a', '#523529', '#6e4939', '#8c5f4b'],
+    skinRamp: ['#543120', '#73462f', '#965f42', '#b87a58', '#d49877'],
+    crownMid: '#c9a649',
+    crownAccent: '#7ec456',
+    lipClosed: '#6e3d2c',
+    collarHi: '#539e43',
+    collarLo: '#2f6328',
+    collarBase: '#1d3d19'
+  };
+
+  const IRECE_SPEC = {
+    instrument: 'flute',
+    silCore: '#0f1a26', silMid: '#1b3045', silRim: '#4da6b8', silRimHi: '#9ef0ff',
+    cape: ['#1b4152', '#2c6880', '#4da6b8', '#9be8f0'],
+    robe: ['#203047', '#334c6e', '#4f739e'],
+    sash: ['#437794', '#84bdd1', '#e8faff'],
+    hair: ['#161a29', '#273047', '#415073'],
+    skin: ['#704631', '#966146', '#bd7f5e'],
+    eyeGlint: '#8cebf5',
+    gemHi: '#7af7f0',
+    crownLit: '#cbe8f2',
+    crownDark: '#4f7c8f',
+    hairRamp: ['#141826', '#232b42', '#384566', '#50618a', '#6e82ab'],
+    skinRamp: ['#573524', '#754933', '#996449', '#bd8162', '#d9a182'],
+    crownMid: '#84bdd1',
+    crownAccent: '#f2cc6b',
+    lipClosed: '#6e3f32',
+    collarHi: '#4da6b8',
+    collarLo: '#2c6878',
+    collarBase: '#1b3e4a'
+  };
+
+  const JUREMA_SPEC = {
+    instrument: 'rabeca',
+    silCore: '#241310', silMid: '#3d201a', silRim: '#d96538', silRimHi: '#ffd35a',
+    cape: ['#542118', '#8c3726', '#c45635', '#eda055'],
+    robe: ['#473023', '#6b4936', '#94694f'],
+    sash: ['#8c2d1f', '#d96538', '#f7c97e'],
+    hair: ['#241510', '#42271e', '#663e30'],
+    skin: ['#693e2a', '#8f573d', '#b57354'],
+    eyeGlint: '#ffd35a',
+    gemHi: '#ffb35c',
+    crownLit: '#f2cc6b',
+    crownDark: '#995326',
+    hairRamp: ['#21130e', '#382018', '#573326', '#784837', '#965e49'],
+    skinRamp: ['#522f1f', '#70422d', '#945b40', '#b87656', '#d49474'],
+    crownMid: '#e69d45',
+    crownAccent: '#e65c4f',
+    lipClosed: '#693629',
+    collarHi: '#d96538',
+    collarLo: '#8c3726',
+    collarBase: '#4f1e15'
+  };
+
   // Compila todos os sprites Hi-Bit uma única vez no SpriteBank
   const PROTAG_F_IDLE0 = buildHiBitProtagonist('idle0');
   const PROTAG_F_IDLE1 = buildHiBitProtagonist('idle1');
@@ -1055,26 +1352,16 @@
       sing: [ORDEM_F_IDLE0, ORDEM_F_SING1],
       celebrate: [ORDEM_F_CELEB0, ORDEM_F_IDLE0]
     },
+    araci: makeGuardianActor(ARACI_SPEC),
+    irece: makeGuardianActor(IRECE_SPEC),
+    jurema: makeGuardianActor(JUREMA_SPEC),
     stoneNeonAnimals: {
       cyan: makeStoneNeonAnimal('#a8e6cf', '#56ab91'),
       magenta: makeStoneNeonAnimal('#f2b8c6', '#bd6b82'),
       gold: makeStoneNeonAnimal('#f5df98', '#c49b45')
     },
     portraits: {
-      portrait_protagonist: {
-        idle: [
-          buildProtagonistPortrait(0, false),
-          buildProtagonistPortrait(0, false),
-          buildProtagonistPortrait(0, false),
-          buildProtagonistPortrait(0, true)
-        ],
-        talk: [
-          buildProtagonistPortrait(0, false),
-          buildProtagonistPortrait(1, false),
-          buildProtagonistPortrait(2, false),
-          buildProtagonistPortrait(1, false)
-        ]
-      },
+      portrait_protagonist: makePortraitSet(buildProtagonistPortrait),
       portrait_mystery_silhouette: {
         idle: [
           buildMysterySilhouettePortrait(0),
@@ -1089,20 +1376,10 @@
           buildMysterySilhouettePortrait(1)
         ]
       },
-      portrait_ordem: {
-        idle: [
-          buildOrdemPortrait(0, false),
-          buildOrdemPortrait(0, false),
-          buildOrdemPortrait(0, false),
-          buildOrdemPortrait(0, true)
-        ],
-        talk: [
-          buildOrdemPortrait(0, false),
-          buildOrdemPortrait(1, false),
-          buildOrdemPortrait(2, false),
-          buildOrdemPortrait(1, false)
-        ]
-      }
+      portrait_ordem: makePortraitSet(buildOrdemPortrait),
+      portrait_araci: makePortraitSet((m, b) => buildGuardianPortrait(ARACI_SPEC, m, b)),
+      portrait_irece: makePortraitSet((m, b) => buildGuardianPortrait(IRECE_SPEC, m, b)),
+      portrait_jurema: makePortraitSet((m, b) => buildGuardianPortrait(JUREMA_SPEC, m, b))
     },
     notes: [NOTE_SINGLE, NOTE_DOUBLE]
   };
@@ -1458,6 +1735,14 @@
       caatinga: false  // Opala de Fogo (Caatinga — formato chama/sol)
     },
 
+    syncSocketsFromCompleted(completedIds = []) {
+      const list = Array.isArray(completedIds) ? completedIds : [];
+      this.sockets.fairy = Boolean(this.sockets.fairy || list.includes(5));
+      this.sockets.forest = Boolean(this.sockets.forest || list.includes(10));
+      this.sockets.river = Boolean(this.sockets.river || list.includes(15));
+      this.sockets.caatinga = Boolean(this.sockets.caatinga || list.includes(20));
+    },
+
     open(lines, onComplete = null) {
       this.queue = Array.isArray(lines) ? lines : [lines];
       this.currentIndex = 0;
@@ -1717,6 +2002,9 @@
   const SPR_SHADOW = fromMap(Q_TUT_ROWS, { o: '#1a122b', W: '#b8a6d9', L: '#5e4d82', M: '#413361', D: '#2a1f42' });
   const SPR_OPAL = fromMap(Q_TUT_ROWS, { o: '#541812', W: '#fff6cc', L: '#e68a49', M: '#c45131', D: '#8c2d1f' });
   const SPR_ROSE = fromMap(Q_TUT_ROWS, { o: '#59223b', W: '#fff2f5', L: '#e396b1', M: '#bf6588', D: '#8c3f60' });
+  const SPR_EMERALD = fromMap(Q_TUT_ROWS, { o: '#193d20', W: '#eaffea', L: '#8ed46a', M: '#539e43', D: '#2f6328' });
+  const SPR_CITRINE = fromMap(Q_TUT_ROWS, { o: '#52300a', W: '#fff9d6', L: '#f7dc7e', M: '#e3b448', D: '#875616' });
+  const SPR_AQUA = fromMap(Q_TUT_ROWS, { o: '#123b45', W: '#ebffff', L: '#a8f0f0', M: '#4da6b8', D: '#1f6170' });
 
   function drawMiniOrb(ctx, x, y, col, rim) {
     ctx.fillStyle = rim;
@@ -1842,6 +2130,43 @@
         drawRing(ctx, R(vx + vw / 2), cy, r, '#cfa3c4');
         ctx.drawImage(SPR_ROSE, R(vx + vw / 2 - (expanded ? 12 : 8)), cy - 7);
         ctx.drawImage(SPR_PURE, R(vx + vw / 2 + (expanded ? 3 : 0)), cy - 7);
+      } else if (type === 'emerald_altar') {
+        const ax = R(vx + vw / 2 + 18);
+        ctx.fillStyle = '#3b3332';
+        ctx.fillRect(ax - 8, cy + 5, 16, 6);
+        ctx.drawImage(SPR_EMERALD, ax - 6, cy - 8);
+        drawRing(ctx, ax, cy, 12, '#7ec456');
+        const boosted = phase >= 0.52;
+        const px = phase < 0.52
+          ? R(vx + 46 + easeInOut(phase / 0.52) * (ax - 18 - (vx + 46)))
+          : R(ax - 18 - easeInOut((phase - 0.52) / 0.48) * 30);
+        ctx.drawImage(SPR_PURE, px - 6, cy - 7);
+        drawMiniOrb(ctx, px - 3, cy - 11, '#a8d8e6', '#294c66');
+        drawMiniOrb(ctx, px + 3, cy - 11, '#a8d8e6', '#294c66');
+        if (boosted) {
+          drawMiniOrb(ctx, px - 8, cy - 9, '#a8d8e6', '#294c66');
+          drawMiniOrb(ctx, px + 8, cy - 9, '#a8d8e6', '#294c66');
+          drawStar(ctx, ax - 8, cy - 6, 3, '#ffffff', '#8ed46a');
+        }
+      } else if (type === 'citrine_split' || type === 'aqua_drop') {
+        const spr = type === 'citrine_split' ? SPR_CITRINE : SPR_AQUA;
+        const orbCol = type === 'citrine_split' ? '#f7dc7e' : '#a8f0f0';
+        const rimCol = type === 'citrine_split' ? '#52300a' : '#123b45';
+        const mx = R(vx + vw / 2);
+        if (phase < 0.45) {
+          ctx.drawImage(spr, mx - 6, cy - 7);
+          for (const dx of [-7, -2, 3, 8]) drawMiniOrb(ctx, mx + dx, cy - 11, orbCol, rimCol);
+          if (phase > 0.3) drawRing(ctx, mx, cy, 11, '#ffffff');
+        } else {
+          const sep = R(6 + easeInOut(clamp((phase - 0.45) / 0.35, 0, 1)) * 18);
+          ctx.drawImage(spr, mx - sep - 6, cy - 7);
+          drawMiniOrb(ctx, mx - sep - 3, cy - 11, orbCol, rimCol);
+          drawMiniOrb(ctx, mx - sep + 3, cy - 11, orbCol, rimCol);
+          ctx.drawImage(spr, mx + sep - 6, cy - 7);
+          drawMiniOrb(ctx, mx + sep - 3, cy - 11, orbCol, rimCol);
+          drawMiniOrb(ctx, mx + sep + 3, cy - 11, orbCol, rimCol);
+          if (phase < 0.65) drawStar(ctx, mx, cy - 2, 3, '#ffffff', orbCol);
+        }
       }
     },
 
@@ -1908,6 +2233,7 @@
   });
 
   const GameHUD = {
+    worldLabel: 'Caverna',
     paused: false,
     settingsOpen: false,
     muted: false,
@@ -2030,6 +2356,8 @@
       this.playSfx('click');
       if (typeof this.onRestart === 'function') {
         this.onRestart();
+      } else if (global.TruePixelWorlds && global.TruePixelWorlds.isActiveGame?.()) {
+        global.TruePixelWorlds.restartCurrentPhase();
       } else if (global.CaveChapter1 && typeof global.CaveChapter1.restartCurrentPhase === 'function') {
         global.CaveChapter1.restartCurrentPhase();
       }
@@ -2183,7 +2511,7 @@
       }
     },
 
-    renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false) {
+    renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false, customTitle = null) {
       // Barra Superior Esculpida Estilo Owlboy (0..20)
       ctx.fillStyle = '#241c19';
       ctx.fillRect(0, 0, W, 20);
@@ -2194,11 +2522,13 @@
       ctx.fillRect(W - 8, 19, 8, 1);
 
       // Título da Fase à esquerda (com acentuação e minúsculas legíveis)
-      drawPixelText(ctx, `Caverna - Fase ${levelNum}`, 6, 6, '#f7e2b8', '#120d0b', 96, 9);
+      const labelPrefix = this.worldLabel || 'Caverna';
+      const titleStr = customTitle || `${labelPrefix} - Fase ${levelNum}`;
+      drawPixelText(ctx, titleStr, 6, 6, '#f7e2b8', '#120d0b', 90, 9);
 
       // Indicador visual de Etapas no centro-esquerda (oculto durante apresentações musicais com botão Pular)
       if (!hideSteps) {
-        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 94, 6, '#a8d8e6', '#120d0b', 62, 9);
+        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 96, 6, '#a8d8e6', '#120d0b', 62, 9);
         for (let s = 1; s <= totalSteps; s++) {
           const dx = 148 + (s - 1) * 10, dy = 9;
           const done = s < currentStep;
@@ -2361,6 +2691,30 @@
         title: 'Equação Cristalina',
         vignette: 'aura_equation',
         body: 'Arraste cristais até a Equação Cristalina para adicioná-los, ou toque nela para expandir e organizar seu interior!'
+      }
+    ],
+    FOREST_EMERALD: [
+      {
+        id: 'tut_emerald_altar',
+        title: 'Altar de Esmeralda',
+        vignette: 'emerald_altar',
+        body: 'Aproxime um cristal puro do Altar de Esmeralda para duplicar suas bolinhas de energia uma única vez!'
+      }
+    ],
+    FOREST_CITRINE: [
+      {
+        id: 'tut_citrine_split',
+        title: 'Citrino Solar',
+        vignette: 'citrine_split',
+        body: 'Toque rápido em um Citrino Solar com número par de bolinhas para dividi-lo em dois cristais iguais!'
+      }
+    ],
+    RIVER_AQUA: [
+      {
+        id: 'tut_aqua_drop',
+        title: 'Água-Marinha',
+        vignette: 'aqua_drop',
+        body: 'Toque rápido em uma Água-Marinha par para reparti-la ao meio, ou arraste gotas iguais para somá-las!'
       }
     ]
   };
