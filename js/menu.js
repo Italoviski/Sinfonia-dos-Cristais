@@ -1,6 +1,6 @@
 /* True Pixel Art Interactive Sanctuary Menu (320x180 logical pixel grid, 12 FPS sprites / 8 FPS water / 60 Hz float).
  * Preserves the approved menu-aprovado.png layout while enhancing the Monumental Ancient Door,
- * Primordial Gem sockets, crystal clusters, subterranean water reflections, and trembling floating whispers.
+ * Primordial Gem sockets, crystal clusters, and subterranean water reflections.
  */
 (() => {
   'use strict';
@@ -13,41 +13,8 @@
 
   const W = 320, H = 180;
   const R = Math.round, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  let paused = false, time = 0, last = 0, hoveredChoice = -1, doorPulse = 0, whisperIdx = 0, whisperTimer = 0;
+  let paused = false, time = 0, last = 0, hoveredChoice = -1, doorPulse = 0;
 
-  // Trembling floating whispers for the Menu Sanctuary
-  const MENU_WHISPERS = [
-    '“...Você ouve o eco dos cristais?...”',
-    '“...A Porta Ancestral guarda quatro vozes...”',
-    '“...Toque em Jogar para despertar a caverna...”',
-    '“...Una a luz à sombra e liberte nossa canção...”'
-  ];
-  const HOVER_WHISPERS = [
-    '“...Entre na caverna... siga minha voz!...”',
-    '“...Ajuste os sons, contrastes e o ritmo tranquilo...”',
-    '“...Conheça quem teceu cada cristal e melodia...”',
-    '“...Seu progresso fica guardado nas pedras...”'
-  ];
-
-  // Create DOM layer for trembling floating whisper in the menu
-  const whisperBox = document.createElement('div');
-  whisperBox.className = 'menu-whisper-float';
-  whisperBox.setAttribute('aria-hidden', 'true');
-  frame.append(whisperBox);
-
-  function setWhisperText(text) {
-    if (whisperBox.dataset.text === text) return;
-    whisperBox.dataset.text = text;
-    whisperBox.replaceChildren();
-    [...text].forEach((ch, i) => {
-      const span = document.createElement('span');
-      span.className = 'whisper-char';
-      span.textContent = ch === ' ' ? '\u00A0' : ch;
-      span.style.setProperty('--char-idx', String(i));
-      whisperBox.append(span);
-    });
-  }
-  setWhisperText(MENU_WHISPERS[0]);
 
   function hash(n) {
     let x = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b);
@@ -304,7 +271,6 @@
     }
     window.CrystalMenuAudio?.play?.();
     hoveredChoice = idx;
-    setWhisperText(HOVER_WHISPERS[idx] || MENU_WHISPERS[0]);
     doorPulse = Math.max(doorPulse, idx === 0 ? 1.2 : 0.55);
   }
   buttons.forEach((btn, idx) => {
@@ -330,14 +296,9 @@
     if (px >= 168 && px <= 270 && py >= 22 && py <= 145) {
       doorPulse = 1.6;
       window.CrystalAudio?.reward?.(2);
-      setWhisperText('“...As quatro gemas primordiais abrirão a Porta Ancestral!...”');
-      whisperTimer = 0;
     } else {
       doorPulse = 0.9;
       window.CrystalAudio?.clink?.();
-      whisperIdx = (whisperIdx + 1) % MENU_WHISPERS.length;
-      setWhisperText(MENU_WHISPERS[whisperIdx]);
-      whisperTimer = 0;
     }
   });
 
@@ -466,12 +427,6 @@
       } else {
         time += dt;
         doorPulse = Math.max(0, doorPulse - dt * 1.4);
-        whisperTimer += dt;
-        if (hoveredChoice < 0 && whisperTimer > 4.2) {
-          whisperTimer = 0;
-          whisperIdx = (whisperIdx + 1) % MENU_WHISPERS.length;
-          setWhisperText(MENU_WHISPERS[whisperIdx]);
-        }
 
         const f12 = Math.floor(time * 12);
         const f8 = Math.floor(time * 8);
