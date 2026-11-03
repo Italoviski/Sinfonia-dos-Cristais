@@ -368,23 +368,21 @@
   function drawMenuSelector(f12) {
     if (hoveredChoice < 0 || hoveredChoice > 3) return;
     // Button vertical centers in 320x180 space matching .menu-choice tops
-    const ys = [76, 94, 112, 131];
+    const ys = [76, 94, 112, 130];
     const cols = ['#a8ff66', '#9ef0ff', '#ff8ae2', '#ffd35a'];
+    const bws = [70, 78, 86, 62];
     const cy = ys[hoveredChoice];
     const col = cols[hoveredChoice] || '#9ef0ff';
+    const bw = bws[hoveredChoice] || 72;
     const bob = [0, -1, 0, 1][f12 % 4];
     const shift = (f12 & 1) ? 1 : 0;
 
-    // Ícone temático em pixel art à esquerda do botão
-    const icon = MENU_ICONS[hoveredChoice];
-    if (icon) ctx.drawImage(icon, 11 + shift, cy - 5 + bob);
-
-    // Seta luminosa em pixel art apontando para a opção sob o mouse
-    dia(6 + shift, cy + bob, 2, '#ffffff', col);
-    P1(9 + shift, cy + bob, '#ffffff');
+    // Seta luminosa em pixel art apontando para a opção sob o mouse com espaçamento elegante
+    dia(8 + shift, cy + bob, 2, '#ffffff', col);
+    P1(12 + shift, cy + bob, '#ffffff');
 
     // Colchetes de canto em pixel art + trilha energética sob o botão focado
-    const bx = 22, bw = 76, by = cy - 7, bh = 14;
+    const bx = 18, by = cy - 8, bh = 16;
     ctx.fillStyle = col;
     // Canto superior esquerdo e inferior esquerdo
     ctx.fillRect(bx, by, 5, 1);
@@ -397,11 +395,11 @@
     ctx.fillRect(bx + bw - 4, by + bh, 5, 1);
     ctx.fillRect(bx + bw, by + bh - 3, 1, 4);
 
-    // Linha de energia animada + estrelas nas pontas
+    // Linha de energia animada + estrelas nas pontas com distância confortável do texto
     ctx.fillRect(bx + 4, by + bh, bw - 8, 1);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(bx + 6 + ((f12 * 5) % (bw - 20)), by + bh, 10, 1);
-    star(bx + bw + 4 - shift, cy, (f12 & 1) ? 2 : 1, '#ffffff', col);
+    star(bx + bw + 6 - shift, cy, (f12 & 1) ? 2 : 1, '#ffffff', col);
   }
 
   function renderStaticFrame() {
