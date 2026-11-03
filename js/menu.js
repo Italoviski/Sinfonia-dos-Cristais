@@ -8,12 +8,11 @@
   const frame = document.getElementById('menuFilmFrame');
   const canvas = document.getElementById('menuParticles');
   const ctx = canvas.getContext('2d');
-  const toggle = document.getElementById('menuMotionButton');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
   const W = 320, H = 180;
   const R = Math.round, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  let paused = false, time = 0, last = 0, hoveredChoice = -1, doorPulse = 0;
+  let time = 0, last = 0, hoveredChoice = -1, doorPulse = 0;
 
 
   function hash(n) {
@@ -414,15 +413,10 @@
   function tick(now) {
     const dt = Math.min(0.05, (now - last) / 1000 || 0);
     last = now;
-    const reduced = document.body.classList.contains('reduce-motion');
-    const stop = paused || reduced;
-    toggle.disabled = reduced;
-    toggle.textContent = stop ? '▶' : '❚❚';
-    toggle.setAttribute('aria-pressed', String(stop));
-    toggle.setAttribute('aria-label', stop ? 'Reproduzir animação do menu' : 'Pausar animação do menu');
+    const reduced = document.body.classList.contains('reduce-motion') || motion.matches;
 
     if (!home.hidden && !document.hidden && !document.querySelector('dialog[open]')) {
-      if (stop) {
+      if (reduced) {
         renderStaticFrame();
       } else {
         time += dt;
@@ -467,8 +461,6 @@
     }
     requestAnimationFrame(tick);
   }
-
-  toggle.onclick = () => { paused = !paused; };
   addEventListener('resize', fit);
   frame.classList.add('video-ready');
   fit();

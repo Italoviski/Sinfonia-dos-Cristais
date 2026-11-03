@@ -22,15 +22,13 @@
  .home-screen .menu-choice:hover span{color:var(--menu-color);transform:translateX(8px);text-shadow:0 0 14px #a9f1ff66}
  .home-screen .menu-choice:hover i{opacity:1;transform:scale(1) rotate(0)}
 }
-.menu-motion-button{position:absolute;right:22px;bottom:20px;z-index:3;width:42px;height:42px;background:#091930b8;color:#c2efff;border:1px solid #8ecce477;border-radius:4px;font-size:16px;transition:background .2s}
-.menu-motion-button:hover{background:#214967}.menu-motion-button:disabled{opacity:.6;cursor:default}
 .menu-film-frame.video-error .menu-choice span,.menu-film-frame:not(.video-ready) .menu-choice span{color:#dcf3ff}
 .menu-film-frame.video-error .menu-choice,.menu-film-frame:not(.video-ready) .menu-choice{background:#0a1d36e8}
 .high-contrast .home-screen .menu-choice{background:#06152afa;border:1px solid #bfeaff}
 .high-contrast .home-screen .menu-choice span{color:white}
 .reduce-motion .home-screen .menu-choice span,.reduce-motion .home-screen .menu-choice i{transform:none!important}
 @media(prefers-reduced-motion:reduce){.home-screen .menu-choice span,.home-screen .menu-choice i{transform:none!important}.menu-video{transition:none}}
-@media(max-width:600px){.menu-motion-button{right:14px;bottom:14px}.home-screen .menu-choice{font-size:clamp(22px,var(--menu-font),34px)}}
+@media(max-width:600px){.home-screen .menu-choice{font-size:clamp(22px,var(--menu-font),34px)}}
 
 /* Preloader Funcional em True Pixel Art */
 #preloaderScreen{position:fixed;inset:0;z-index:99999;background:#05030f;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;cursor:pointer;overflow:hidden}
