@@ -446,6 +446,24 @@
   finale() {
    cue([261.6, 329.6, 392, 523.3, 659.3, 784], 0.1, 'triangle', 0.12, 0.22);
   },
+  stopAllMusic(except = null) {
+   if (menuTrack && menuTrack !== except) {
+    try { menuTrack.pause(); menuTrack.currentTime = 0; } catch (_) {}
+   }
+   if (typeof window !== 'undefined') {
+    const cave = window.CaveChapter1;
+    if (cave?.musicAudio && cave.musicAudio !== except) {
+     try { cave.musicAudio.pause(); } catch (_) {}
+    }
+    const worlds = window.TruePixelWorlds;
+    if (worlds?.regularAudio && worlds.regularAudio !== except) {
+     try { worlds.regularAudio.pause(); } catch (_) {}
+    }
+    if (worlds?.musicAudio && worlds.musicAudio !== except) {
+     try { worlds.musicAudio.pause(); } catch (_) {}
+    }
+   }
+  },
   get enabled() {
    return enabled;
   }
