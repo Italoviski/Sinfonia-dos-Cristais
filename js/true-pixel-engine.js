@@ -2362,6 +2362,31 @@
           drawMiniOrb(ctx, mx + sep + 3, cy - 11, orbCol, rimCol);
           if (phase < 0.65) drawStar(ctx, mx, cy - 2, 3, '#ffffff', orbCol);
         }
+      } else if (type === 'forest_ninja_slice') {
+        const mx = R(vx + vw / 2);
+        const my = cy;
+        // Desenha corte ninja: cristais sobem, rastro de corte corta ambos, 'COMBO X2!' aparece
+        if (phase < 0.45) {
+          const u = phase / 0.45;
+          const arcY = R(cy + 10 - Math.sin(u * Math.PI) * 16);
+          ctx.drawImage(SPR_EMERALD, mx - 16, arcY - 7);
+          ctx.drawImage(SPR_PURE, mx + 6, arcY - 7);
+        } else if (phase < 0.58) {
+          // Rastro do corte
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(mx - 24, cy - 10);
+          ctx.lineTo(mx + 24, cy + 10);
+          ctx.stroke();
+          drawStar(ctx, mx, cy, 4, '#ffffff', '#6ef58c');
+        } else {
+          // Metades se separando
+          const sep = R((phase - 0.58) * 36);
+          ctx.drawImage(SPR_EMERALD, mx - 20 - sep, cy - 7 + sep * 0.5);
+          ctx.drawImage(SPR_PURE, mx + 10 + sep, cy - 7 + sep * 0.5);
+          drawPixelTextCentered(ctx, 'COMBO X2!', mx, cy - 12, '#fbbf24', '#1f1410', 60, 7);
+        }
       } else if (type === 'caatinga_circle') {
         const sx = R(vx + vw / 2 + 24);
         drawRing(ctx, sx, cy, 11, '#FBBF24');
@@ -3038,6 +3063,14 @@
         title: 'Citrino Solar',
         vignette: 'citrine_split',
         body: 'Toque rápido em um Citrino Solar com número par de bolinhas para dividi-lo em dois cristais iguais!'
+      }
+    ],
+    FOREST_SLICING_NINJA: [
+      {
+        id: 'tut_forest_ninja',
+        title: 'Corte Cristalino da Floresta',
+        vignette: 'forest_ninja_slice',
+        body: 'Deslize o dedo ou mouse para cortar os cristais no ar! Faça combos cortando múltiplos de uma vez e NUNCA corte as sombras!'
       }
     ],
     RIVER_AQUA: [

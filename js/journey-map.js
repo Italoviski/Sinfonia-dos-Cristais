@@ -1,7 +1,59 @@
 (() => {
- const coordinates=[[27.8,25.6],[20.0,26.7],[20.0,35.0],[25.3,38.9],[32.2,38.9],[40.9,52.8],[48.3,52.8],[54.7,52.8],[56.6,60.6],[65.3,61.7],[65.3,32.8],[65.3,21.7],[71.2,20.8],[77.2,20.8],[80.0,31.9],[80.6,51.4],[81.1,68.9],[70.8,81.1],[68.8,93.8],[56.2,95.8]];
- const finalPedestal=[30.8,64.0];
- const route=[...coordinates.slice(0,5),[36.0,46.0],...coordinates.slice(5,10),[65.3,47.0],[65.3,40.0],...coordinates.slice(10,15),[80.3,42.0],...coordinates.slice(15,20),[45.0,95.0],[32.0,92.0],[28.0,80.0],[36.0,72.0],[46.0,66.0],[38.0,64.0],finalPedestal];
+ const coordinates=[
+   [20.6,26.8], // 1: Caverna (pedra topo-esquerda)
+   [27.5,25.5], // 2: Caverna (anel roxo)
+   [32.6,34.5], // 3: Caverna (pedra junto ao cristal da fada)
+   [38.7,39.5], // 4: Caverna/Floresta (pedra acima da porta)
+   [50.5,39.5], // 5: Floresta (pedra trilha superior)
+   [56.5,39.5], // 6: Floresta (pedra antes da curva)
+   [58.0,51.5], // 7: Floresta (pedra descida vertical)
+   [62.5,56.9], // 8: Floresta (pedra curva inferior)
+   [66.9,47.0], // 9: Floresta/Rio (pedra abaixo cristal ciano)
+   [66.9,31.0], // 10: Rio (pedra antes da ponte de madeira)
+   [67.0,17.0], // 11: Rio (pedra canto superior da ponte de pedra)
+   [73.6,15.9], // 12: Rio (pedra meio da ponte de pedra)
+   [79.2,15.9], // 13: Rio (pedra canto direito da ponte de pedra)
+   [82.5,22.8], // 14: Rio (pedra na ponte de madeira da direita)
+   [82.8,37.7], // 15: Caatinga (pedra logo após a ponte)
+   [83.0,52.1], // 16: Caatinga (pedra na descida sul)
+   [70.8,62.5], // 17: Caatinga (anel roxo / rosa)
+   [69.9,73.5], // 18: Caatinga (pedra cinza na curva)
+   [59.2,78.2], // 19: Caatinga (pedra dourada em frente ao Citrino)
+   [32.3,60.4]  // 20: Porta Ancestral (pedestal azul ciano)
+ ];
+ const finalPedestal=coordinates[19];
+ const route=[
+   coordinates[0],
+   coordinates[1],
+   coordinates[2],
+   [32.6,39.5],
+   coordinates[3],
+   [44.0,39.5],
+   coordinates[4],
+   coordinates[5],
+   coordinates[6],
+   coordinates[7],
+   [66.9,53.0],
+   coordinates[8],
+   coordinates[9],
+   coordinates[10],
+   coordinates[11],
+   coordinates[12],
+   coordinates[13],
+   coordinates[14],
+   coordinates[15],
+   [77.7,62.5],
+   coordinates[16],
+   coordinates[17],
+   coordinates[18],
+   [47.8,78.2],
+   [35.9,78.2],
+   [23.9,78.2],
+   [20.3,72.3],
+   [20.3,63.8],
+   [25.1,60.4],
+   coordinates[19]
+ ];
  const screen=document.getElementById('map'),root=document.createElement('div');root.className='journey-map';screen.append(root);
  const fairy=document.createElement('div');fairy.className='journey-fairy';fairy.setAttribute('aria-hidden','true');root.append(fairy);
  window.TruePixelEngine?.ActorAnimator?.adaptMapFairyIcon?.();

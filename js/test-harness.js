@@ -132,6 +132,20 @@
                   cupsCount: (mod.shellGame.cups || []).length
                 }
               : null,
+            forestNinja: mod.forestNinja
+              ? {
+                  phase: mod.forestNinja.phase,
+                  vignetteCard: mod.forestNinja.vignetteCard,
+                  currentStage: mod.forestNinja.currentStage,
+                  totalStages: mod.forestNinja.totalStages,
+                  stageTimeRemaining: mod.forestNinja.stageTimeRemaining,
+                  strikes: mod.forestNinja.strikes,
+                  maxStrikes: mod.forestNinja.maxStrikes,
+                  pureCuts: mod.forestNinja.pureCuts,
+                  maxCombo: mod.forestNinja.maxCombo,
+                  flyingCount: (mod.forestNinja.flyingCrystals || []).length
+                }
+              : null,
             pureEquation: mod.pureEquation
               ? { x: mod.pureEquation.x, y: mod.pureEquation.y, expanded: !!mod.pureEquation.expanded, broken: !!mod.pureEquation.broken }
               : null,

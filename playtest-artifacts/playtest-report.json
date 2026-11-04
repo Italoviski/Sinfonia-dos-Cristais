@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-04T13:42:26.444Z",
+  "timestamp": "2026-11-04T16:15:44.374Z",
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "screensTested": [
     "home",
@@ -71,8 +71,8 @@
     },
     {
       "id": 10,
-      "name": "Floresta - Fase 4",
-      "initialPieces": 3,
+      "name": "Floresta - Fase 5",
+      "initialPieces": 2,
       "solved": true,
       "finished": true
     },

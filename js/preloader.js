@@ -25,7 +25,13 @@
   const AUDIO_MANIFEST = [
     { id: 'musica_menu', src: 'assets/audio/musica-menu.mp3', label: 'Sinfonia do Santuário' },
     { id: 'era_uma_vez_caverna', src: 'assets/audio/era-uma-vez-caverna.mp3', label: 'A Canção da Ordem' },
-    { id: 'o_que_um_cristal_pode_fazer', src: 'assets/audio/o-que-um-cristal-pode-fazer.mp3', label: 'Apresentação Final' }
+    { id: 'o_que_um_cristal_pode_fazer', src: 'assets/audio/o-que-um-cristal-pode-fazer.mp3', label: 'Apresentação Final' },
+    { id: 'musica_floresta_fases', src: 'assets/audio/musica-floresta-fases.mp3', label: 'Floresta: Sussurros da Mata' },
+    { id: 'musica_floresta_especial', src: 'assets/audio/musica-floresta-especial.mp3', label: 'Floresta: O Despertar da Esmeralda' },
+    { id: 'musica_rio_fases', src: 'assets/audio/musica-rio-fases.mp3', label: 'Rio: Correnteza Turquesa' },
+    { id: 'musica_rio_especial', src: 'assets/audio/musica-rio-especial.mp3', label: 'Rio: A Dança das Cascatas' },
+    { id: 'musica_caatinga_fases', src: 'assets/audio/musica-caatinga-fases.mp3', label: 'Caatinga: Sol Sobre o Arenito' },
+    { id: 'musica_caatinga_especial', src: 'assets/audio/musica-caatinga-especial.mp3', label: 'Caatinga: O Baião da Opala de Fogo' }
   ];
 
   const TOTAL_RESOURCES = IMAGE_MANIFEST.length + AUDIO_MANIFEST.length;

@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 
 function setupNodeDOM() {
   globalThis.window = globalThis;
+  globalThis.addEventListener = globalThis.addEventListener || ((evt, fn) => {});
+  globalThis.removeEventListener = globalThis.removeEventListener || ((evt, fn) => {});
   globalThis.requestAnimationFrame = (fn) => 1;
   globalThis.cancelAnimationFrame = (id) => {};
 
@@ -167,12 +169,12 @@ test('CaveChapter1.restartCurrentPhase reinicia de forma robusta e limpa a fase'
   assert.ok(Cave.pieces.length > 0, 'Peças da Etapa 1 devem ser recriadas');
 });
 
-test('AssetPreloader gerencia apenas os 11 recursos ativos (8 PNGs de Menu/Mapa + 3 MP3s) existentes em disco', async () => {
+test('AssetPreloader gerencia apenas os 17 recursos ativos (8 PNGs de Menu/Mapa + 9 MP3s) existentes em disco', async () => {
   setupNodeDOM();
   await import('../js/preloader.js');
   const Preloader = globalThis.AssetPreloader;
   assert.ok(Preloader, 'AssetPreloader deve existir');
-  assert.equal(Preloader.totalCount, 11, 'Deve gerenciar exatamente os 11 recursos ativos do boot');
+  assert.equal(Preloader.totalCount, 17, 'Deve gerenciar exatamente os 17 recursos ativos do boot');
 
   await new Promise((r) => setTimeout(r, 20));
   for (const src of Object.keys(Preloader.cache.images)) {
@@ -308,7 +310,7 @@ test('TruePixelWorlds unifica Floresta (6-10), Rio (11-15), Caatinga (16-20) e S
 
   // 3. Rio (Nós 11..15), Caatinga (Nós 16..20, Fases 1..5) e Santuário Final (Nó 21) carregam e renderizam sem erros
   for (const [nodeId, expectedWorld, expectedLevel] of [
-    [10, 'forest', 4],
+    [10, 'forest', 5],
     [11, 'river', 1],
     [15, 'river', 5],
     [16, 'caatinga', 1],
@@ -849,6 +851,182 @@ test('Mundo do Rio: Plataforma de Fração (Nós 11-14) e Simon-Says Melódico d
   assert.equal(rulesBoard.fractionDivide(['non_existent'], ['another']).type, 'invalid');
   assert.equal(rulesBoard.fractionDivide([rp1.id], [rp3.id]).type, 'invalid', 'Peça sombria não pode ser dividida na fração pura');
   assert.equal(rulesBoard.fractionDivide([rp1.id], [rp2.id]).type, 'divided', '2/2 deve dividir perfeitamente');
+});
+
+test('Fase Especial da Floresta (Nó 10): Mecânica Fruit Ninja em 4 Etapas, Vinhetas Card 1 e 2, Combos X2/X3/X4 e Cristais Sombrios', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+  await import('../js/true-pixel-worlds.js');
+  await import('../js/audio.js');
+  await import('../js/test-harness.js');
+
+  const Worlds = globalThis.TruePixelWorlds;
+  const E = globalThis.TruePixelEngine;
+  assert.ok(Worlds, 'TruePixelWorlds deve existir');
+
+  // 1. Inicia Fase Especial da Floresta pelo Nó 10
+  Worlds.startByCampaignNode(10);
+  Worlds.running = false;
+  E.DialogueBox.close();
+  E.TutorialModal.close();
+
+  assert.equal(Worlds.worldKey, 'forest');
+  assert.equal(Worlds.currentLevel, 5, 'Nó 10 deve carregar a Fase 5 (Fase Especial da Floresta)');
+  assert.equal(Worlds.phase, 'forest_ninja_vignette', 'Deve abrir na vinheta preparatória da mecânica');
+  assert.ok(Worlds.forestNinja, 'forestNinja deve estar inicializado');
+
+  const fn = Worlds.forestNinja;
+  assert.equal(fn.vignetteCard, 1, 'Card 1 deve ser a apresentação/vídeo explicativo');
+  assert.equal(fn.currentStage, 1);
+  assert.equal(fn.totalStages, 4, 'Devem existir 4 etapas');
+  assert.equal(fn.stageDuration, 30.0, 'Cada etapa deve ter em torno de 30 segundos');
+  assert.equal(fn.maxStrikes, 3, 'Tolerância máxima de 3 cortes em cristais sombrios');
+
+  // 2. Card 1 (Vídeo demonstrativo): avança o tempo de demonstração sem erros
+  Worlds.update(0.2);
+  assert.ok(fn.vignettePracticeTime > 0, 'Tempo de animação do vídeo deve avançar');
+
+  // Clica no botão "Praticar Corte >" (x: 240, y: 155) para avançar para o Card 2
+  const card1BtnClicked = Worlds.handleForestNinjaVignetteClick(240, 155);
+  assert.equal(card1BtnClicked, true, 'Clique em Praticar Corte deve ser aceito');
+  assert.equal(fn.vignetteCard, 2, 'Deve avançar para Card 2 (Treino Livre)');
+
+  // 3. Card 2 (Oportunidade de testar / Treino Livre):
+  Worlds.spawnForestNinjaWave(true);
+  assert.ok(fn.practiceCrystals.length >= 1, 'Treino deve ter cristais no ar');
+
+  // Pratica corte de um cristal puro
+  const testPure = fn.practiceCrystals.find(c => !c.shadow);
+  assert.ok(testPure, 'Deve haver cristal puro no treino');
+  const sliceRes = Worlds.sliceForestCrystal(testPure, true);
+  assert.equal(sliceRes, true, 'Corte de cristal puro no treino deve ter sucesso');
+  assert.equal(fn.practiceHalves.length, 2, 'Cristal puro cortado deve se dividir em 2 metades');
+
+  // Pratica combo cortando outro cristal no mesmo golpe
+  const testPure2 = { x: 160, y: 80, vx: 0, vy: 0, rot: 0, vrot: 0, type: 'emerald', shadow: false, radius: 13, value: 2, sliced: false };
+  Worlds.sliceForestCrystal(testPure2, true);
+  assert.equal(fn.activeComboBanner?.text, 'COMBO X2!', 'Deve exibir COMBO X2! ao cortar 2 cristais');
+
+  // Botão "< Vídeo" volta para Card 1 e "Praticar Corte >" retorna para Card 2
+  Worlds.handleForestNinjaVignetteClick(50, 155);
+  assert.equal(fn.vignetteCard, 1);
+  Worlds.handleForestNinjaVignetteClick(240, 155);
+  assert.equal(fn.vignetteCard, 2);
+
+  // Iniciar Desafio ao vivo a partir do Card 2 (botão "Iniciar Desafio! ⚔" em x: 240, y: 155)
+  Worlds.handleForestNinjaVignetteClick(240, 155);
+  assert.equal(Worlds.phase, 'forest_ninja_game', 'Deve entrar no jogo oficial de corte');
+  assert.equal(fn.currentStage, 1, 'Inicia na Etapa 1');
+  assert.equal(fn.stageTimeRemaining, 30.0, 'Tempo inicial deve ser 30 segundos');
+  assert.equal(fn.strikes, 0);
+
+  // ============================================================================
+  // 4. Etapa 1: Focada na mecânica normal de cortar (APENAS cristais puros)
+  // ============================================================================
+  Worlds.spawnForestNinjaWave(false);
+  assert.ok(fn.flyingCrystals.length >= 1, 'Devem surgir cristais no ar');
+  assert.ok(fn.flyingCrystals.every(c => !c.shadow), 'Etapa 1 NÃO deve conter cristais sombrios');
+
+  // Validação física: nenhum cristal ultrapassa o topo da tela
+  for (const c of fn.flyingCrystals) {
+    const apexH = c.y - (c.vy * c.vy) / (2 * 135);
+    assert.ok(apexH >= 20, 'Cristal arremessado NUNCA deve ultrapassar o topo da tela');
+  }
+
+  // Corta 3 cristais em sequência num mesmo golpe para testar combos
+  fn.strokePureCuts = 0;
+  fn.strokeCrystals = [];
+  const c1 = { x: 100, y: 80, vx: 10, vy: -50, rot: 0, vrot: 0, type: 'white', shadow: false, radius: 13, value: 2, sliced: false };
+  const c2 = { x: 140, y: 70, vx: 5, vy: -60, rot: 0, vrot: 0, type: 'emerald', shadow: false, radius: 13, value: 2, sliced: false };
+  const c3 = { x: 180, y: 65, vx: -5, vy: -60, rot: 0, vrot: 0, type: 'citrine', shadow: false, radius: 13, value: 2, sliced: false };
+
+  Worlds.sliceForestCrystal(c1, false);
+  assert.equal(fn.pureCuts, 1);
+  assert.equal(fn.activeComboBanner, null, '1 corte não ativa combo');
+
+  Worlds.sliceForestCrystal(c2, false);
+  assert.equal(fn.pureCuts, 2);
+  assert.equal(fn.activeComboBanner?.text, 'COMBO X2!', '2 cortes devem exibir COMBO X2!');
+
+  Worlds.sliceForestCrystal(c3, false);
+  assert.equal(fn.pureCuts, 3);
+  assert.equal(fn.activeComboBanner?.text, 'COMBO X3!', '3 cortes devem exibir COMBO X3!');
+  assert.equal(fn.maxCombo, 3);
+
+  // Avança o tempo da Etapa 1 até os 30s se esgotarem -> avança para Etapa 2
+  fn.stageTimeRemaining = 0.1;
+  Worlds.update(0.2);
+  assert.equal(fn.currentStage, 2, 'Ao findar 30s da Etapa 1, deve avançar para Etapa 2');
+  assert.equal(fn.stageTimeRemaining, 30.0, 'Etapa 2 reinicia o cronômetro em 30 segundos');
+  assert.equal(fn.strikes, 0);
+
+  // ============================================================================
+  // 5. Etapa 2: Introduz cristais sombrios (não podem ser cortados até 3 vezes)
+  // ============================================================================
+  Worlds.spawnForestNinjaWave(false);
+  assert.ok(fn.flyingCrystals.some(c => c.shadow), 'Etapa 2 DEVE conter cristais sombrios');
+
+  // Simula cortes em cristais sombrios
+  const shadow1 = { x: 120, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
+  Worlds.sliceForestCrystal(shadow1, false);
+  assert.equal(fn.strikes, 1, '1º corte em sombra resulta em 1 strike');
+  assert.equal(fn.currentStage, 2, 'Etapa 2 não reinicia com 1 strike');
+
+  const shadow2 = { x: 150, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
+  Worlds.sliceForestCrystal(shadow2, false);
+  assert.equal(fn.strikes, 2, '2º corte em sombra resulta em 2 strikes');
+
+  // 3º corte em cristal sombrio REINICIA A ETAPA 2!
+  const shadow3 = { x: 180, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
+  Worlds.sliceForestCrystal(shadow3, false);
+  assert.equal(fn.strikes, 0, 'Após o 3º corte, strikes são zerados no reinício da etapa');
+  assert.equal(fn.stageTimeRemaining, 30.0, 'Tempo da Etapa 2 é restaurado para 30 segundos');
+  assert.equal(fn.currentStage, 2, 'Continua na Etapa 2 reiniciada');
+  assert.ok(fn.floatingBanner?.text.includes('3 Sombras cortadas'), 'Deve exibir aviso de reinício da etapa');
+
+  // Avança Etapa 2 com sucesso após os 30s
+  fn.stageTimeRemaining = 0.1;
+  Worlds.update(0.2);
+  assert.equal(fn.currentStage, 3, 'Deve avançar para Etapa 3');
+
+  // ============================================================================
+  // 6. Etapa 3 e Etapa 4: Adição de mais cristais sombrios a serem evitados
+  // ============================================================================
+  assert.equal(fn.currentStage, 3);
+  assert.equal(fn.stageTimeRemaining, 30.0);
+  Worlds.spawnForestNinjaWave(false);
+  const stage3Shadows = fn.flyingCrystals.filter(c => c.shadow).length;
+  assert.ok(stage3Shadows >= 1, 'Etapa 3 contém múltiplos cristais sombrios');
+
+  // Avança Etapa 3 após os 30s
+  fn.stageTimeRemaining = 0.1;
+  Worlds.update(0.2);
+  assert.equal(fn.currentStage, 4, 'Deve avançar para Etapa 4');
+  assert.equal(fn.stageTimeRemaining, 30.0);
+
+  // Etapa 4 com densidade máxima de sombras
+  Worlds.spawnForestNinjaWave(false);
+  const stage4Shadows = fn.flyingCrystals.filter(c => c.shadow).length;
+  assert.ok(stage4Shadows >= 2, 'Etapa 4 contém densidade elevada de cristais sombrios');
+
+  // ============================================================================
+  // 7. Conclusão da Etapa 4 -> Vitória da Fase Especial e Libertação de Araci
+  // ============================================================================
+  fn.stageTimeRemaining = 0.1;
+  Worlds.update(0.2);
+  assert.equal(Worlds.phase, 'post_musical_dlg', 'Conclusão da Etapa 4 deve abrir diálogo final');
+  assert.equal(E.DialogueBox.sockets.forest, true, 'Esmeralda Primordial da Floresta deve estar acesa');
+  assert.equal(E.DialogueBox.isOpen, true, 'Diálogo de Araci deve estar aberto');
+
+  // Avança diálogo até celebração final
+  while (E.DialogueBox.isOpen) {
+    E.DialogueBox.advance();
+  }
+  assert.equal(Worlds.phase, 'world_celebrate_complete', 'Deve entrar na celebração final do Mundo da Floresta');
+
+  // Renderiza tela em True Pixel Art sem erros
+  Worlds.render();
 });
 
 

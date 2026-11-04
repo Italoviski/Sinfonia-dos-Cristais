@@ -348,6 +348,33 @@
    noiseBurst(t, 0.18, 950, 'bandpass', 1.1, 0.11, 380);
    tone(293.66, t, 0.14, 'triangle', 0.08, 220);
   },
+
+  // 7. CORTE CRISTALINO ('FRUIT NINJA' DA FLORESTA) E COMBOS
+  crystalSlice() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.07, 5200, 'highpass', 2.2, 0.16, 2600);
+   tone(880, t, 0.11, 'triangle', 0.15, 1760);
+   tone(1320, t + 0.015, 0.08, 'sine', 0.12, 2640);
+  },
+  comboChime(count = 2) {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   const mult = Math.min(2.2, 1 + (count - 2) * 0.22);
+   const base = 523.25 * mult;
+   const notes = [base, base * 1.25, base * 1.5, base * 2.0];
+   notes.slice(0, Math.min(4, count + 1)).forEach((f, i) => {
+    tone(f, t + i * 0.038, 0.20, 'triangle', 0.14, f * 1.04);
+    tone(f * 2, t + i * 0.038 + 0.008, 0.11, 'sine', 0.07);
+   });
+  },
+  shadowStrike() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.22, 850, 'bandpass', 1.8, 0.22, 160);
+   tone(110, t, 0.24, 'sawtooth', 0.18, 48);
+   tone(73.42, t + 0.03, 0.28, 'square', 0.15, 36);
+  },
   playRiverNote(noteIdx = 0) {
    if (!enabled || !ensure()) return;
    const freqs = [523.25, 587.33, 659.25, 783.99, 880.00];

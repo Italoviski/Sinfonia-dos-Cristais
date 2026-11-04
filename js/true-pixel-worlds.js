@@ -136,6 +136,9 @@
     }),
     emerald_core: buildHiBitWorldGem('quartz', {
       W: '#ecffea', H: '#b2f09e', L: '#7ec456', M: '#4b943b', D: '#2c6324', K: '#183b14'
+    }),
+    shadow_bomb: buildHiBitWorldGem('quartz', {
+      W: '#6d2e82', H: '#451859', L: '#2c0c3b', M: '#1e0529', D: '#12021c', K: '#0a0010'
     })
   };
 
@@ -1458,7 +1461,8 @@
         1: { ids: [6], next: 7 },
         2: { ids: [6, 7], next: 8 },
         3: { ids: [6, 7, 8], next: 9 },
-        4: { ids: [6, 7, 8, 9, 10], next: 11 }
+        4: { ids: [6, 7, 8, 9], next: 10 },
+        5: { ids: [6, 7, 8, 9, 10], next: 11 }
       },
       introDialogues: {
         1: [
@@ -1470,6 +1474,11 @@
           { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Olhe no alto da copa! Outro cristal gigante envolto por raízes!' },
           { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A fumaça me prendeu aqui dentro! Harmonizem os cristais para libertar a mata!' },
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Vamos juntos! Já sabemos combinar luz, Citrino, Esmeralda e Fogo!' }
+        ],
+        5: [
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'As cinzas e raízes sombrias invadiram o coração da floresta!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Use o corte cristalino para libertar a energia pura da terra!' },
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Corte apenas os cristais puros no ar. Evite os sombrios: 3 erros reiniciam a etapa!' }
         ]
       },
       postDialogues: {
@@ -1483,13 +1492,17 @@
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O coração da Floresta está logo à frente! Vamos libertar sua Guardiã!' }
         ],
         4: [
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Quase lá! O Altar da Floresta está logo à nossa frente!' }
+        ],
+        5: [
           { speaker: 'Araci', portrait: 'portrait_araci', text: 'Livre! Eu sou Araci, Guardiã da Floresta, e a Esmeralda voltou a pulsar!' },
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Mais uma gema primordial acesa! Agora precisamos seguir até o Rio das Águas Claras!' }
         ]
       },
       tutorialsByLevel: {
         1: 'FOREST_EMERALD',
-        2: 'FOREST_CITRINE'
+        2: 'FOREST_CITRINE',
+        5: 'FOREST_SLICING_NINJA'
       },
       musicalCaptions: [
         [0.5, 8.0, 'Era uma mata inteira a cantar, onde cada folha sabia dançar...'],
@@ -1611,6 +1624,32 @@
               { id: 'fo4_3_sc', type: 'citrine', value: 4, shadow: true, x: 204, y: 78, inEquation: 'shadow' },
               { id: 'fo4_3_sq', type: 'white', value: 2, shadow: true, x: 222, y: 78, inEquation: 'shadow' },
               { id: 'fo4_3_sl', type: 'citrine', value: 2, shadow: true, x: 216, y: 116 }
+            ]
+          }
+        ],
+        5: [
+          {
+            pieces: [
+              { id: 'fo5_ninja_stage1_emerald', type: 'emerald', value: 2, shadow: false, x: 120, y: 104 },
+              { id: 'fo5_ninja_stage1_quartz', type: 'white', value: 2, shadow: false, x: 196, y: 104 }
+            ]
+          },
+          {
+            pieces: [
+              { id: 'fo5_ninja_stage2_emerald', type: 'emerald', value: 2, shadow: false, x: 120, y: 104 },
+              { id: 'fo5_ninja_stage2_quartz', type: 'white', value: 2, shadow: false, x: 196, y: 104 }
+            ]
+          },
+          {
+            pieces: [
+              { id: 'fo5_ninja_stage3_emerald', type: 'emerald', value: 2, shadow: false, x: 120, y: 104 },
+              { id: 'fo5_ninja_stage3_quartz', type: 'white', value: 2, shadow: false, x: 196, y: 104 }
+            ]
+          },
+          {
+            pieces: [
+              { id: 'fo5_ninja_stage4_emerald', type: 'emerald', value: 2, shadow: false, x: 120, y: 104 },
+              { id: 'fo5_ninja_stage4_quartz', type: 'white', value: 2, shadow: false, x: 196, y: 104 }
             ]
           }
         ]
@@ -2378,8 +2417,19 @@
           if (inMusical) {
             if (muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
               try { this.musicAudio.pause(); } catch (_) {}
-            } else if (this.musicAudio.paused && this.musicalTime < 56.0) {
+            } else if (this.musicAudio.paused && this.musicalTime < 65.0) {
               try { this.musicAudio.play().catch(() => {}); } catch (_) {}
+            }
+          }
+        }
+        if (this.regularAudio) {
+          this.regularAudio.muted = !!muted || vol <= 0;
+          this.regularAudio.volume = vol;
+          if (!inMusical) {
+            if (muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
+              try { this.regularAudio.pause(); } catch (_) {}
+            } else if (this.regularAudio.paused && this.running && this.phase !== 'map_active') {
+              try { this.regularAudio.play().catch(() => {}); } catch (_) {}
             }
           }
         }
@@ -2396,7 +2446,7 @@
     resolveNodeToWorldLevel(nodeId) {
       const id = Number(nodeId) || 6;
       if (id >= 6 && id <= 10) {
-        return { worldKey: 'forest', levelNum: id >= 9 ? 4 : (id - 5), nodeId: id };
+        return { worldKey: 'forest', levelNum: id - 5, nodeId: id };
       }
       if (id >= 11 && id <= 15) {
         return { worldKey: 'river', levelNum: id - 10, nodeId: id };
@@ -2419,7 +2469,7 @@
     startWorldLevel(worldKey, levelNum = 1, nodeId = null) {
       this.worldKey = WORLD_SPECS[worldKey] ? worldKey : 'forest';
       const spec = this.getSpec();
-      const maxLvl = this.worldKey === 'sanctuary' ? 1 : ((this.worldKey === 'caatinga' || this.worldKey === 'river') ? 5 : 4);
+      const maxLvl = this.worldKey === 'sanctuary' ? 1 : 5;
       this.currentLevel = clamp(levelNum, 1, maxLvl);
       const stepList = spec.levels[this.currentLevel] || spec.levels[1];
       this.totalSteps = stepList.length;
@@ -2465,6 +2515,9 @@
       this.guardianActor.visible = false;
 
       IrisTransition.start('in', 44, 126, 0.65);
+      if (this.currentLevel < maxLvl) {
+        this.playRegularBgm();
+      }
 
       if (!this.running) {
         this.running = true;
@@ -2503,8 +2556,15 @@
       this.stopMusicAudio();
       this.shellGame = null;
       this.riverMelody = null;
+      this.forestNinja = null;
       this.fractionPlatform = null;
       this.selectedPiece = null;
+
+      if (this.worldKey === 'forest' && this.currentLevel === 5) {
+        this.startForestNinjaGame();
+        IrisTransition.start('in', 160, 90, 0.45);
+        return;
+      }
       this.floatingBanners = [];
       this.camPanY = 0;
       this.currentStep = 1;
@@ -2608,6 +2668,9 @@
       }
       if (this.worldKey === 'river' && this.currentLevel === 5) {
         this.startRiverMelodyGame();
+      }
+      if (this.worldKey === 'forest' && this.currentLevel === 5) {
+        this.startForestNinjaGame();
       }
 
       if (this.pureEquation) this.layoutEquationPieces(this.pureEquation, 'pure');
@@ -4609,6 +4672,1024 @@
       });
     },
 
+    // ==========================================================================
+    // MINIGAME DA FASE 5 DA FLORESTA: CORTE CRISTALINO ('FRUIT NINJA' EM 4 ETAPAS)
+    // ==========================================================================
+    startForestNinjaGame() {
+      const assistEl = typeof document !== 'undefined' ? document.getElementById('assistToggle') : null;
+      const calmDefault = Boolean(assistEl?.checked || global.CrystalApp?.state?.settings?.assist);
+
+      this.forestNinja = {
+        phase: 'vignette',
+        vignetteCard: 1, // 1: Vídeo explicativo, 2: Treino livre
+        vignettePracticeTime: 0,
+        calmMode: calmDefault,
+
+        currentStage: 1, // 1 a 4
+        totalStages: 4,
+        stageDuration: 30.0, // ~30 segundos por etapa
+        stageTimeRemaining: 30.0,
+
+        strikes: 0,
+        maxStrikes: 3,
+
+        score: 0,
+        pureCuts: 0,
+        maxCombo: 0,
+
+        spawnTimer: 0.8,
+
+        flyingCrystals: [],
+        halvedCrystals: [],
+        bladeTrail: [],
+
+        isSlicing: false,
+        lastStrokeX: 0,
+        lastStrokeY: 0,
+        strokePureCuts: 0,
+        strokeCrystals: [],
+
+        activeComboBanner: null, // { text, x, y, scale, alpha, timer, duration, color }
+        floatingBanner: null,    // { text, x, y, color, timer }
+        shakeTimer: 0,
+
+        // Treino do Card 2
+        practiceCrystals: [],
+        practiceHalves: [],
+        practiceTrail: [],
+        practiceSpawnTimer: 0.6,
+        practiceBanner: null,
+        practiceStrokeCuts: 0,
+        practiceStrokeCrystals: []
+      };
+
+      if (typeof window !== 'undefined') {
+        window.ForestCrystalNinja = this.forestNinja;
+      }
+
+      this.pieces = [
+        { id: 'fo5_ninja_target_emerald', type: 'emerald', value: 2, shadow: false, x: 120, y: 104 },
+        { id: 'fo5_ninja_target_quartz', type: 'white', value: 2, shadow: false, x: 196, y: 104 }
+      ];
+
+      this.phase = 'forest_ninja_vignette';
+      this.phaseTime = 0;
+    },
+
+    startForestNinjaStage(stageNum) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      fn.currentStage = clamp(stageNum, 1, 4);
+      this.currentStep = fn.currentStage;
+      this.totalSteps = fn.totalStages;
+      fn.stageTimeRemaining = fn.stageDuration;
+      fn.strikes = 0;
+      fn.flyingCrystals = [];
+      fn.halvedCrystals = [];
+      fn.bladeTrail = [];
+      fn.isSlicing = false;
+      fn.strokePureCuts = 0;
+      fn.strokeCrystals = [];
+      fn.activeComboBanner = null;
+      fn.spawnTimer = 0.6;
+      this.phase = 'forest_ninja_game';
+
+      const stageTitles = {
+        1: 'ETAPA 1: CORTE CRISTALINO',
+        2: 'ETAPA 2: CRISTAIS SOMBRIOS!',
+        3: 'ETAPA 3: SOMBRAS EM ENXAME',
+        4: 'ETAPA 4: O CLÍMAX DA MATA!'
+      };
+      const stageColors = {
+        1: '#2ecc71',
+        2: '#e74c3c',
+        3: '#9b59b6',
+        4: '#f39c12'
+      };
+      fn.floatingBanner = {
+        text: stageTitles[fn.currentStage] || 'NOVA ETAPA!',
+        color: stageColors[fn.currentStage] || '#ffffff',
+        x: 160,
+        y: 65,
+        timer: 2.2
+      };
+      GameHUD.playSfx('start');
+    },
+
+    restartForestNinjaStage() {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      fn.strikes = 0;
+      fn.stageTimeRemaining = fn.stageDuration;
+      fn.flyingCrystals = [];
+      fn.halvedCrystals = [];
+      fn.bladeTrail = [];
+      fn.strokePureCuts = 0;
+      fn.strokeCrystals = [];
+      fn.activeComboBanner = null;
+      fn.bladeTrail = [];
+      fn.isSlicing = false;
+      fn.strokePureCuts = 0;
+      fn.activeComboBanner = null;
+      fn.floatingBanner = {
+        text: `3 Sombras cortadas! Reiniciando Etapa ${fn.currentStage}...`,
+        color: '#e74c3c',
+        x: 160,
+        y: 65,
+        timer: 2.6
+      };
+      this.clearTrembleStates?.();
+      GameHUD.playSfx('error');
+    },
+
+    spawnForestNinjaWave(isPractice = false) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      const g = 135; // px/s² gravidade
+      const speedMult = fn.calmMode ? 0.88 : 1.0;
+
+      const makeCrystal = (isShadow, preferredType = null) => {
+        const types = ['emerald', 'white', 'citrine', 'aqua', 'rose'];
+        const type = isShadow ? 'shadow_bomb' : (preferredType || types[Math.floor(Math.random() * types.length)]);
+        const startX = R(55 + Math.random() * 210);
+        const startY = 186; // Começa imediatamente abaixo da tela (180px)
+
+        // Vértice do salto rigorosamente entre 32px e 64px para NUNCA cruzar o topo
+        const targetApexY = R(32 + Math.random() * 32);
+        const deltaH = startY - targetApexY; // 122 a 154 px
+        const vy = -Math.sqrt(2 * g * deltaH) * speedMult;
+
+        // Velocidade horizontal direcionada suavemente ao centro da tela
+        let vx = 0;
+        if (startX < 120) {
+          vx = (15 + Math.random() * 25) * speedMult;
+        } else if (startX > 200) {
+          vx = (-15 - Math.random() * 25) * speedMult;
+        } else {
+          vx = (-20 + Math.random() * 40) * speedMult;
+        }
+
+        return {
+          id: 'c_' + Math.random().toString(36).slice(2, 8),
+          type,
+          shadow: Boolean(isShadow),
+          x: startX,
+          y: startY,
+          vx,
+          vy,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (-2.5 + Math.random() * 5.0),
+          radius: 13,
+          value: isShadow ? 1 : (1 + Math.floor(Math.random() * 4)),
+          sliced: false
+        };
+      };
+
+      if (isPractice) {
+        // Modo treino: lança 1 ou 2 cristais puros e ocasionalmente 1 sombra de teste inofensiva
+        const count = 1 + (Math.random() < 0.65 ? 1 : 0);
+        for (let i = 0; i < count; i++) {
+          fn.practiceCrystals.push(makeCrystal(false));
+        }
+        if (Math.random() < 0.28 && fn.practiceCrystals.length < 3) {
+          fn.practiceCrystals.push(makeCrystal(true));
+        }
+        return;
+      }
+
+      // 4 Etapas do jogo oficial:
+      const stage = fn.currentStage;
+      if (stage === 1) {
+        // Etapa 1: APENAS cristais puros (focada na mecânica normal de cortar e combos)
+        const count = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+          fn.flyingCrystals.push(makeCrystal(false));
+        }
+      } else if (stage === 2) {
+        // Etapa 2: Introduz cristais sombrios que não podem ser cortados até 3 vezes
+        const pureCount = 2 + (Math.random() < 0.5 ? 1 : 0);
+        for (let i = 0; i < pureCount; i++) {
+          fn.flyingCrystals.push(makeCrystal(false));
+        }
+        fn.flyingCrystals.push(makeCrystal(true));
+      } else if (stage === 3) {
+        // Etapa 3: Adição de mais cristais sombrios a serem evitados durante os cortes
+        const pureCount = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < pureCount; i++) {
+          fn.flyingCrystals.push(makeCrystal(false));
+        }
+        const shadowCount = 1 + (Math.random() < 0.7 ? 1 : 0);
+        for (let s = 0; s < shadowCount; s++) {
+          fn.flyingCrystals.push(makeCrystal(true));
+        }
+      } else if (stage === 4) {
+        // Etapa 4: Adição de mais cristais sombrios em trajetórias cruzadas densas
+        const pureCount = 3 + (Math.random() < 0.5 ? 1 : 0);
+        for (let i = 0; i < pureCount; i++) {
+          fn.flyingCrystals.push(makeCrystal(false));
+        }
+        const shadowCount = 2 + (Math.random() < 0.4 ? 1 : 0);
+        for (let s = 0; s < shadowCount; s++) {
+          fn.flyingCrystals.push(makeCrystal(true));
+        }
+      }
+    },
+
+    sliceForestCrystal(crystal, isPractice = false) {
+      const fn = this.forestNinja;
+      if (!fn || crystal.sliced) return false;
+      crystal.sliced = true;
+
+      if (crystal.shadow) {
+        // Cristais sombrios: NÃO podem ser cortados!
+        if (isPractice) {
+          this.spawnShatter(crystal.x, crystal.y, 'rock', 12);
+          GameHUD.playSfx('error');
+          fn.practiceBanner = {
+            text: 'CUIDADO: Sombra evitada no treino!',
+            color: '#e74c3c',
+            timer: 1.5,
+            x: 160,
+            y: 70
+          };
+          return false;
+        }
+
+        fn.strikes++;
+        fn.shakeTimer = 0.35;
+        this.spawnShatter(crystal.x, crystal.y, 'rock', 14);
+        if (global.CrystalAudio?.shadowStrike) {
+          global.CrystalAudio.shadowStrike();
+        } else {
+          GameHUD.playSfx('error');
+        }
+
+        if (fn.strikes < fn.maxStrikes) {
+          fn.floatingBanner = {
+            text: `CRISTAL SOMBRIO! (${fn.strikes}/3)`,
+            color: '#e74c3c',
+            x: 160,
+            y: 65,
+            timer: 1.6
+          };
+        } else {
+          // Atingiu 3 cortes em cristais sombrios: reinicia a etapa!
+          this.restartForestNinjaStage();
+        }
+        return false;
+      }
+
+      // Cristais puros: cortáveis! Divide em duas metades com física de separação
+      const halfList = isPractice ? fn.practiceHalves : fn.halvedCrystals;
+      const sprType = crystal.type || 'emerald';
+
+      halfList.push({
+        x: crystal.x - 4,
+        y: crystal.y,
+        vx: crystal.vx - 32,
+        vy: crystal.vy - 18,
+        rot: crystal.rot,
+        vrot: -5.5,
+        type: sprType,
+        side: 'left',
+        alpha: 1.0
+      });
+      halfList.push({
+        x: crystal.x + 4,
+        y: crystal.y,
+        vx: crystal.vx + 32,
+        vy: crystal.vy - 18,
+        rot: crystal.rot,
+        vrot: 5.5,
+        type: sprType,
+        side: 'right',
+        alpha: 1.0
+      });
+
+      this.spawnShatter(crystal.x, crystal.y, sprType === 'shadow_bomb' ? 'pure' : sprType, 8);
+      if (global.CrystalAudio?.crystalSlice) {
+        global.CrystalAudio.crystalSlice();
+      } else {
+        GameHUD.playSfx('reward');
+      }
+
+      if (isPractice) {
+        fn.practiceStrokeCuts = (fn.practiceStrokeCuts || 0) + 1;
+        fn.practiceStrokeCrystals.push(crystal);
+        if (fn.practiceStrokeCuts >= 2) {
+          const comboTxt = `COMBO X${fn.practiceStrokeCuts}!`;
+          fn.activeComboBanner = {
+            text: comboTxt,
+            x: crystal.x,
+            y: crystal.y - 12,
+            scale: 1.4,
+            alpha: 1.0,
+            timer: 1.3,
+            count: fn.practiceStrokeCuts
+          };
+          if (global.CrystalAudio?.comboChime) global.CrystalAudio.comboChime(fn.practiceStrokeCuts);
+        }
+        return true;
+      }
+
+      fn.pureCuts++;
+      fn.score += 10;
+      fn.strokePureCuts++;
+      fn.strokeCrystals.push(crystal);
+
+      // Mecânica de combo caso corte 2, 3 ou 4 cristais de uma vez
+      if (fn.strokePureCuts >= 2) {
+        fn.maxCombo = Math.max(fn.maxCombo, fn.strokePureCuts);
+        const comboTxt = `COMBO X${fn.strokePureCuts}!`;
+        const avgX = fn.strokeCrystals.reduce((acc, c) => acc + c.x, 0) / fn.strokeCrystals.length;
+        const avgY = fn.strokeCrystals.reduce((acc, c) => acc + c.y, 0) / fn.strokeCrystals.length;
+
+        fn.activeComboBanner = {
+          text: comboTxt,
+          x: avgX,
+          y: avgY - 14,
+          scale: 1.5,
+          alpha: 1.0,
+          timer: 1.4,
+          count: fn.strokePureCuts
+        };
+        if (global.CrystalAudio?.comboChime) {
+          global.CrystalAudio.comboChime(fn.strokePureCuts);
+        } else {
+          GameHUD.playSfx('reward');
+        }
+      }
+      return true;
+    },
+
+    updateForestNinjaGame(dt) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      const g = 135;
+
+      // 1. Vinheta (Demonstração no Card 1 ou Treino no Card 2)
+      if (this.phase === 'forest_ninja_vignette') {
+        if (fn.vignetteCard === 1) {
+          fn.vignettePracticeTime += dt;
+        } else if (fn.vignetteCard === 2) {
+          fn.vignettePracticeTime += dt;
+          fn.practiceSpawnTimer -= dt;
+          if (fn.practiceSpawnTimer <= 0) {
+            this.spawnForestNinjaWave(true);
+            fn.practiceSpawnTimer = 1.6 + Math.random() * 0.8;
+          }
+
+          // Atualiza cristais do modo treino
+          for (let i = fn.practiceCrystals.length - 1; i >= 0; i--) {
+            const c = fn.practiceCrystals[i];
+            c.x += c.vx * dt;
+            c.y += c.vy * dt;
+            c.vy += g * dt;
+            c.rot += c.vrot * dt;
+            if (c.y > 195 && c.vy > 0) {
+              fn.practiceCrystals.splice(i, 1);
+            }
+          }
+          // Atualiza metades cortadas do treino
+          for (let i = fn.practiceHalves.length - 1; i >= 0; i--) {
+            const h = fn.practiceHalves[i];
+            h.x += h.vx * dt;
+            h.y += h.vy * dt;
+            h.vy += g * 1.2 * dt;
+            h.rot += h.vrot * dt;
+            h.alpha -= dt * 0.5;
+            if (h.y > 200 || h.alpha <= 0) {
+              fn.practiceHalves.splice(i, 1);
+            }
+          }
+          // Atualiza rastro de corte do treino
+          const now = fn.vignettePracticeTime;
+          fn.practiceTrail = fn.practiceTrail.filter((p) => now - p.time < 0.16);
+          if (fn.activeComboBanner) {
+            fn.activeComboBanner.timer -= dt;
+            fn.activeComboBanner.y -= 12 * dt;
+            if (fn.activeComboBanner.timer <= 0) fn.activeComboBanner = null;
+          }
+          if (fn.practiceBanner) {
+            fn.practiceBanner.timer -= dt;
+            if (fn.practiceBanner.timer <= 0) fn.practiceBanner = null;
+          }
+        }
+        return;
+      }
+
+      // 2. Jogo ao vivo (Etapas 1..4)
+      if (this.phase !== 'forest_ninja_game') return;
+
+      if (fn.shakeTimer > 0) fn.shakeTimer = Math.max(0, fn.shakeTimer - dt);
+
+      // Atualiza banner de combo
+      if (fn.activeComboBanner) {
+        fn.activeComboBanner.timer -= dt;
+        fn.activeComboBanner.y -= 10 * dt;
+        if (fn.activeComboBanner.timer <= 0) fn.activeComboBanner = null;
+      }
+      if (fn.floatingBanner) {
+        fn.floatingBanner.timer -= dt;
+        if (fn.floatingBanner.timer <= 0) fn.floatingBanner = null;
+      }
+
+      // Rastro de corte
+      const curTime = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+      fn.bladeTrail = fn.bladeTrail.filter((pt) => curTime - pt.time < 0.18);
+
+      // Contagem regressiva da etapa (~30 segundos)
+      fn.stageTimeRemaining -= dt;
+      if (fn.stageTimeRemaining <= 0) {
+        fn.stageTimeRemaining = 0;
+        if (fn.currentStage < fn.totalStages) {
+          GameHUD.playSfx('reward');
+          this.startForestNinjaStage(fn.currentStage + 1);
+        } else {
+          this.finishForestNinjaVictory();
+        }
+        return;
+      }
+
+      // Spawner de ondas
+      fn.spawnTimer -= dt;
+      if (fn.spawnTimer <= 0) {
+        this.spawnForestNinjaWave(false);
+        const intervalBase = fn.currentStage === 1 ? 1.8 : (fn.currentStage === 2 ? 1.7 : 1.5);
+        fn.spawnTimer = intervalBase + Math.random() * 0.7;
+      }
+
+      // Movimento dos cristais no ar com gravidade
+      for (let i = fn.flyingCrystals.length - 1; i >= 0; i--) {
+        const c = fn.flyingCrystals[i];
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        c.vy += g * dt;
+        c.rot += c.vrot * dt;
+
+        if (c.y > 195 && c.vy > 0) {
+          fn.flyingCrystals.splice(i, 1);
+        }
+      }
+
+      // Movimento das metades cortadas
+      for (let i = fn.halvedCrystals.length - 1; i >= 0; i--) {
+        const h = fn.halvedCrystals[i];
+        h.x += h.vx * dt;
+        h.y += h.vy * dt;
+        h.vy += g * 1.2 * dt;
+        h.rot += h.vrot * dt;
+        h.alpha -= dt * 0.55;
+        if (h.y > 200 || h.alpha <= 0) {
+          fn.halvedCrystals.splice(i, 1);
+        }
+      }
+    },
+
+    handleForestNinjaVignetteClick(x, y) {
+      const fn = this.forestNinja;
+      if (!fn || this.phase !== 'forest_ninja_vignette') return false;
+      const cx = 24, cy = 18, cw = 272, ch = 152;
+
+      if (fn.vignetteCard === 1) {
+        // Botão "Praticar Corte >" no Card 1
+        const b = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          GameHUD.playSfx('click');
+          fn.vignetteCard = 2;
+          fn.practiceCrystals = [];
+          fn.practiceHalves = [];
+          fn.practiceTrail = [];
+          fn.practiceSpawnTimer = 0.4;
+          return true;
+        }
+      } else if (fn.vignetteCard === 2) {
+        // Botões do Card 2:
+        // 1. "< Vídeo"
+        const bBack = { x: cx + 10, y: cy + ch - 18, w: 72, h: 14 };
+        if (x >= bBack.x && x <= bBack.x + bBack.w && y >= bBack.y && y <= bBack.y + bBack.h) {
+          GameHUD.playSfx('click');
+          fn.vignetteCard = 1;
+          return true;
+        }
+        // 2. "↺ Recomeçar"
+        const bReset = { x: cx + 86, y: cy + ch - 18, w: 76, h: 14 };
+        if (x >= bReset.x && x <= bReset.x + bReset.w && y >= bReset.y && y <= bReset.y + bReset.h) {
+          GameHUD.playSfx('click');
+          fn.practiceCrystals = [];
+          fn.practiceHalves = [];
+          fn.practiceTrail = [];
+          fn.practiceSpawnTimer = 0.4;
+          return true;
+        }
+        // 3. "Iniciar Desafio! ⚔"
+        const bStart = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
+        if (x >= bStart.x && x <= bStart.x + bStart.w && y >= bStart.y && y <= bStart.y + bStart.h) {
+          this.startForestNinjaStage(1);
+          return true;
+        }
+
+        // Toque na arena de treino (para cortar cristais)
+        const arena = { x: cx + 12, y: cy + 30, w: cw - 24, h: 88 };
+        if (x >= arena.x && x <= arena.x + arena.w && y >= arena.y && y <= arena.y + arena.h) {
+          fn.isSlicing = true;
+          fn.lastStrokeX = x;
+          fn.lastStrokeY = y;
+          fn.practiceStrokeCuts = 0;
+          fn.practiceStrokeCrystals = [];
+          const now = fn.vignettePracticeTime;
+          fn.practiceTrail.push({ x, y, time: now });
+
+          for (let i = fn.practiceCrystals.length - 1; i >= 0; i--) {
+            const c = fn.practiceCrystals[i];
+            if (Math.hypot(x - c.x, y - c.y) <= (c.radius + 6)) {
+              this.sliceForestCrystal(c, true);
+              fn.practiceCrystals.splice(i, 1);
+            }
+          }
+          return true;
+        }
+      }
+      return false;
+    },
+
+    handleForestNinjaPointerDown(x, y) {
+      const fn = this.forestNinja;
+      if (!fn || this.phase !== 'forest_ninja_game') return false;
+
+      fn.isSlicing = true;
+      fn.lastStrokeX = x;
+      fn.lastStrokeY = y;
+      fn.strokePureCuts = 0;
+      fn.strokeCrystals = [];
+
+      const curTime = typeof performance !== 'undefined' ? performance.now() / 1000 : 0;
+      fn.bladeTrail.push({ x, y, time: curTime });
+
+      // Verificação de clique direto (suporte acessível / Modo Toque Único)
+      for (let i = fn.flyingCrystals.length - 1; i >= 0; i--) {
+        const c = fn.flyingCrystals[i];
+        if (Math.hypot(x - c.x, y - c.y) <= (c.radius + 6)) {
+          this.sliceForestCrystal(c, false);
+          fn.flyingCrystals.splice(i, 1);
+        }
+      }
+      return true;
+    },
+
+    handleForestNinjaPointerMove(x, y) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+
+      const isPractice = this.phase === 'forest_ninja_vignette' && fn.vignetteCard === 2;
+      if (!isPractice && this.phase !== 'forest_ninja_game') return;
+      if (!fn.isSlicing) return;
+
+      const curTime = isPractice ? fn.vignettePracticeTime : (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
+      const trail = isPractice ? fn.practiceTrail : fn.bladeTrail;
+      trail.push({ x, y, time: curTime });
+
+      const x1 = fn.lastStrokeX;
+      const y1 = fn.lastStrokeY;
+      const x2 = x;
+      const y2 = y;
+      const crystals = isPractice ? fn.practiceCrystals : fn.flyingCrystals;
+
+      const distToSeg = (px, py) => {
+        const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+        if (l2 < 1) return Math.hypot(px - x1, py - y1);
+        const t = Math.max(0, Math.min(1, ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2));
+        const qx = x1 + t * (x2 - x1);
+        const qy = y1 + t * (y2 - y1);
+        return Math.hypot(px - qx, py - qy);
+      };
+
+      for (let i = crystals.length - 1; i >= 0; i--) {
+        const c = crystals[i];
+        if (distToSeg(c.x, c.y) <= (c.radius + 6)) {
+          this.sliceForestCrystal(c, isPractice);
+          crystals.splice(i, 1);
+        }
+      }
+
+      fn.lastStrokeX = x;
+      fn.lastStrokeY = y;
+    },
+
+    handleForestNinjaPointerUp() {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      fn.isSlicing = false;
+      fn.strokePureCuts = 0;
+      fn.strokeCrystals = [];
+      fn.practiceStrokeCuts = 0;
+      fn.practiceStrokeCrystals = [];
+    },
+
+    handleForestNinjaKeyboardSlash() {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      const isPractice = this.phase === 'forest_ninja_vignette' && fn.vignetteCard === 2;
+      const crystals = isPractice ? fn.practiceCrystals : fn.flyingCrystals;
+      if (!crystals.length) return;
+
+      // Corta até 2 cristais puros no ar com golpe de espada cristalina
+      const pures = crystals.filter((c) => !c.shadow && c.y < 160);
+      const targets = pures.slice(0, 2);
+      if (targets.length) {
+        fn.isSlicing = true;
+        fn.strokePureCuts = 0;
+        fn.strokeCrystals = [];
+        targets.forEach((c) => {
+          const idx = crystals.indexOf(c);
+          if (idx !== -1) {
+            this.sliceForestCrystal(c, isPractice);
+            crystals.splice(idx, 1);
+          }
+        });
+        fn.isSlicing = false;
+      }
+    },
+
+    finishForestNinjaVictory() {
+      const spec = this.getSpec();
+      this.obstacleDecay = 1;
+      this.giantCrystalBroken = true;
+      this.waveActive = true;
+      this.waveRadius = 300;
+      this.phase = 'post_musical_dlg';
+      this.phaseTime = 0;
+      this.protag.x = 68;
+      this.protag.state = 'idle';
+      this.ordemCompanion.x = 96;
+      this.ordemCompanion.state = 'idle';
+      this.guardianActor.visible = true;
+      this.guardianActor.x = 152;
+      this.guardianActor.y = 142;
+      this.guardianActor.state = 'idle';
+      this.guardianActor.flipX = true;
+
+      DialogueBox.sockets.forest = true;
+      const lines = (spec.postDialogues && spec.postDialogues[5]) || [];
+      DialogueBox.open(lines, () => {
+        this.phase = 'world_celebrate_complete';
+        this.phaseTime = 0;
+        this.protag.state = 'celebrate';
+        this.ordemCompanion.state = 'celebrate';
+        this.guardianActor.state = 'celebrate';
+      });
+    },
+
+    drawForestNinjaGame(ctx, tq) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+
+      if (this.phase === 'forest_ninja_vignette') {
+        this.drawForestNinjaVignette(ctx, tq);
+        return;
+      }
+
+      ctx.save();
+      if (fn.shakeTimer > 0) {
+        const sMag = fn.shakeTimer * 7;
+        ctx.translate(RH((Math.sin(tq * 50) * sMag)), RH((Math.cos(tq * 50) * sMag)));
+      }
+
+      // 1. Cristais inteiros arremessados no ar
+      for (const c of fn.flyingCrystals) {
+        ctx.save();
+        ctx.translate(RH(c.x), RH(c.y));
+        ctx.rotate(c.rot);
+
+        if (c.shadow) {
+          // Cristal Sombrio (obsidiana com aura violeta sinistra e centelhas)
+          drawRing(ctx, 0, 0, 15, '#7c3aed');
+          const spr = GEM_SPRITES.shadow_bomb || GEM_SPRITES.white_shadow;
+          const gw = spr.width * 0.5, gh = spr.height * 0.5;
+          ctx.drawImage(spr, RH(-gw / 2), RH(-gh / 2), gw, gh);
+          drawStar(ctx, 0, -8, 2, '#c084fc', '#4c1d95');
+        } else {
+          // Cristal Puro (brilhante com facetas e pips de energia)
+          const sprKey = (c.type === 'emerald' ? 'emerald_core' : `${c.type}_pure`);
+          const spr = GEM_SPRITES[sprKey] || GEM_SPRITES.emerald_core;
+          const gw = spr.width * 0.5, gh = spr.height * 0.5;
+          ctx.drawImage(spr, RH(-gw / 2), RH(-gh / 2), gw, gh);
+
+          // Pips luminosos orbitando
+          const pCol = c.type === 'emerald' ? '#8ed46a' : (c.type === 'citrine' ? '#fde047' : '#a5f3fc');
+          for (let p = 0; p < c.value; p++) {
+            const ang = (p / c.value) * Math.PI * 2;
+            P1(ctx, RH(Math.cos(ang) * 9), RH(Math.sin(ang) * 9), pCol);
+          }
+          drawStar(ctx, 0, -6, 2, '#ffffff', pCol);
+        }
+        ctx.restore();
+      }
+
+      // 2. Metades de cristais cortados (efeito de divisão limpa do corte)
+      for (const h of fn.halvedCrystals) {
+        ctx.save();
+        ctx.globalAlpha = clamp(h.alpha, 0, 1);
+        ctx.translate(RH(h.x), RH(h.y));
+        ctx.rotate(h.rot);
+
+        const sprKey = (h.type === 'emerald' ? 'emerald_core' : `${h.type}_pure`);
+        const spr = GEM_SPRITES[sprKey] || GEM_SPRITES.emerald_core;
+        const gw = spr.width * 0.5, gh = spr.height * 0.5;
+        const halfSprW = spr.width * 0.5;
+
+        if (h.side === 'left') {
+          ctx.drawImage(spr, 0, 0, halfSprW, spr.height, RH(-gw / 2), RH(-gh / 2), gw * 0.5, gh);
+        } else {
+          ctx.drawImage(spr, halfSprW, 0, halfSprW, spr.height, 0, RH(-gh / 2), gw * 0.5, gh);
+        }
+        ctx.restore();
+      }
+
+      // 3. Rastro do corte ninja em True Pixel Art
+      if (fn.bladeTrail.length >= 2) {
+        ctx.save();
+        for (let i = 0; i < fn.bladeTrail.length - 1; i++) {
+          const p1 = fn.bladeTrail[i];
+          const p2 = fn.bladeTrail[i + 1];
+          // Núcleo brilhante
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(RH(p1.x), RH(p1.y));
+          ctx.lineTo(RH(p2.x), RH(p2.y));
+          ctx.stroke();
+
+          // Centelhas ao longo da lâmina
+          P1(ctx, RH(p2.x), RH(p2.y), '#6ef58c');
+        }
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      // 4. Barra Superior do Desafio: Etapa / Tempo 30s / Sombras evitadas
+      const barBox = { x: 42, y: 22, w: 236, h: 16 };
+      drawParchmentBox(ctx, barBox.x, barBox.y, barBox.w, barBox.h);
+
+      // Etapa (1 a 4)
+      drawPixelText(ctx, `Etapa ${fn.currentStage}/4`, barBox.x + 8, barBox.y + 4, '#1f2937', null, 56, 8);
+
+      // Tempo de 30 segundos
+      const secLeft = Math.max(0, Math.ceil(fn.stageTimeRemaining));
+      const timeCol = secLeft <= 5 ? '#e11d48' : '#166534';
+      drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 160, barBox.y + 4, timeCol, null, 64, 8);
+
+      // Barra fina de progresso dos 30s
+      const timeFrac = clamp(fn.stageTimeRemaining / fn.stageDuration, 0, 1);
+      ctx.fillStyle = '#14532d';
+      ctx.fillRect(132, barBox.y + 12, R(56 * timeFrac), 2);
+
+      // Indicador de Cristais Sombrios (até 3 cortes tolerados)
+      if (fn.currentStage === 1) {
+        drawPixelText(ctx, `Cortes: ${fn.pureCuts}`, barBox.x + barBox.w - 74, barBox.y + 4, '#1e293b', null, 66, 8, 'right');
+      } else {
+        const sTxt = `Sombras: ${fn.strikes}/3`;
+        const sCol = fn.strikes >= 2 ? '#b91c1c' : '#475569';
+        drawPixelText(ctx, sTxt, barBox.x + barBox.w - 74, barBox.y + 4, sCol, null, 66, 8, 'right');
+      }
+
+      // 5. Banner de COMBO (COMBO X2!, COMBO X3!, COMBO X4!)
+      if (fn.activeComboBanner) {
+        const cb = fn.activeComboBanner;
+        const bw = 92, bh = 18;
+        const bx = R(cb.x - bw / 2), by = R(cb.y - bh / 2);
+        ctx.save();
+        ctx.globalAlpha = clamp(cb.timer / 0.35, 0, 1);
+
+        // Caixa temática de combo
+        ctx.fillStyle = '#064e3b';
+        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = '#ecfdf5';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(bx, by, bw, 1);
+        ctx.fillRect(bx, by + bh - 1, bw, 1);
+
+        // Texto do combo
+        drawPixelTextCentered(ctx, cb.text, bx + bw / 2, by + 4, '#047857', null, bw - 10, 10);
+        drawStar(ctx, bx + 10, by + 9, 3, '#ffffff', '#fbbf24');
+        drawStar(ctx, bx + bw - 10, by + 9, 3, '#ffffff', '#fbbf24');
+        ctx.restore();
+      }
+
+      // 6. Banner flutuante de avisos de etapa / reinício
+      if (fn.floatingBanner) {
+        const fb = fn.floatingBanner;
+        drawParchmentBox(ctx, 40, fb.y, 240, 18);
+        drawPixelTextCentered(ctx, fb.text, 160, fb.y + 5, fb.color, null, 230, 9);
+      }
+    },
+
+    drawForestNinjaVignette(ctx, tq) {
+      const fn = this.forestNinja;
+      if (!fn) return;
+      ctx.fillStyle = 'rgba(10, 14, 8, 0.72)';
+      ctx.fillRect(0, 20, W, H - 20);
+
+      const cx = 24, cy = 18, cw = 272, ch = 152;
+      drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 18, headerBg: '#213d28' });
+
+      if (fn.vignetteCard === 1) {
+        // CARD 1: VÍDEO EXPLICATIVO DA MECÂNICA
+        drawPixelText(ctx, 'Corte Cristalino', cx + 10, cy + 6, '#e2ffea', '#142918', 120, 9);
+        drawPixelText(ctx, '1/2', cx + 10, cy + 6, '#bbf7d0', '#142918', cw - 20, 9, 'right');
+
+        // Moldura do vídeo demonstrativo
+        const prevBox = { x: cx + 12, y: cy + 22, w: cw - 24, h: 48 };
+        ctx.fillStyle = '#112217';
+        ctx.fillRect(prevBox.x, prevBox.y, prevBox.w, prevBox.h);
+        ctx.fillStyle = '#3e7338';
+        ctx.fillRect(prevBox.x, prevBox.y, prevBox.w, 1);
+        ctx.fillRect(prevBox.x, prevBox.y + prevBox.h - 1, prevBox.w, 1);
+        ctx.fillRect(prevBox.x, prevBox.y, 1, prevBox.h);
+        ctx.fillRect(prevBox.x + prevBox.w - 1, prevBox.y, 1, prevBox.h);
+
+        // Tag "▶ VÍDEO DEMO"
+        ctx.fillStyle = '#166534';
+        ctx.fillRect(prevBox.x + 4, prevBox.y + 4, 62, 9);
+        drawPixelText(ctx, '▶ VÍDEO DEMO', prevBox.x + 6, prevBox.y + 5, '#f0fdf4', null, 60, 7);
+
+        // Animação contínua em loop demonstrando a mecânica de corte e combo
+        const tLoop = (fn.vignettePracticeTime % 5.2) / 5.2;
+        const midY = prevBox.y + prevBox.h / 2;
+
+        if (tLoop < 0.45) {
+          // Cristais subindo em parábola sob a gravidade
+          const u = tLoop / 0.45;
+          const arcY = R(midY + 12 - Math.sin(u * Math.PI) * 22);
+          const sprE = GEM_SPRITES.emerald_core;
+          const sprQ = GEM_SPRITES.white_pure;
+          ctx.drawImage(sprE, prevBox.x + 85, arcY - 10, 17, 21);
+          ctx.drawImage(sprQ, prevBox.x + 135, arcY - 8, 17, 21);
+        } else if (tLoop < 0.58) {
+          // Lâmina cortando ambos em um só golpe!
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(prevBox.x + 60, midY + 12);
+          ctx.lineTo(prevBox.x + 175, midY - 14);
+          ctx.stroke();
+          drawStar(ctx, prevBox.x + 95, midY, 4, '#ffffff', '#6ef58c');
+          drawStar(ctx, prevBox.x + 145, midY - 6, 4, '#ffffff', '#6ef58c');
+        } else if (tLoop < 0.78) {
+          // Metades se separando + COMBO X2!
+          const sep = R((tLoop - 0.58) * 45);
+          const sprE = GEM_SPRITES.emerald_core;
+          const sprQ = GEM_SPRITES.white_pure;
+          ctx.drawImage(sprE, 0, 0, 17, 42, prevBox.x + 80 - sep, midY - 5 + sep * 0.4, 8.5, 21);
+          ctx.drawImage(sprE, 17, 0, 17, 42, prevBox.x + 92 + sep, midY - 5 + sep * 0.4, 8.5, 21);
+          ctx.drawImage(sprQ, 0, 0, 17, 42, prevBox.x + 130 - sep, midY - 8 + sep * 0.4, 8.5, 21);
+          ctx.drawImage(sprQ, 17, 0, 17, 42, prevBox.x + 142 + sep, midY - 8 + sep * 0.4, 8.5, 21);
+
+          drawParchmentBox(ctx, prevBox.x + 80, prevBox.y + 6, 80, 14);
+          drawPixelTextCentered(ctx, 'COMBO X2!', prevBox.x + 120, prevBox.y + 9, '#15803d', null, 70, 8);
+        } else {
+          // Cristal Sombrio sobe com aviso "NÃO CORTE A SOMBRA!"
+          const u = (tLoop - 0.78) / 0.22;
+          const arcY = R(midY + 12 - Math.sin(u * Math.PI) * 20);
+          drawRing(ctx, prevBox.x + 120, arcY, 14, '#7c3aed');
+          const sprS = GEM_SPRITES.shadow_bomb || GEM_SPRITES.white_shadow;
+          ctx.drawImage(sprS, prevBox.x + 112, arcY - 10, 17, 21);
+          drawPixelTextCentered(ctx, 'NÃO CORTE A SOMBRA!', prevBox.x + 120, prevBox.y + 8, '#b91c1c', null, 140, 8);
+        }
+
+        // Pontos explicativos
+        let ty = cy + 74;
+        ty += drawPixelText(ctx, '• Arraste na tela para fatiar cristais no ar.', cx + 14, ty, '#1f2937', null, cw - 28, 8) + 4;
+        ty += drawPixelText(ctx, '• Corte 2, 3 ou 4 de vez: COMBO X2, X3, X4!', cx + 14, ty, '#15803d', null, cw - 28, 8) + 4;
+        ty += drawPixelText(ctx, '• CUIDADO: 3 cortes em Sombras reiniciam a etapa.', cx + 14, ty, '#b91c1c', null, cw - 28, 8) + 4;
+        drawPixelText(ctx, '• Supere 4 etapas com mais sombras e ritmo!', cx + 14, ty, '#475569', null, cw - 28, 8);
+
+        // Botão "Praticar Corte >"
+        const b = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
+        ctx.fillStyle = '#142918';
+        ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+        ctx.fillStyle = '#166534';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = '#86efac';
+        ctx.fillRect(b.x, b.y, b.w, 1);
+        ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+        drawPixelTextCentered(ctx, 'Praticar Corte >', b.x + b.w / 2, b.y + 3, '#ffffff', '#142918', b.w - 4, 8);
+      } else {
+        // CARD 2: OPORTUNIDADE DE TESTAR / TREINO LIVRE
+        drawPixelText(ctx, 'Treino Livre', cx + 10, cy + 6, '#e2ffea', '#142918', 120, 9);
+        drawPixelText(ctx, '2/2', cx + 10, cy + 6, '#bbf7d0', '#142918', cw - 20, 9, 'right');
+
+        drawPixelText(ctx, 'Arraste na área abaixo para testar cortes e combos:', cx + 14, cy + 21, '#1f2937', null, cw - 28, 8);
+
+        // Arena interativa de teste
+        const arena = { x: cx + 12, y: cy + 32, w: cw - 24, h: 86 };
+        ctx.fillStyle = '#0f2015';
+        ctx.fillRect(arena.x, arena.y, arena.w, arena.h);
+        ctx.fillStyle = '#22543d';
+        ctx.fillRect(arena.x, arena.y, arena.w, 1);
+        ctx.fillRect(arena.x, arena.y + arena.h - 1, arena.w, 1);
+        ctx.fillRect(arena.x, arena.y, 1, arena.h);
+        ctx.fillRect(arena.x + arena.w - 1, arena.y, 1, arena.h);
+
+        // Cristais de treino no ar
+        for (const c of fn.practiceCrystals) {
+          ctx.save();
+          ctx.translate(RH(c.x), RH(c.y));
+          ctx.rotate(c.rot);
+          if (c.shadow) {
+            drawRing(ctx, 0, 0, 14, '#7c3aed');
+            const spr = GEM_SPRITES.shadow_bomb || GEM_SPRITES.white_shadow;
+            ctx.drawImage(spr, RH(-spr.width * 0.25), RH(-spr.height * 0.25), spr.width * 0.5, spr.height * 0.5);
+            drawPixelTextCentered(ctx, 'SOMBRA', 0, 10, '#f87171', null, 40, 6);
+          } else {
+            const sprKey = (c.type === 'emerald' ? 'emerald_core' : `${c.type}_pure`);
+            const spr = GEM_SPRITES[sprKey] || GEM_SPRITES.emerald_core;
+            ctx.drawImage(spr, RH(-spr.width * 0.25), RH(-spr.height * 0.25), spr.width * 0.5, spr.height * 0.5);
+          }
+          ctx.restore();
+        }
+
+        // Metades de treino cortadas
+        for (const h of fn.practiceHalves) {
+          ctx.save();
+          ctx.globalAlpha = clamp(h.alpha, 0, 1);
+          ctx.translate(RH(h.x), RH(h.y));
+          ctx.rotate(h.rot);
+          const sprKey = (h.type === 'emerald' ? 'emerald_core' : `${h.type}_pure`);
+          const spr = GEM_SPRITES[sprKey] || GEM_SPRITES.emerald_core;
+          const gw = spr.width * 0.5, gh = spr.height * 0.5;
+          const halfSprW = spr.width * 0.5;
+          if (h.side === 'left') {
+            ctx.drawImage(spr, 0, 0, halfSprW, spr.height, RH(-gw / 2), RH(-gh / 2), gw * 0.5, gh);
+          } else {
+            ctx.drawImage(spr, halfSprW, 0, halfSprW, spr.height, 0, RH(-gh / 2), gw * 0.5, gh);
+          }
+          ctx.restore();
+        }
+
+        // Rastro de treino
+        if (fn.practiceTrail.length >= 2) {
+          ctx.save();
+          for (let i = 0; i < fn.practiceTrail.length - 1; i++) {
+            const p1 = fn.practiceTrail[i];
+            const p2 = fn.practiceTrail[i + 1];
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(RH(p1.x), RH(p1.y));
+            ctx.lineTo(RH(p2.x), RH(p2.y));
+            ctx.stroke();
+            P1(ctx, RH(p2.x), RH(p2.y), '#4ade80');
+          }
+          ctx.restore();
+        }
+
+        // Aviso / Combo no treino
+        if (fn.activeComboBanner) {
+          drawParchmentBox(ctx, 110, arena.y + 6, 100, 15);
+          drawPixelTextCentered(ctx, fn.activeComboBanner.text, 160, arena.y + 9, '#15803d', null, 90, 8);
+        } else if (fn.practiceBanner) {
+          drawPixelTextCentered(ctx, fn.practiceBanner.text, 160, arena.y + 8, fn.practiceBanner.color, null, 180, 8);
+        }
+
+        // Botões do Card 2:
+        // 1. "< Vídeo"
+        const bBack = { x: cx + 10, y: cy + ch - 18, w: 72, h: 14 };
+        ctx.fillStyle = '#142918';
+        ctx.fillRect(bBack.x - 1, bBack.y - 1, bBack.w + 2, bBack.h + 2);
+        ctx.fillStyle = '#374151';
+        ctx.fillRect(bBack.x, bBack.y, bBack.w, bBack.h);
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillRect(bBack.x, bBack.y, bBack.w, 1);
+        ctx.fillRect(bBack.x, bBack.y + bBack.h - 1, bBack.w, 1);
+        drawPixelTextCentered(ctx, '< Vídeo', bBack.x + bBack.w / 2, bBack.y + 3, '#ffffff', '#1f2937', bBack.w - 4, 8);
+
+        // 2. "↺ Recomeçar"
+        const bReset = { x: cx + 86, y: cy + ch - 18, w: 76, h: 14 };
+        ctx.fillStyle = '#142918';
+        ctx.fillRect(bReset.x - 1, bReset.y - 1, bReset.w + 2, bReset.h + 2);
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(bReset.x, bReset.y, bReset.w, bReset.h);
+        ctx.fillStyle = '#93c5fd';
+        ctx.fillRect(bReset.x, bReset.y, bReset.w, 1);
+        ctx.fillRect(bReset.x, bReset.y + bReset.h - 1, bReset.w, 1);
+        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#1e3a8a', bReset.w - 4, 8);
+
+        // 3. "Iniciar Desafio! >"
+        const bStart = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
+        ctx.fillStyle = '#142918';
+        ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+        ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+        drawPixelTextCentered(ctx, 'Iniciar Desafio! >', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#142918', bStart.w - 4, 8);
+      }
+    },
+
     onStepCleared(originX, originY) {
       this.targetObstacleDecay = this.currentStep / this.totalSteps;
       this.spawnShatter(this.isWorldFinale() ? 176 : 258, this.isWorldFinale() ? 34 : 108, 'rock', 14);
@@ -4632,7 +5713,51 @@
     // ==========================================================================
     // SHOW MUSICAL EM 2 PARTES + PÓS-DIÁLOGO + TRANSIÇÃO AO MAPA
     // ==========================================================================
+    getRegularBgmSrc() {
+      if (this.worldKey === 'forest') return 'assets/audio/musica-floresta-fases.mp3';
+      if (this.worldKey === 'river') return 'assets/audio/musica-rio-fases.mp3';
+      if (this.worldKey === 'caatinga') return 'assets/audio/musica-caatinga-fases.mp3';
+      return null;
+    },
+
+    getSpecialBgmSrc() {
+      if (this.worldKey === 'forest') return 'assets/audio/musica-floresta-especial.mp3';
+      if (this.worldKey === 'river') return 'assets/audio/musica-rio-especial.mp3';
+      if (this.worldKey === 'caatinga') return 'assets/audio/musica-caatinga-especial.mp3';
+      return 'assets/audio/o-que-um-cristal-pode-fazer.mp3';
+    },
+
+    playRegularBgm() {
+      const src = this.getRegularBgmSrc();
+      if (!src) return;
+      try {
+        global.CrystalMenuAudio?.pause?.();
+        if (!this.regularAudio || this.regularAudio._src !== src) {
+          if (this.regularAudio) {
+            try { this.regularAudio.pause(); } catch (_) {}
+          }
+          this.regularAudio = new Audio(src);
+          this.regularAudio._src = src;
+          this.regularAudio.loop = true;
+          this.regularAudio.preload = 'auto';
+        }
+        const effMus = GameHUD.muted ? 0 : clamp(GameHUD.musicVol / 100, 0, 1);
+        this.regularAudio.muted = GameHUD.muted || effMus <= 0;
+        this.regularAudio.volume = effMus;
+        if (!GameHUD.muted && GameHUD.musicVol > 0 && this.regularAudio.paused) {
+          this.regularAudio.play().catch(() => {});
+        }
+      } catch (_) {}
+    },
+
+    stopRegularBgm() {
+      if (this.regularAudio) {
+        try { this.regularAudio.pause(); } catch (_) {}
+      }
+    },
+
     startMusicalShow() {
+      this.stopRegularBgm();
       const spec = this.getSpec();
       this.phase = this.worldKey === 'sanctuary' ? 'musical_part2_bright' : 'musical_part1_shadows';
       this.phaseTime = 0;
@@ -4661,8 +5786,13 @@
 
       try {
         global.CrystalMenuAudio?.pause?.();
-        if (!this.musicAudio) {
-          this.musicAudio = new Audio('assets/audio/o-que-um-cristal-pode-fazer.mp3');
+        const specSrc = this.getSpecialBgmSrc();
+        if (!this.musicAudio || this.musicAudio._src !== specSrc) {
+          if (this.musicAudio) {
+            try { this.musicAudio.pause(); } catch (_) {}
+          }
+          this.musicAudio = new Audio(specSrc);
+          this.musicAudio._src = specSrc;
           this.musicAudio.preload = 'auto';
         }
         GameHUD.syncAudio();
@@ -4680,6 +5810,7 @@
       if (this.musicAudio) {
         try { this.musicAudio.pause(); } catch (_) {}
       }
+      this.stopRegularBgm();
     },
 
     finishMusicalShow() {
@@ -4879,6 +6010,16 @@
           return;
         }
 
+        if (this.phase === 'forest_ninja_vignette') {
+          this.handleForestNinjaVignetteClick(x, y);
+          return;
+        }
+
+        if (this.phase === 'forest_ninja_game') {
+          this.handleForestNinjaPointerDown(x, y);
+          return;
+        }
+
         if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
           const sb = this.skipMusicalBtnRect;
           if (x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
@@ -4945,6 +6086,15 @@
         if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
 
+        if (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2) {
+          this.handleForestNinjaPointerMove(x, y);
+          return;
+        }
+        if (this.phase === 'forest_ninja_game') {
+          this.handleForestNinjaPointerMove(x, y);
+          return;
+        }
+
         if (this.draggedPiece) {
           if (this.phase !== 'gameplay' || this.draggedPiece.broken || this.draggedPiece.value <= 0) {
             this.draggedPiece.dragging = false;
@@ -4994,6 +6144,15 @@
 
       const onUp = () => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
+
+        if (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2) {
+          this.handleForestNinjaPointerUp();
+          return;
+        }
+        if (this.phase === 'forest_ninja_game') {
+          this.handleForestNinjaPointerUp();
+          return;
+        }
 
         if (this.fractionPlatform) {
           this.fractionPlatform.topHover = false;
@@ -5105,6 +6264,13 @@
             e.preventDefault();
             this.restartCurrentPhase();
           }
+          return;
+        }
+
+        if ((this.phase === 'forest_ninja_game' || (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2)) && (e.code === 'Space' || e.code === 'KeyC' || e.code === 'Enter')) {
+          e.preventDefault();
+          this.handleForestNinjaKeyboardSlash();
+          return;
         }
       };
 
@@ -5222,6 +6388,8 @@
             this.startShellGame();
           } else if (this.worldKey === 'river' && this.currentLevel === 5) {
             this.startRiverMelodyGame();
+          } else if (this.worldKey === 'forest' && this.currentLevel === 5) {
+            this.startForestNinjaGame();
           } else {
             this.startMusicalShow();
           }
@@ -5230,6 +6398,8 @@
         this.updateShellGame(dt);
       } else if (this.phase === 'river_melody_game') {
         this.updateRiverMelodyGame(dt);
+      } else if (this.phase === 'forest_ninja_vignette' || this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_'))) {
+        this.updateForestNinjaGame(dt);
       } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
         if (this.musicAudio && !this.musicAudio.paused && this.musicAudio.currentTime > 0 && this.worldKey !== 'sanctuary') {
           this.musicalTime = this.musicAudio.currentTime;
@@ -5584,6 +6754,9 @@
       }
       if (this.phase === 'river_melody_game') {
         this.drawRiverMelodyGame(ctx, tq);
+      }
+      if (this.phase === 'forest_ninja_vignette' || this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_'))) {
+        this.drawForestNinjaGame(ctx, tq);
       }
 
       if (

@@ -11,5 +11,8 @@
     "audit:pixels": "node .agents/skills/true-pixel-art-pipeline/scripts/audit-sprites.mjs",
     "verify:campaign": "node .agents/skills/campaign-balancer/scripts/verify-campaign.mjs",
     "music:cave": "node scripts/generate-cave-music.mjs"
+  },
+  "dependencies": {
+    "lamejs": "^1.2.1"
   }
 }
