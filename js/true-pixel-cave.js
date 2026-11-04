@@ -399,10 +399,10 @@
     }
 
     if (!flashMode && E.SpriteBank && E.SpriteBank.ordem) {
-      // Silhueta de alta resolução (48x68) da Rainha da Ordem aprisionada no núcleo
+      // Silhueta de alta resolução (64x64) da Fada / Rainha da Ordem aprisionada no núcleo
       const silSpr = E.SpriteBank.ordem.back_silhouette[0];
       x.globalAlpha = 0.85;
-      x.drawImage(silSpr, cx - 24, 14);
+      x.drawImage(silSpr, cx - Math.round(silSpr.width / 2), 14);
       x.globalAlpha = 1.0;
 
       // Rachaduras luminosas progressivas em alta resolução
@@ -830,28 +830,43 @@
         const isOrdem = q === 1;
         const bob = Math.sin(t * 2.4 + q) * 1.5;
 
-        // Halo de destaque quando a Ordem canta "e entre elas a Ordem era minha"
-        if (isOrdem && highlightOrdem) {
-          drawRing(ctx, R(qx), R(qy - 4 + bob), 16, '#f2cc6b');
-          drawRing(ctx, R(qx), R(qy - 4 + bob), 12, '#68b8c4');
-          // Asas abertas luminosas da Rainha da Ordem no mural
+        // Halo de destaque e asas de borboleta quando a Ordem canta "e entre elas a Ordem era minha"
+        if (isOrdem) {
+          if (highlightOrdem) {
+            drawRing(ctx, R(qx), R(qy - 2 + bob), 16, '#77eef8');
+            drawRing(ctx, R(qx), R(qy - 2 + bob), 12, '#e2adf6');
+          }
+          // Asas de borboleta superiores e inferiores da Fada / Rainha da Ordem
+          const wingColHi = highlightOrdem ? '#77eef8' : '#3b4e7a';
+          const wingColLo = highlightOrdem ? '#e2adf6' : '#293861';
           for (let w = 4; w <= 13; w += 2) {
-            P(ctx, qx - w, qy - 6 - (w * 0.4) + bob, '#f7e2b8');
-            P(ctx, qx + w, qy - 6 - (w * 0.4) + bob, '#f7e2b8');
+            P(ctx, qx - w, qy - 6 - (w * 0.4) + bob, wingColHi);
+            P(ctx, qx + w, qy - 6 - (w * 0.4) + bob, wingColHi);
+            if (w <= 10) {
+              P(ctx, qx - w + 1, qy + 2 + (w * 0.2) + bob, wingColLo);
+              P(ctx, qx + w - 1, qy + 2 + (w * 0.2) + bob, wingColLo);
+            }
           }
         }
 
-        // Silhueta Hi-Bit esculpida de cada Rainha (manto, ombros, cabeça e coroa)
-        ctx.fillStyle = (isOrdem && highlightOrdem) ? '#f2cc6b' : '#090d1c';
-        ctx.fillRect(RH(qx - 5), RH(qy - 4 + bob), 10, 20);
-        ctx.fillRect(RH(qx - 7), RH(qy + 8 + bob), 14, 10);
+        // Silhueta Hi-Bit esculpida de cada Rainha (vestido de pétalas para a Ordem, manto para as demais)
+        ctx.fillStyle = (isOrdem && highlightOrdem) ? '#4ec0ee' : '#090d1c';
+        ctx.fillRect(RH(qx - 4), RH(qy - 4 + bob), 8, isOrdem ? 12 : 20);
+        ctx.fillRect(RH(qx - 7), RH(qy + 4 + bob), 14, isOrdem ? 8 : 14);
         ctx.fillRect(RH(qx - 3), RH(qy - 10 + bob), 6, 6);
 
-        // Coroa real delicada de 3 pontas
-        const crownCol = isOrdem ? '#ffd86b' : gemColors[q];
-        P(ctx, qx - 3, qy - 12 + bob, crownCol);
-        P(ctx, qx, qy - 14 + bob, '#ffffff');
-        P(ctx, qx + 3, qy - 12 + bob, crownCol);
+        if (isOrdem) {
+          // Flor cristalina azul com miolo dourado no cabelo + cinto dourado
+          P(ctx, qx + 3, qy - 10 + bob, '#77eef8');
+          P(ctx, qx + 4, qy - 9 + bob, '#f7d75b');
+          P(ctx, qx, qy + 2 + bob, '#f7d75b');
+        } else {
+          // Coroa real delicada de 3 pontas
+          const crownCol = gemColors[q];
+          P(ctx, qx - 3, qy - 12 + bob, crownCol);
+          P(ctx, qx, qy - 14 + bob, '#ffffff');
+          P(ctx, qx + 3, qy - 12 + bob, crownCol);
+        }
 
         // Gema Primordial pairando sobre cada Rainha
         drawExternalOrb(ctx, qx, qy - 22 + bob, '#ffffff', gemColors[q], '#161e38', isOrdem && highlightOrdem ? 1.35 : 1.0);

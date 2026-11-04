@@ -450,11 +450,92 @@
   // 1. BANCO CENTRAL DE ANIMAÇÕES REUTILIZÁVEIS EM LOOP (SpriteBank)
   // Criado UMA ÚNICA VEZ e instanciado em todas as cutscenes e fases do jogo.
   // ============================================================================
-  // --- PROTAGONISTA HI-BIT (40x54 PIXELS FÍSICOS — ESTILO OTUS DE OWLBOY) ---
-  // Paleta quente terrosa (warm muted Owlboy palette), sem contorno preto duro,
-  // sombreamento pictórico suave, tufos de cabelo emplumados, capa em dobras e botas.
+  // ============================================================================
+  // MATRIZ PIXEL ART OFICIAL 64x64 DO PROTAGONISTA
+  // Cabelos castanho-escuro despenteados, olhos castanhos expressivos, capa e capuz
+  // azul-marinho com bordado geométrico ciano luminoso na barra, mangas creme,
+  // bolsa tiracolo de couro, cinto com fivela de cristal azul e botas de couro.
+  // ============================================================================
+  const PROTAG_PIXEL_PALETTE = {
+    A: '#4e312b', B: '#060606', C: '#0e3e70', D: '#0f4477', E: '#e79b73', F: '#2f1b17', G: '#402723', H: '#060201',
+    I: '#010001', J: '#073460', K: '#77422f', L: '#041d3d', M: '#1e0f0b', N: '#5a372e', O: '#643221', P: '#91482d',
+    Q: '#042951', R: '#05172c', S: '#76edfa', T: '#f7e7c3', U: '#f9eed2', V: '#925b46', W: '#0a4f87', X: '#020915',
+    Y: '#4b2519', Z: '#3e1b11', a: '#ca7352', b: '#d78763', c: '#ba6246', d: '#e2d0b1', e: '#29262a', f: '#d08f54',
+    g: '#f6f6f5', h: '#ee9070', i: '#b4977a', j: '#4bb7e1', k: '#0d74af', l: '#a66a36', m: '#298fc4', n: '#6fcfe8',
+    o: '#40d3f7', p: '#12a0e7', q: '#caae88', r: '#1e6897', s: '#423d3c', t: '#3688a6', u: '#1cb3ed', v: '#878b89',
+    w: '#978065', x: '#587dab', y: '#35777f', z: '#1e384c', 0: '#61615e', 1: '#a0deee', 2: '#adadab', 3: '#979890',
+    4: '#ccb1a7', 5: '#ddd9d9'
+  };
+
+  const PROTAG_PIXEL_ROWS = [
+    '................................................................',
+    '................................................................',
+    '.............................BHIIB..............................',
+    '.......................B.....BAAANBB............................',
+    '......................BNH..BIIHAAAAAB..B........................',
+    '......................BAAAFAAAAAAAGAAHGB........................',
+    '.......................MAAAAAAAAAAAGAFAB........................',
+    '......................BAAAAAAAGFGFFFGAAAH.......................',
+    '.....................BVNAAAAAFAAAAAFGAAAAH......................',
+    '..................BBIAVVAAAAFAAAAAAFAAAAVKB.....................',
+    '..................BAAAAKVAAAFAAAAAAAAAAVVNM.....................',
+    '...................FFAGANAVGKKAAAAAAAAVGAAB.....................',
+    '...................BAAFAAAAFAKKKAAAGAANAGAAB....................',
+    '..................BAAFAAAAAFAAAAAAAGAAAAFAAABB..................',
+    '..................BNAFAAGAGMAAAAAAMFNAAAAAAAAB..................',
+    '.................BGAFAAAGAGbFAAAFGbbMAGAAGAFH...................',
+    '................BAAAFAAGAMGFHAAAMbFFFFGAAFAGs...................',
+    '.................HFFMAAFMaEEEFNAMEEEEbGAAMGAH...................',
+    '..................BGBNAMEAIHFEHAANFHIHNAAFGB....................',
+    '..................BGOFNMKvYFFEEEaE5FF2KAGYGB....................',
+    '.................HAMEPGMHgZIZEEEEEFIZgNAMEHFB...................',
+    '..................BHEaMFEgOFOEEEEEOFOgKFabHIH...................',
+    '....................KEcVEEgOEEEaEEVK4EVcbEB.....................',
+    '.....................BEVEhhEEEEEEEEEhhVhEB......................',
+    '......................BHIEEEEEPbcbEEEEIHB.......................',
+    '.......................IJHEEEEEEEEEEEBJB........................',
+    '......................BDRLIMEEEEEEEbIRLCH.......................',
+    '......................BDCCJLIHPPPPIXQDCCI.......................',
+    '.....................BDDCCCCCBaacKQCCCCCDB......................',
+    '.....................BCCCCDCDDXaODDCCCJCDB......................',
+    '......................BXLLLLLQJBLJLLLLQRB.......................',
+    '......................HCCCLPKeyntVLQJDCCH.......................',
+    '.....................MDDCCCRPPIkBRCCCCCCC.......................',
+    '.....................XDCCCDCXOPYUCQRQDCCDH......................',
+    '....................ICCCQRXQJIPPZJCCJMXCCCB.....................',
+    '...................BDDRBTqRCCDIPPYCCCeTFBDDB....................',
+    '...................BXMdTUqLCCWUBPPYCJBTUTHLX....................',
+    '..................BQdTTidwCCCWUTHPPZCBTiUUdJB...................',
+    '.................BCMTUUUTICCCWTqTBPPZQiUUUUsCB..................',
+    '.................CDC0VTUdBRRLLfffQHPPZdUTKwCCC..................',
+    '................BCCCBacViBOKKVxSWlOMPKFVcaHCCCB.................',
+    '...............HCCCDZEEaRBOOKlmpWlOFOYPOEEZCCCCB................',
+    '...............RCCCJEEEMXLRIXHlWfIMBOYPOMEECCCCR................',
+    '..............BCCCCBEEEEBDCCCrFMBWQJYKOPHEEMCCCCB...............',
+    '.............BWSCCDBEEcELCCCDJTtUWWJIKFfHEEMDCCSDB..............',
+    '.............BnoSDCBEEcBCCCCu3UJTvWDIKKZMEEMDDSknB..............',
+    '............ISCSDDWLIEEBJCDCuTTJTUkWBKOYOEBCjCCSDSB.............',
+    '............BkSCCSSBLXBIJLLWWJCCDDQDJFOPPZBrpSDCSX..............',
+    '.............BmSCJrLLLQBDDDLLDJQJCQQJIOOOHXJnCDSB...............',
+    '..............BRS1JjjQWIDDDDDDQRQJDDDJIBLmzCWSSB................',
+    '................BooBBjRWDDDDDDQRQDDDDDDRmBBSSpB.................',
+    '.................IH..BIDDDDDDDJRRDDDDDDDB.BBIB..................',
+    '......................BDCDDDDDDRRDDDDDDDB.......................',
+    '......................BDJJDDCCJXRCDDDCQDB.......................',
+    '.......................BJLDJJJX..LCQQCQB........................',
+    '........................BNseLB....ILeeF.........................',
+    '.......................BKKKKKOB..BKKKKKB........................',
+    '.......................BFFFOOYB..HYANFMB........................',
+    '.......................BYKOGGB....BFFKOB........................',
+    '......................BNNNFAAB....BAAFNNH.......................',
+    '.....................BNNNNANNB....BAANNNNB......................',
+    '.....................BGGAAGMGB....BGMGGGGB......................',
+    '......................BHIIIIB......BHIIHB.......................',
+    '................................................................'
+  ];
+
   function buildHiBitProtagonist(pose = 'idle0') {
-    const W = 40, H = 54;
+    const W = 64, H = 64;
     const [c, x] = mk(W, H);
     c.hib = true;
     const put = (px, py, col) => {
@@ -464,155 +545,129 @@
         x.fillRect(ix, iy, 1, 1);
       }
     };
-    const fillEll = (cx, cy, rx, ry, fn) => {
-      for (let py = Math.floor(cy - ry - 1); py <= Math.ceil(cy + ry + 1); py++) {
-        for (let px = Math.floor(cx - rx - 1); px <= Math.ceil(cx + rx + 1); px++) {
-          const dx = (px - cx) / rx, dy = (py - cy) / ry;
-          const d = dx * dx + dy * dy;
-          if (d <= 1.0) {
-            const col = fn(px, py, dx, dy, d);
-            if (col) put(px, py, col);
-          }
+
+    // Pose horizontal caída no chão (abertura da Fase 1 antes de se levantar)
+    if (pose === 'fallen') {
+      for (let sy = 2; sy < 63; sy++) {
+        const row = PROTAG_PIXEL_ROWS[sy];
+        if (!row) continue;
+        for (let sx = 12; sx < 52; sx++) {
+          const ch = row[sx];
+          if (!ch || ch === '.') continue;
+          const col = PROTAG_PIXEL_PALETTE[ch];
+          if (!col) continue;
+          const dx = 9 + Math.round((sy - 2) * 0.76);
+          const dy = 52 + Math.round((sx - 31) * 0.42);
+          put(dx, dy, col);
         }
       }
-    };
-
-    const HAIR_DARK = '#2a1c1b', HAIR_MID = '#4a312c', HAIR_LIT = '#754d42', HAIR_HI = '#9e6b58';
-    const SKIN_DARK = '#b57b5c', SKIN_MID = '#d99e7b', SKIN_LIT = '#f2be9b';
-    const CLOAK_DARK = '#3d2522', CLOAK_MID = '#633b34', CLOAK_LIT = '#8c5447', CLOAK_TRIM = '#d9a85b';
-    const TUNIC_DARK = '#596157', TUNIC_MID = '#848f7d', TUNIC_LIT = '#b3bfaa';
-    const BELT_DARK = '#332219', BELT_GOLD = '#e3b454';
-    const BOOT_DARK = '#261917', BOOT_MID = '#422c27', BOOT_LIT = '#63433b';
-
-    if (pose === 'fallen') {
-      fillEll(20, 46, 15, 5, (px, py, dx, dy, d) => d > 0.8 ? CLOAK_DARK : (dy < 0 ? CLOAK_LIT : CLOAK_MID));
-      fillEll(11, 44, 7, 6, (px, py, dx, dy, d) => d > 0.82 ? HAIR_DARK : (dy < -0.2 ? HAIR_LIT : HAIR_MID));
-      fillEll(29, 47, 5, 3, (px, py, dx, dy) => dy < 0 ? BOOT_LIT : BOOT_DARK);
       return c;
     }
 
-    const bobY = (pose === 'idle1' || pose === 'walk1') ? 1 : (pose === 'celeb1' ? -2 : (pose === 'kneel' ? 5 : 0));
     const isFall = pose === 'fall0' || pose === 'fall1';
+    const isBlink = pose === 'idle2';
+    const isTalk = pose === 'talk1';
+    const isCeleb = pose === 'celeb1';
+    const isShock = pose === 'shock0';
+    const isKneel = pose === 'kneel';
+    const bobY = (pose === 'idle1' || pose === 'walk1')
+      ? 1
+      : isCeleb
+        ? -2
+        : isKneel
+          ? 4
+          : 0;
 
-    // 1. Capa traseira esvoaçante estilo Otus (Owlboy) com dobras pictóricas
-    const cloakSpread = (pose === 'celeb1' || isFall) ? 14 : (pose === 'walk0' || pose === 'walk2' ? 12 : 11);
-    for (let py = 22 + bobY; py <= 46 + bobY; py++) {
-      const t = (py - (22 + bobY)) / 24;
-      const halfW = Math.round(7 + t * cloakSpread);
-      for (let px = 20 - halfW; px <= 20 + halfW; px++) {
-        const dx = (px - 20) / Math.max(1, halfW);
-        const fold = Math.sin(dx * 5 + (pose === 'walk0' ? 0.6 : pose === 'walk2' ? -0.6 : 0));
-        let col = CLOAK_MID;
-        if (Math.abs(dx) > 0.86 || py === 46 + bobY) col = CLOAK_DARK;
-        else if (py === 45 + bobY) col = CLOAK_TRIM;
-        else if (fold > 0.35 && dx < 0.4) col = CLOAK_LIT;
-        else if (fold < -0.35) col = CLOAK_DARK;
-        put(px, py, col);
+    for (let sy = 0; sy < 64; sy++) {
+      const row = PROTAG_PIXEL_ROWS[sy];
+      if (!row) continue;
+      for (let sx = 0; sx < 64; sx++) {
+        const ch = row[sx];
+        if (!ch || ch === '.') continue;
+        const col = PROTAG_PIXEL_PALETTE[ch];
+        if (!col) continue;
+
+        const isLeftCloak = sx <= 19 && sy >= 33 && sy <= 51;
+        const isRightCloak = sx >= 43 && sy >= 33 && sy <= 51;
+        const isLeftArm = sx >= 20 && sx <= 24 && sy >= 35 && sy <= 47;
+        const isRightArm = sx >= 38 && sx <= 42 && sy >= 35 && sy <= 47;
+        const isLeftLeg = sy >= 51 && sx >= 21 && sx <= 30;
+        const isRightLeg = sy >= 51 && sx >= 33 && sx <= 41;
+
+        let dx = sx;
+        let dy = sy + bobY;
+
+        if (isKneel && (isLeftLeg || isRightLeg)) {
+          dy = sy;
+          if (sy >= 53 && sy <= 56) continue;
+        } else if (pose === 'walk0') {
+          if (isLeftLeg) { dx -= 1; dy -= 2; }
+          else if (isRightLeg) { dx += 1; dy += 1; }
+          else if (isLeftArm) { dy -= 1; }
+          else if (isRightArm) { dy += 1; }
+          else if (isLeftCloak) { dx -= 1; }
+        } else if (pose === 'walk2') {
+          if (isRightLeg) { dx += 1; dy -= 2; }
+          else if (isLeftLeg) { dx -= 1; dy += 1; }
+          else if (isRightArm) { dy -= 1; }
+          else if (isLeftArm) { dy += 1; }
+          else if (isRightCloak) { dx += 1; }
+        } else if (pose === 'idle1') {
+          if (isLeftLeg || isRightLeg) dy = sy;
+          else if (isLeftCloak) dx -= 1;
+          else if (isRightCloak) dx += 1;
+        } else if (isTalk && isRightArm) {
+          dy -= 1;
+        } else if (isCeleb) {
+          if (isLeftArm) { dx -= 1; dy -= 4; }
+          else if (isRightArm) { dx += 1; dy -= 4; }
+          else if (isLeftCloak) { dx -= 1; dy -= 2; }
+          else if (isRightCloak) { dx += 1; dy -= 2; }
+        } else if (isShock) {
+          if (isLeftArm || isRightArm) dy -= 3;
+          else if (isLeftCloak) { dx -= 1; dy -= 1; }
+          else if (isRightCloak) { dx += 1; dy -= 1; }
+        } else if (isFall) {
+          const flutter = pose === 'fall0' ? -1 : 1;
+          if (isLeftCloak) { dx -= 2; dy -= 4 + flutter; }
+          else if (isRightCloak) { dx += 2; dy -= 4 - flutter; }
+          else if (isLeftArm || isRightArm) { dy -= 4; }
+          else if (isLeftLeg) { dy += flutter; }
+          else if (isRightLeg) { dy -= flutter; }
+        }
+
+        put(dx, dy, col);
       }
     }
 
-    // 2. Pernas e Botas de couro macio (sem contorno preto duro)
-    const legLOff = pose === 'walk0' ? -3 : (pose === 'walk2' ? 3 : 0);
-    const legROff = pose === 'walk0' ? 3 : (pose === 'walk2' ? -3 : 0);
-    const legY0 = 41 + bobY;
-    for (const [lx, off] of [[16, legLOff], [24, legROff]]) {
-      const bx = lx + off;
-      const by = legY0 - (Math.abs(off) > 0 ? 1 : 0);
-      for (let py = by; py <= by + 10; py++) {
-        for (let px = bx - 3; px <= bx + 3; px++) {
-          if (py < by + 4) {
-            put(px, py, px < bx ? TUNIC_MID : TUNIC_DARK);
-          } else {
-            const isEdge = px === bx - 3 || px === bx + 3 || py === by + 10;
-            put(px, py, isEdge ? BOOT_DARK : (px < bx && py < by + 8 ? BOOT_LIT : BOOT_MID));
-          }
+    // Piscar suave dos olhos (left eye: x 25..28, right eye: x 34..37, y 19..22)
+    if (isBlink) {
+      for (const ox of [25, 34]) {
+        for (let i = 0; i < 4; i++) {
+          put(ox + i, 19 + bobY, '#ca7352');
+          put(ox + i, 20 + bobY, '#e79b73');
+          put(ox + i, 21 + bobY, '#2f1b17');
         }
       }
     }
 
-    // 3. Túnica terrosa/creme-sálvia e cinto com fivela dourada
-    fillEll(20, 34 + bobY, 8, 9, (px, py, dx, dy, d) => {
-      if (d > 0.84) return TUNIC_DARK;
-      if (py >= 36 + bobY && py <= 38 + bobY) {
-        return Math.abs(px - 20) <= 2 ? BELT_GOLD : BELT_DARK;
-      }
-      return (dx + dy < -0.15) ? TUNIC_LIT : (dx > 0.3 ? TUNIC_DARK : TUNIC_MID);
-    });
-
-    // 4. Gola/Manto sobre os ombros + broche dourado
-    fillEll(20, 25 + bobY, 10, 4.5, (px, py, dx, dy, d) => {
-      if (d > 0.82) return CLOAK_DARK;
-      if (Math.abs(px - 20) <= 2 && py >= 25 + bobY && py <= 27 + bobY) return BELT_GOLD;
-      return dy < 0 ? CLOAK_LIT : CLOAK_MID;
-    });
-
-    // 5. Braços e mãos expressivas
-    const armY = (pose === 'celeb1' || pose === 'shock0' || isFall) ? 20 + bobY : 29 + bobY;
-    for (const side of [-1, 1]) {
-      const ax = 20 + side * 10;
-      fillEll(ax, armY, 3, 5, (px, py, dx, dy, d) => d > 0.78 ? CLOAK_DARK : (dx * side < 0 ? CLOAK_LIT : CLOAK_MID));
-      fillEll(ax + side, armY + (armY < 25 ? -4 : 4), 2.2, 2.2, (px, py, dx, dy) => dy < 0 ? SKIN_LIT : SKIN_DARK);
+    // Expressão de susto/surpresa (olhos mais abertos com brilho branco)
+    if (isShock || isFall) {
+      put(26, 19 + bobY, '#f6f6f5');
+      put(35, 19 + bobY, '#f6f6f5');
+      put(26, 22 + bobY, '#f6f6f5');
+      put(35, 22 + bobY, '#f6f6f5');
     }
 
-    // 6. Cabeça e rosto estilo Otus (Owlboy) com bochechas quentes e olhos grandes expressivos
-    const headY = 14 + bobY;
-    // Cabelo de fundo
-    fillEll(20, headY - 1, 11, 10, (px, py, dx, dy, d) => {
-      if (d > 0.85) return HAIR_DARK;
-      return (dx + dy < -0.25) ? HAIR_LIT : HAIR_MID;
-    });
-    // Tufos auriculares emplumados (inspirados em Otus de Owlboy)
-    for (const side of [-1, 1]) {
-      for (let i = 0; i < 7; i++) {
-        const tx = 20 + side * (8 + i);
-        const ty = headY - 6 - Math.floor(i * 0.6);
-        put(tx, ty, HAIR_LIT);
-        put(tx, ty + 1, HAIR_MID);
-        put(tx, ty + 2, HAIR_DARK);
+    // Boca aberta ao falar, celebrar, cair ou levar susto
+    if (isTalk || isCeleb || isShock || isFall) {
+      for (let bx = 30; bx <= 32; bx++) {
+        put(bx, 24 + bobY, '#3e1b11');
+        put(bx, 25 + bobY, isShock || isFall ? '#1e0f0b' : '#ee9070');
       }
-    }
-    // Rosto sombreado suavemente
-    fillEll(20, headY + 2, 8.5, 7.5, (px, py, dx, dy, d) => {
-      if (d > 0.86) return SKIN_DARK;
-      if (dy > 0.45 || dx > 0.45) return SKIN_MID;
-      return SKIN_LIT;
-    });
-
-    // Olhos grandes expressivos (com pupila profunda e brilho especular)
-    for (const ox of [16, 24]) {
-      for (let dy = -2; dy <= 2; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          put(ox + dx, headY + 2 + dy, '#1f1414');
-        }
-      }
-      put(ox - 1, headY + 1, '#ffffff');
-      put(ox, headY + 1, '#ffffff');
-      put(ox + 1, headY + 3, '#a3d9c9');
-      // Sobrancelha emplumada
-      for (let dx = -2; dx <= 2; dx++) {
-        put(ox + dx, headY - 1, HAIR_DARK);
-      }
-    }
-
-    // Boca (idle / talk / shock / celebrate)
-    if (pose === 'talk1' || pose === 'celeb1' || pose === 'shock0') {
-      for (let dx = -2; dx <= 2; dx++) {
-        put(20 + dx, headY + 6, '#592525');
-        put(20 + dx, headY + 7, '#c95b5b');
-      }
-    } else {
-      put(19, headY + 6, '#8c5245');
-      put(20, headY + 6, '#8c5245');
-      put(21, headY + 6, '#8c5245');
-    }
-
-    // Franja detalhada em camadas sobre a testa (com dithering suave)
-    for (let px = 11; px <= 29; px++) {
-      const wave = Math.round(Math.sin((px - 11) * 0.65) * 2);
-      for (let py = headY - 8; py <= headY - 1 + wave; py++) {
-        const isTip = py === headY - 1 + wave;
-        const isHi = py < headY - 5 && ((px + py) & 1) === 0;
-        put(px, py, isTip ? HAIR_DARK : (isHi ? HAIR_HI : (py < headY - 4 ? HAIR_LIT : HAIR_MID)));
+      if (isCeleb) {
+        // Brilho na fivela de cristal azul do cinto ao celebrar
+        put(31, 41 + bobY, '#ffffff');
       }
     }
 
@@ -656,53 +711,121 @@
         x.fillRect(px, py, 1, 1);
       }
     };
-    fillOvalPainterly(x, 14, 13, 9, 9.5, ['#3d2217', '#593424', '#784832', '#965d42', '#bd815e']);
-    fillOvalPainterly(x, 14, 15, 7, 7, ['#784e38', '#ab7456', '#cf9b7a', '#e8bfa0', '#f5dac4']);
-    // Topete e tufos de cabelo estilo Otus
-    for (let i = 7; i <= 20; i++) {
-      put(i, 6, i < 14 ? '#bd815e' : '#784832');
-      put(i, 7, i < 14 ? '#965d42' : '#593424');
-      if (i % 3 === 0) put(i, 8, '#593424');
+    // Recorta o busto real 28x28 do Protagonista (sx = 17..44, sy = 6..33)
+    for (let py = 0; py < 28; py++) {
+      const sy = py + 6;
+      const row = PROTAG_PIXEL_ROWS[sy] || '';
+      for (let px = 0; px < 28; px++) {
+        if (Math.abs(px - 13.5) + Math.abs(py - 13.5) > 20.5) continue;
+        const sx = px + 17;
+        const ch = row[sx];
+        if (!ch || ch === '.') continue;
+        const col = PROTAG_PIXEL_PALETTE[ch];
+        if (col) put(px, py, col);
+      }
     }
+    // Piscar suave dos olhos (left eye: px 8..11, right eye: px 17..20, py 13..16)
     if (blink) {
-      for (let dx = 0; dx < 4; dx++) {
-        put(9 + dx, 14, '#4d2d20');
-        put(15 + dx, 14, '#4d2d20');
-      }
-    } else {
-      for (const ox of [9, 15]) {
-        for (let dy = 0; dy < 3; dy++) {
-          for (let dx = 0; dx < 3; dx++) put(ox + dx, 13 + dy, dx === 0 && dy > 0 ? '#f5efe4' : '#261712');
+      for (const ox of [8, 17]) {
+        for (let dx = 0; dx < 4; dx++) {
+          put(ox + dx, 13, '#ca7352');
+          put(ox + dx, 14, '#e79b73');
+          put(ox + dx, 15, '#2f1b17');
         }
-        put(ox + 1, 13, '#ffffff');
       }
     }
-    put(8, 16, '#d98a7c');
-    put(19, 16, '#d98a7c');
-    if (mouthOpen === 0) {
-      put(12, 19, '#784533'); put(13, 19, '#784533'); put(14, 19, '#784533');
-    } else {
-      for (let dx = 12; dx <= 15; dx++) {
-        put(dx, 18, '#592824');
-        put(dx, 19, mouthOpen === 1 ? '#d96b62' : '#b8524c');
+    // Animação da boca ao falar
+    if (mouthOpen > 0) {
+      for (let px = 13; px <= 15; px++) {
+        put(px, 18, '#3e1b11');
+        put(px, 19, mouthOpen === 1 ? '#ee9070' : '#ca7352');
       }
     }
-    // Manto marrom-terracota afunilado nos ombros e fecho dourado no pescoco
-    for (let i = 8; i <= 19; i++) {
-      put(i, 22, i < 14 ? '#9c5b42' : '#5c3222');
-    }
-    for (let i = 7; i <= 20; i++) {
-      put(i, 23, i < 14 ? '#bd7456' : '#7d4632');
-    }
-    for (let i = 9; i <= 18; i++) {
-      put(i, 24, i < 14 ? '#9c5b42' : '#5c3222');
-    }
-    for (let i = 11; i <= 16; i++) {
-      put(i, 25, '#422318');
-    }
-    put(13, 22, '#f0d28c'); put(14, 22, '#cca252');
     return c;
   }
+
+  // ============================================================================
+  // MATRIZ PIXEL ART OFICIAL 64x64 DA RAINHA DA ORDEM / FADA DAS GEMAS
+  // Pele marrom quente, cabelos longos castanho-escuro com flor cristalina azul/dourada,
+  // asas de borboleta translúcidas em violeta/lilás/ciano, vestido de pétalas azuis
+  // com cinto dourado e gema central.
+  // ============================================================================
+  const ORDEM_FAIRY_PALETTE = {
+    A: '#150a28', B: '#b76039', C: '#f1fbfa', D: '#c8723c', E: '#889ce9', F: '#571526', G: '#77eef8', H: '#8e3730',
+    I: '#75262e', J: '#95ecf6', K: '#cbf7f9', L: '#a34935', M: '#84d8f7', N: '#261635', O: '#391d3b', P: '#64e1f5',
+    Q: '#6782d6', R: '#4ba1e4', S: '#5e44c0', T: '#b7a8f1', U: '#b8bdf6', V: '#e2adf6', W: '#122b7d', X: '#6c9fd9',
+    Y: '#b9d2f9', Z: '#86c3ef', a: '#34294a', b: '#5b373d', c: '#6d69d8', d: '#47132a', e: '#4ec0ee', f: '#764a3d',
+    g: '#182560', h: '#987eec', i: '#3765cf', j: '#143f90', k: '#b095ef', l: '#2c7cc8', m: '#b7e5fa', n: '#cdfadd',
+    o: '#4a2c41', p: '#383b68', q: '#e6e2f6', r: '#455390', s: '#2942b3', t: '#445776', u: '#581941', v: '#f09732',
+    w: '#f99475', x: '#f7d75b', y: '#170714', z: '#646165', 0: '#5a9caa', 1: '#b7b3b9', 2: '#fbf293', 3: '#ac9374'
+  };
+
+  const ORDEM_FAIRY_ROWS = [
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '................................................................',
+    '.....YKKCZ..................pONNAAA...................XCCCK.....',
+    '.....YXZJKCZ..............rbbboOAAaaCe.CP...........XCCJZXK.....',
+    '.....YXJCJUCCX...........rfffOOAANotGCGKC.........QCCUJCJXK.....',
+    '......mXJJZETCCQ........rfBbbbbOONbtResPP........MCqEZJJXm......',
+    '......mXXEVKTEqCE......rbbDffbbbOOpCGi2xPCK....QCCTEVVEXXm......',
+    '......EMEEVVqTEkCE....raObfDffbAAAtrRlxCRR....ECkTTqVVEEmE......',
+    '......EckCVVVVCTECE...pOOoffDbAHHIazGiDviJ...ECkTCVVVVCEQE......',
+    '.......TQccqkVTUTECQ..pNoNObfAHDDLAzCPiiPC..QCETUTVVCcQQU.......',
+    '.......kQRhETCTUCCECQ.ANAAOOAHDDDDHotgGGg..QCECCUTnZZheQU.......',
+    '........TShkUUQCnJJXK.AAAoOAHDDDDDLAaogKg.QKXJJnCQUTThcU........',
+    '........cTSkUUYQnJKGXAOooAAddbDDDbddAaagaAKXJKJnQUUTTSTc........',
+    '........cmYSVVnQnJKGXAAAAFdAIHBBBLIAIAAAAAXGJKJnQnVVSYmc........',
+    '.........hSSEZMMRnGGPadBdAyqAHBBBIqAANdBNNPGJGnRZUUESSk.........',
+    '.........hSGhEMMMRKGPadHdF1yyBBBBByd1FOHNNPGGKRJJmYkGSk.........',
+    '.........YSShUXJGGeKPpNLIIDfDBBBBBfDBFILNaPGKeJJJZYkSSm.........',
+    '..........kSSSYJKKeeraAADFwwDBBvBBDwwFDNNareeJKKJYSSST..........',
+    '..........YEYEEEMPPpaNOAAALBBBBBBBBBHAAAopapGPMMEEQYEm..........',
+    '...........YShEZPPOrPNbOAAAHBBBBBBBHAAAoopGraGGMZEkSY...........',
+    '...........YccEZPPOpZobOOAAAFHBBBHFAAAOobtRaaGGMZEccY...........',
+    '............mEiEZMMNffbAOAAAAAdddAAAAANAfftaPMMERiEK............',
+    '.............mEQZZabDfAOAAIIIIIIIIIIFAAaABftpZZRQXK.............',
+    '..............mKRRObfANAAHDDBLLHLLBBDIAANAfbNRRmKm..............',
+    '................KKNbOANAFDDGCBBDDDCPDBdANAObNKK.................',
+    '..................NOOAaALDQGCCDD3CCGiDHAaAOOA...................',
+    '..................AOOAAOBHjGKPeDMGKeWBHAANOaN...................',
+    '................XCJAOaAFBHjleGeleGPlgBBdNaaAJCX.................',
+    '...............XCZGGaNFLBHgjelllllljNHBLNaNGGZCX................',
+    '..............ECEMGGpoLBHFAWsijZjisWNFLDHppGGMECX...............',
+    '..............CQZMRKPLDBINAHggxCDggHANHDDIPKRMMhCX..............',
+    '.............EkVVXMegBDLFMgHD2vKvxDHgMILDIPPMQVVVZ..............',
+    '.............TcQEMZRLBLFMWssggDevggWsWMIBDFPXMEccT..............',
+    '.............TSVEMLLLBIMWiRWlsWDWsiWRiWMILBuQMEVST..............',
+    '.............ThSdDBDLIMWQPiieisWsieicPQWMIBDDQSShT..............',
+    '..............TFDdFDIEWEeQjeejSQSjPRjEPEWEBIFBIST...............',
+    '..............kFFdLIEjUUGsRGPjERQjPGRiZUYjILFFFSk...............',
+    '..............YkShchlKCUQWJGRiJRZlRGJWhUCKhchSSkY...............',
+    '............QCEUkTcclChYWYnJjRYMUijJnYWYhClcckVUEC..............',
+    '...........lCJc..mTYPVUWWCnJjGKMUXjJnCWjUVPYTY..cJC.............',
+    '...........qJEc.....WWjRWCRPFGKUUXFeRCWRWWj.....cEMC............',
+    '...........qEU........QRWGeFFhqUCcIdeGWRQ........YhC............',
+    '...........00.........RllWFHHNVqEFHHFglle.........XZ............',
+    '..........................FLLIgqgHLHF...........................',
+    '..........................dBDLdgFLLLr...........................',
+    '..........................FHDLd.dLDHu...........................',
+    '..........................FHHHF.dIIIu...........................',
+    '..........................FLLLF.dIIIu...........................',
+    '..........................FLBBF.dIII............................',
+    '...........................LBBF.FIId............................',
+    '...........................FBBu.FHHF............................',
+    '...........................FBBu.FHHF............................',
+    '...........................FDDH.FIIF............................',
+    '...........................FDDL.FHHF............................',
+    '...........................FDDBF................................',
+    '...........................FHHHF................................',
+    '................................................................'
+  ];
 
   function buildMysterySilhouettePortrait(pulseStep) {
     const [c, x] = mk(28, 28);
@@ -714,15 +837,38 @@
       }
     };
     if (pulseStep > 0) {
-      drawRing(x, 14, 14, 9 + pulseStep, pulseStep === 1 ? '#7ba1bf' : '#cca252');
+      drawRing(x, 14, 14, 10 + pulseStep, pulseStep === 1 ? '#77eef8' : '#f7d75b');
     }
-    fillOvalPainterly(x, 14, 14, 7.5, 9, ['#527394', '#161d29', '#1c2533', '#283647', '#9eb8cc']);
-    for (let i = 9; i <= 18; i++) put(i, 23, '#1c2533');
-    for (let i = 11; i <= 16; i++) put(i, 24, '#161d29');
-    const crown = [[11, 4], [13, 3], [14, 3], [16, 4], [12, 5], [15, 5]];
-    for (const [cx, cy] of crown) put(cx, cy, pulseStep ? '#f0d28c' : '#7ba1bf');
+    for (let py = 0; py < 28; py++) {
+      const sy = py + 10;
+      const row = ORDEM_FAIRY_ROWS[sy] || '';
+      for (let px = 0; px < 28; px++) {
+        if (py >= 19 && (px <= 3 || px >= 24)) continue;
+        if (Math.abs(px - 13.5) + Math.abs(py - 13.5) > 20.5) continue;
+        const sx = px + 18;
+        const ch = row[sx];
+        if (!ch || ch === '.') continue;
+        const nL = sx > 18 ? row[sx - 1] : '.';
+        const nR = sx < 45 ? row[sx + 1] : '.';
+        const nU = sy > 10 ? (ORDEM_FAIRY_ROWS[sy - 1] || '')[sx] : '.';
+        const nD = sy < 37 ? (ORDEM_FAIRY_ROWS[sy + 1] || '')[sx] : '.';
+        const isEdge = nL === '.' || nR === '.' || nU === '.' || nD === '.';
+        const isFlower = sx >= 35 && sx <= 42 && sy >= 10 && sy <= 18 && 'CGJKMPQRceijrstvx2'.includes(ch);
+        const isWing = sx <= 21 || sx >= 42;
+        if (isFlower) {
+          put(px, py, 'vx2'.includes(ch) ? (pulseStep ? '#f7d75b' : '#cca252') : (pulseStep ? '#77eef8' : '#527394'));
+        } else if (isEdge) {
+          put(px, py, pulseStep ? '#95ecf6' : '#527394');
+        } else if (isWing) {
+          put(px, py, ((px + py) & 1) === 0 ? '#283647' : '#1c2533');
+        } else {
+          put(px, py, '#161d29');
+        }
+      }
+    }
     if (pulseStep > 0) {
-      put(13, 18, '#f5efe2'); put(14, 18, '#f5efe2');
+      put(13, 15, '#f1fbfa');
+      put(14, 15, '#f1fbfa');
     }
     return c;
   }
@@ -736,35 +882,40 @@
         x.fillRect(px, py, 1, 1);
       }
     };
-    fillOvalPainterly(x, 14, 13.5, 8.5, 9.5, ['#2b1a14', '#42281e', '#613c2d', '#82533f', '#a66e56']);
-    fillOvalPainterly(x, 14, 15, 6.8, 7, ['#4f3021', '#6e4531', '#915f46', '#b37b5e', '#cfa084']);
-    for (let i = 9; i <= 18; i++) put(i, 6, '#e0b865');
-    put(13, 5, '#fae3a2'); put(14, 5, '#7ba1bf');
+    for (let py = 0; py < 28; py++) {
+      const sy = py + 10;
+      const row = ORDEM_FAIRY_ROWS[sy] || '';
+      for (let px = 0; px < 28; px++) {
+        if (py >= 19 && (px <= 3 || px >= 24)) continue;
+        if (Math.abs(px - 13.5) + Math.abs(py - 13.5) > 20.5) continue;
+        const sx = px + 18;
+        const ch = row[sx];
+        if (!ch || ch === '.') continue;
+        const col = ORDEM_FAIRY_PALETTE[ch];
+        if (col) put(px, py, col);
+      }
+    }
     if (blink) {
-      for (let dx = 0; dx < 3; dx++) {
-        put(9 + dx, 14, '#42281e');
-        put(16 + dx, 14, '#42281e');
-      }
-    } else {
-      for (const ox of [9, 16]) {
-        for (let dy = 0; dy < 3; dy++) {
-          for (let dx = 0; dx < 3; dx++) put(ox + dx, 13 + dy, dx === 0 ? '#f5efe2' : '#261712');
+      for (const ox of [8, 16]) {
+        for (let dx = 0; dx < 3; dx++) {
+          put(ox + dx, 10, '#8e3730');
+          put(ox + dx, 11, '#b76039');
+          put(ox + dx, 12, '#150a28');
         }
-        put(ox + 1, 13, '#ffffff');
       }
     }
-    if (mouthOpen === 0) {
-      put(12, 19, '#6e4531'); put(13, 19, '#6e4531'); put(14, 19, '#6e4531');
-    } else {
-      for (let dx = 12; dx <= 15; dx++) {
-        put(dx, 18, '#592422');
-        put(dx, 19, '#c95b54');
+    if (mouthOpen > 0) {
+      put(12, 15, '#47132a');
+      put(13, 15, '#47132a');
+      put(14, 15, '#47132a');
+      put(13, 16, '#f99475');
+      put(14, 16, '#f99475');
+      if (mouthOpen > 1) {
+        put(12, 16, '#75262e');
+        put(15, 15, '#47132a');
+        put(15, 16, '#75262e');
       }
     }
-    // Gola real turquesa/dourada contida na base do busto
-    for (let i = 8; i <= 19; i++) put(i, 22, i < 14 ? '#68b8c4' : '#3d7c8a');
-    for (let i = 9; i <= 18; i++) put(i, 23, i < 14 ? '#f2cc6b' : '#b88d3d');
-    for (let i = 11; i <= 16; i++) put(i, 24, '#2b4f59');
     return c;
   }
 
@@ -865,12 +1016,13 @@
   ], { o: '#140d2e', W: '#ffffff', M: '#ffc6f2', B: '#ff72e0' });
 
   // ============================================================================
-  // RAINHA DA "ORDEM" / FADA LIBERTA — SPRITE HI-BIT 48x68 PIXELS (ESTILO MENTOR DE OWLBOY)
-  // Proporção alta e elegante como o mentor na print de Owlboy, manto/asas em camadas
-  // pictóricas sem contorno preto grosso, coroa dourada delicada e cabelos longos.
+  // RAINHA DA "ORDEM" / FADA LIBERTA — SPRITE HI-BIT 64x64 PIXELS (TRUE PIXEL ART)
+  // Fada com pele marrom quente, cabelos longos castanho-escuro com flor cristalina
+  // azul e miolo dourado, grandes asas de borboleta translúcidas em violeta/lilás/ciano,
+  // vestido de pétalas azuis e cinto dourado com gema central.
   // ============================================================================
   function buildHiBitOrdem(pose = 'idle0') {
-    const W = 48, H = 68;
+    const W = 64, H = 64;
     const [c, x] = mk(W, H);
     c.hib = true;
     const put = (px, py, col) => {
@@ -880,125 +1032,111 @@
         x.fillRect(ix, iy, 1, 1);
       }
     };
-    const fillEll = (cx, cy, rx, ry, fn) => {
-      for (let py = Math.floor(cy - ry - 1); py <= Math.ceil(cy + ry + 1); py++) {
-        for (let px = Math.floor(cx - rx - 1); px <= Math.ceil(cx + rx + 1); px++) {
-          const dx = (px - cx) / rx, dy = (py - cy) / ry;
-          const d = dx * dx + dy * dy;
-          if (d <= 1.0) {
-            const col = fn(px, py, dx, dy, d);
-            if (col) put(px, py, col);
+
+    const isSil = pose === 'sil0' || pose === 'sil1' || pose === 'sil2';
+    const isBlink = pose === 'idle2';
+    const isSing = pose === 'sing1' || pose === 'sing2';
+    const isCeleb = pose === 'celeb0';
+    const bobY = (pose === 'idle1' || pose === 'walk1' || pose === 'sing1' || pose === 'sil2')
+      ? -1
+      : (pose === 'walk2' || pose === 'celeb0')
+        ? -2
+        : 0;
+    const wingLift = (pose === 'idle1' || pose === 'walk1' || pose === 'sil1')
+      ? 1
+      : (pose === 'walk2' || pose === 'sing1' || pose === 'celeb0' || pose === 'sil2')
+        ? 2
+        : 0;
+    const wingPinch = (pose === 'idle1' || pose === 'walk1' || pose === 'sing2') ? 1 : 0;
+
+    const SIL_CORE = '#131824';
+    const SIL_MID = '#202b3d';
+    const SIL_RIM = pose === 'sil2' ? '#f7d75b' : (pose === 'sil1' ? '#95ecf6' : '#65b8d9');
+
+    for (let sy = 0; sy < 64; sy++) {
+      const row = ORDEM_FAIRY_ROWS[sy];
+      if (!row) continue;
+      for (let sx = 0; sx < 64; sx++) {
+        const ch = row[sx];
+        if (!ch || ch === '.') continue;
+
+        const isLeftWing = sx <= 19 || (sx <= 21 && sy <= 31);
+        const isRightWing = sx >= 44 || (sx >= 42 && sy >= 19 && sy <= 31);
+        const isWing = isLeftWing || isRightWing;
+        const isLeftLeg = sy >= 50 && sx >= 24 && sx <= 31;
+        const isRightLeg = sy >= 50 && sx >= 32 && sx <= 39;
+
+        let dx = sx;
+        let dy = sy + bobY;
+
+        if (isWing) {
+          const dist = Math.max(0, Math.abs(sx - 31.5) - 10);
+          dy -= Math.round((wingLift * dist) / 14);
+          if (wingPinch && dist > 6) {
+            dx += isLeftWing ? 1 : -1;
+          }
+        } else if (pose === 'walk1' && isLeftLeg) {
+          dy -= 1;
+        } else if (pose === 'walk2' && isRightLeg) {
+          dy -= 1;
+        }
+
+        if (isSil) {
+          const nL = sx > 0 ? row[sx - 1] : '.';
+          const nR = sx < 63 ? row[sx + 1] : '.';
+          const nU = sy > 0 ? ORDEM_FAIRY_ROWS[sy - 1][sx] : '.';
+          const nD = sy < 63 ? ORDEM_FAIRY_ROWS[sy + 1][sx] : '.';
+          const isEdge = nL === '.' || nR === '.' || nU === '.' || nD === '.';
+          const isFlowerOrGem =
+            (sx >= 35 && sx <= 42 && sy >= 10 && sy <= 18 && 'CGJKMPQRceijrstvx2'.includes(ch)) ||
+            (sx >= 29 && sx <= 34 && sy >= 37 && sy <= 39 && 'vx2CDGK'.includes(ch));
+          if (isEdge) {
+            put(dx, dy, SIL_RIM);
+          } else if (isFlowerOrGem) {
+            put(dx, dy, 'vx2'.includes(ch) ? '#f7d75b' : '#77eef8');
+          } else if (isWing && 'CGJKMPUVq'.includes(ch)) {
+            put(dx, dy, SIL_MID);
+          } else {
+            put(dx, dy, SIL_CORE);
+          }
+        } else {
+          const col = ORDEM_FAIRY_PALETTE[ch];
+          if (col) put(dx, dy, col);
+        }
+      }
+    }
+
+    if (!isSil) {
+      // Piscar suave dos olhos no quadro idle2
+      if (isBlink) {
+        for (const ox of [26, 34]) {
+          for (let i = 0; i < 3; i++) {
+            put(ox + i, 20 + bobY, '#8e3730');
+            put(ox + i, 21 + bobY, '#b76039');
+            put(ox + i, 22 + bobY, '#150a28');
           }
         }
       }
-    };
 
-    const isSil = pose === 'sil0' || pose === 'sil1' || pose === 'sil2';
-    const wingLift = (pose === 'sing1' || pose === 'celeb0' || pose === 'sil1' || pose === 'sil2') ? -3 : 0;
-    const wingSpread = (pose === 'sil2' || pose === 'celeb0') ? 2 : 0;
-    const bobY = (pose === 'walk1' || pose === 'sing1' || pose === 'sil2') ? -1 : 0;
-
-    const SIL_CORE = '#131824', SIL_MID = '#202b3d', SIL_RIM = pose === 'sil2' ? '#f2cc6b' : (pose === 'sil1' ? '#9ee6ff' : '#65b8d9');
-    const WING_DARK = '#26384a', WING_MID = '#3e5c73', WING_LIT = '#6892ab', WING_HI = '#a7d4e8';
-    const ROBE_DARK = '#243040', ROBE_MID = '#394d66', ROBE_LIT = '#567291';
-    const SASH_DARK = '#8c7248', SASH_MID = '#bfa36f', SASH_LIT = '#e6cf9c';
-    const HAIR_DARK = '#291a16', HAIR_MID = '#4a2f27', HAIR_LIT = '#73493c';
-    const SKIN_DARK = '#6e4534', SKIN_MID = '#946049', SKIN_LIT = '#b87b60';
-    const GOLD_DARK = '#9e742b', GOLD_LIT = '#f2cc6b';
-
-    // 1. Asas / Manto real emplumado em camadas (estilo mentor Asio de Owlboy)
-    for (const side of [-1, 1]) {
-      for (let layer = 0; layer < 3; layer++) {
-        const wy = 26 + layer * 6 + wingLift + bobY;
-        const wx = 24 + side * (11 + wingSpread + layer * 2);
-        fillEll(wx, wy, 9 - layer, 14 - layer * 2, (px, py, dx, dy, d) => {
-          if (isSil) return d > 0.78 ? SIL_RIM : (d > 0.55 ? SIL_MID : SIL_CORE);
-          if (d > 0.84) return WING_DARK;
-          const feather = ((px + py) & 1) === 0;
-          if (dy < -0.25) return feather ? WING_HI : WING_LIT;
-          return feather ? WING_LIT : WING_MID;
-        });
+      // Boca expressiva ao cantar ou celebrar + brilho na flor do cabelo e no cinto dourado
+      if (isSing || isCeleb) {
+        put(30, 25 + bobY, '#75262e');
+        put(31, 25 + bobY, '#47132a');
+        put(32, 25 + bobY, '#47132a');
+        put(33, 25 + bobY, '#75262e');
+        put(31, 26 + bobY, '#f99475');
+        put(32, 26 + bobY, '#f99475');
+        // Brilho intenso na flor azul/dourada do cabelo e na gema central do cinto
+        put(38, 13 + bobY, '#ffffff');
+        put(31, 38 + bobY, '#ffffff');
       }
-    }
 
-    // 2. Vestes longas e fluidas até os pés (proporção alta e imponente)
-    for (let py = 27 + bobY; py <= 63 + bobY; py++) {
-      const t = (py - (27 + bobY)) / 36;
-      const halfW = Math.round(7 + t * 9);
-      for (let px = 24 - halfW; px <= 24 + halfW; px++) {
-        const dx = (px - 24) / Math.max(1, halfW);
-        if (isSil) {
-          put(px, py, Math.abs(dx) > 0.82 || py >= 62 + bobY ? SIL_RIM : SIL_CORE);
-        } else {
-          let col = ROBE_MID;
-          if (Math.abs(dx) > 0.84 || py === 63 + bobY) col = ROBE_DARK;
-          else if (py >= 60 + bobY) col = SASH_MID;
-          else if (Math.abs(dx) < 0.28) {
-            col = Math.abs(dx) < 0.14 ? SASH_LIT : SASH_MID;
-          } else if (dx < -0.3) col = ROBE_LIT;
-          else if (dx > 0.45) col = ROBE_DARK;
-          put(px, py, col);
-        }
+      if (isCeleb) {
+        drawStar(x, 8, 12 + bobY, 2, '#ffffff', '#77eef8');
+        drawStar(x, 55, 12 + bobY, 2, '#ffffff', '#e2adf6');
+        drawStar(x, 11, 44 + bobY, 2, '#ffffff', '#f7d75b');
+        drawStar(x, 52, 44 + bobY, 2, '#ffffff', '#77eef8');
       }
-    }
-
-    // 3. Cabelo longo em cascatas e busto real
-    fillEll(24, 21 + bobY, 11, 12, (px, py, dx, dy, d) => {
-      if (isSil) return d > 0.82 ? SIL_RIM : SIL_CORE;
-      return d > 0.82 ? HAIR_DARK : (dx < 0 ? HAIR_LIT : HAIR_MID);
-    });
-
-    // 4. Braços elegantes (erguidos ao cantar/celebrar/apontar para o mural ou serenamente postados)
-    const armUp = (pose === 'sing1' || pose === 'celeb0' || pose === 'sil2');
-    for (const side of [-1, 1]) {
-      const ax = 24 + side * (armUp ? 13 : 9);
-      const ay = (armUp ? 23 : 32) + bobY;
-      fillEll(ax, ay, 3.2, 6, (px, py, dx, dy, d) => {
-        if (isSil) return d > 0.75 ? SIL_RIM : SIL_CORE;
-        return dy > 0.4 ? SKIN_MID : (d > 0.8 ? ROBE_DARK : ROBE_LIT);
-      });
-    }
-
-    // 5. Rosto esculpido da Rainha da Ordem
-    const headY = 16 + bobY;
-    fillEll(24, headY, 7.5, 8.5, (px, py, dx, dy, d) => {
-      if (isSil) return d > 0.8 ? SIL_RIM : SIL_CORE;
-      if (d > 0.85) return SKIN_DARK;
-      if (py < headY - 2) return dx < 0 ? HAIR_LIT : HAIR_MID;
-      return (dx > 0.35 || dy > 0.45) ? SKIN_MID : SKIN_LIT;
-    });
-
-    if (!isSil) {
-      // Olhos expressivos luminosos
-      for (const ox of [21, 27]) {
-        for (let dy = -1; dy <= 1; dy++) {
-          put(ox, headY + dy, '#1c1210');
-          put(ox + 1, headY + dy, '#1c1210');
-        }
-        put(ox, headY - 1, '#ffffff');
-        put(ox + 1, headY + 1, '#9ee6ff');
-      }
-      // Boca cantando ou serena
-      if (pose === 'sing1' || pose === 'celeb0') {
-        for (let dx = -2; dx <= 2; dx++) {
-          put(24 + dx, headY + 4, '#4a1c24');
-          put(24 + dx, headY + 5, '#d96b7d');
-        }
-      } else {
-        put(23, headY + 4, '#6e352c');
-        put(24, headY + 4, '#6e352c');
-        put(25, headY + 4, '#6e352c');
-      }
-    }
-
-    // 6. Coroa real cristalina no topo
-    for (let dx = -6; dx <= 6; dx++) {
-      const cy = headY - 7;
-      const spike = (dx === -5 || dx === 0 || dx === 5) ? 3 : ((dx === -2 || dx === 2) ? 1 : 0);
-      for (let s = 0; s <= spike; s++) {
-        put(24 + dx, cy - s, isSil ? SIL_RIM : (s === spike ? '#ffffff' : (Math.abs(dx) <= 1 ? '#7be0ff' : GOLD_LIT)));
-      }
-      put(24 + dx, cy + 1, isSil ? SIL_MID : GOLD_DARK);
     }
 
     return c;
@@ -1317,6 +1455,7 @@
   // Compila todos os sprites Hi-Bit uma única vez no SpriteBank
   const PROTAG_F_IDLE0 = buildHiBitProtagonist('idle0');
   const PROTAG_F_IDLE1 = buildHiBitProtagonist('idle1');
+  const PROTAG_F_IDLE2 = buildHiBitProtagonist('idle2');
   const PROTAG_F_WALK0 = buildHiBitProtagonist('walk0');
   const PROTAG_F_WALK2 = buildHiBitProtagonist('walk2');
   const PROTAG_F_TALK1 = buildHiBitProtagonist('talk1');
@@ -1331,13 +1470,17 @@
   const ORDEM_F_SIL1 = buildHiBitOrdem('sil1');
   const ORDEM_F_SIL2 = buildHiBitOrdem('sil2');
   const ORDEM_F_IDLE0 = buildHiBitOrdem('idle0');
+  const ORDEM_F_IDLE1 = buildHiBitOrdem('idle1');
+  const ORDEM_F_IDLE2 = buildHiBitOrdem('idle2');
   const ORDEM_F_WALK1 = buildHiBitOrdem('walk1');
+  const ORDEM_F_WALK2 = buildHiBitOrdem('walk2');
   const ORDEM_F_SING1 = buildHiBitOrdem('sing1');
+  const ORDEM_F_SING2 = buildHiBitOrdem('sing2');
   const ORDEM_F_CELEB0 = buildHiBitOrdem('celeb0');
 
   const SpriteBank = {
     protagonist: {
-      idle: [PROTAG_F_IDLE0, PROTAG_F_IDLE0, PROTAG_F_IDLE1, PROTAG_F_IDLE1],
+      idle: [PROTAG_F_IDLE0, PROTAG_F_IDLE1, PROTAG_F_IDLE2, PROTAG_F_IDLE1],
       walk: [PROTAG_F_WALK0, PROTAG_F_IDLE1, PROTAG_F_WALK2, PROTAG_F_IDLE1],
       talk: [PROTAG_F_IDLE0, PROTAG_F_TALK1, PROTAG_F_IDLE0, PROTAG_F_TALK1],
       celebrate: [PROTAG_F_IDLE0, PROTAG_F_CELEB1, PROTAG_F_CELEB1, PROTAG_F_IDLE0],
@@ -1347,10 +1490,10 @@
     },
     ordem: {
       back_silhouette: [ORDEM_F_SIL0, ORDEM_F_SIL1, ORDEM_F_SIL2, ORDEM_F_SIL1],
-      idle: [ORDEM_F_IDLE0, ORDEM_F_WALK1],
-      walk: [ORDEM_F_IDLE0, ORDEM_F_WALK1],
-      sing: [ORDEM_F_IDLE0, ORDEM_F_SING1],
-      celebrate: [ORDEM_F_CELEB0, ORDEM_F_IDLE0]
+      idle: [ORDEM_F_IDLE0, ORDEM_F_IDLE1, ORDEM_F_IDLE2, ORDEM_F_IDLE1],
+      walk: [ORDEM_F_IDLE0, ORDEM_F_WALK1, ORDEM_F_WALK2, ORDEM_F_WALK1],
+      sing: [ORDEM_F_IDLE0, ORDEM_F_SING1, ORDEM_F_SING2, ORDEM_F_SING1],
+      celebrate: [ORDEM_F_CELEB0, ORDEM_F_IDLE0, ORDEM_F_CELEB0, ORDEM_F_IDLE1]
     },
     araci: makeGuardianActor(ARACI_SPEC),
     irece: makeGuardianActor(IRECE_SPEC),
@@ -1611,16 +1754,17 @@
     adaptMapFairyIcon() {
       const fairyEl = document.querySelector('.journey-fairy');
       if (!fairyEl) return;
-      const cellW = 48, cellH = 68;
+      const cellW = 64, cellH = 64;
       const [sheet, sctx] = mk(cellW * 4, cellH * 2);
       for (let col = 0; col < 4; col++) {
         const idleSpr = SpriteBank.ordem.idle[col % SpriteBank.ordem.idle.length];
-        const walkSpr = SpriteBank.ordem.celebrate[col % SpriteBank.ordem.celebrate.length];
+        const walkSpr = SpriteBank.ordem.walk[col % SpriteBank.ordem.walk.length];
         sctx.drawImage(idleSpr, col * cellW, 0);
         sctx.drawImage(walkSpr, col * cellW, cellH);
       }
       const dataUrl = sheet.toDataURL('image/png');
       fairyEl.style.backgroundImage = `url("${dataUrl}")`;
+      fairyEl.style.aspectRatio = '1';
       fairyEl.style.imageRendering = 'pixelated';
     },
 

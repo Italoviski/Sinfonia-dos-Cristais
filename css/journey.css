@@ -6,7 +6,7 @@
 .journey-node:hover,.journey-node:focus-visible{border-color:#fff5a8;box-shadow:0 0 14px #ffffaa}
 .journey-node.locked{background:#10132bb8;border-color:#5b6177;cursor:not-allowed}
 .journey-node.done:after{content:'✓';font-size:12px;color:white;text-shadow:1px 1px #172d28}
-.journey-fairy{position:absolute;width:5%;aspect-ratio:.8;background:0 0/400% 200% no-repeat;image-rendering:pixelated;transform:translate(-50%,-105%);pointer-events:none;z-index:5;border-radius:45%;will-change:left,top;filter:drop-shadow(0 3px 4px #060b22)}
+.journey-fairy{position:absolute;width:5%;aspect-ratio:1;background:0 0/400% 200% no-repeat;image-rendering:pixelated;transform:translate(-50%,-105%);pointer-events:none;z-index:5;border-radius:45%;will-change:left,top;filter:drop-shadow(0 3px 4px #060b22)}
 .map-screen .screen-bar{padding:12px 20px}.map-caption{bottom:6px;pointer-events:none;text-shadow:1px 2px #000}
 .journey-dialog{width:min(580px,94vw);aspect-ratio:1.5;border:0;background:transparent url('../assets/story/interface-extra/paineis-mundos.png') var(--panel-x) var(--panel-y)/200% 200%;padding:0;overflow:hidden;color:#fff;filter:drop-shadow(0 0 9px #a278bc);animation:panel-idle 3s ease-in-out infinite alternate}
 .journey-dialog::backdrop{background:#071023c9}
