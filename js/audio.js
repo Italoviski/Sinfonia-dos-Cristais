@@ -497,10 +497,13 @@
    ensure();
    if (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') {
     if (menuTrack && menuTrack.paused) {
+     window.CrystalAudio?.stopAllMusic?.(menuTrack);
      menuTrack.volume = menuVol;
      menuTrack.play().then(() => { teardown(); }).catch(() => {});
      return;
     }
+   } else {
+    teardown();
    }
    if (menuTrack && !menuTrack.paused) {
     teardown();
@@ -523,10 +526,12 @@
   get track() { return menuTrack; },
   get playing() { return Boolean(menuTrack && !menuTrack.paused); },
   play() {
-   if (!menuTrack || !menuTrack.paused) return Promise.resolve();
    if (typeof document !== 'undefined' && document.body?.dataset?.screen && document.body.dataset.screen !== 'home') {
+    if (menuTrack) try { menuTrack.pause(); } catch (_) {}
     return Promise.resolve();
    }
+   if (!menuTrack || !menuTrack.paused) return Promise.resolve();
+   window.CrystalAudio?.stopAllMusic?.(menuTrack);
    menuTrack.volume = menuVol;
    return menuTrack.play().catch(() => {
     setupInteractionUnlock();

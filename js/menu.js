@@ -301,8 +301,8 @@
 
   // Interactive click on the Ancient Door or Cavern Crystals in the Menu
   frame.addEventListener('pointerdown', e => {
-    window.CrystalMenuAudio?.play?.();
     if (e.target.closest('button')) return;
+    window.CrystalMenuAudio?.play?.();
     const rect = frame.getBoundingClientRect();
     const px = ((e.clientX - rect.left) / rect.width) * W;
     const py = ((e.clientY - rect.top) / rect.height) * H;

@@ -2369,6 +2369,9 @@
 
     prepareCanvasForGame() {
       global.CaveChapter1?.deactivateCanvas?.();
+      global.CaveChapter1?.stopMusicAudio?.();
+      global.CrystalMenuAudio?.pause?.();
+      global.CrystalAudio?.stopAllMusic?.(this.regularAudio || this.musicAudio);
       if (!this.canvas) this.init();
       this.canvas.hidden = false;
       this.canvas.style.display = 'block';
@@ -2410,27 +2413,35 @@
       };
       GameHUD.onMuteChange = (muted, effMus) => {
         const vol = effMus !== undefined ? effMus : (muted ? 0 : GameHUD.musicVol / 100);
-        const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
+        const maxLvl = this.worldKey === 'sanctuary' ? 1 : 5;
+        const inSpecial = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright' ||
+          Boolean(this.forestNinja) || Boolean(this.riverMelody) || Boolean(this.shellGame) ||
+          this.currentLevel === maxLvl;
+
         if (this.musicAudio) {
           this.musicAudio.muted = !!muted || vol <= 0;
           this.musicAudio.volume = vol;
-          if (inMusical) {
+          if (inSpecial) {
             if (muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
               try { this.musicAudio.pause(); } catch (_) {}
-            } else if (this.musicAudio.paused && this.musicalTime < 65.0) {
+            } else if (this.musicAudio.paused && this.running && this.phase !== 'map_active') {
               try { this.musicAudio.play().catch(() => {}); } catch (_) {}
             }
+          } else {
+            try { this.musicAudio.pause(); } catch (_) {}
           }
         }
         if (this.regularAudio) {
           this.regularAudio.muted = !!muted || vol <= 0;
           this.regularAudio.volume = vol;
-          if (!inMusical) {
+          if (!inSpecial) {
             if (muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
               try { this.regularAudio.pause(); } catch (_) {}
             } else if (this.regularAudio.paused && this.running && this.phase !== 'map_active') {
               try { this.regularAudio.play().catch(() => {}); } catch (_) {}
             }
+          } else {
+            try { this.regularAudio.pause(); } catch (_) {}
           }
         }
       };
@@ -2479,6 +2490,8 @@
       this.prepareCanvasForGame();
       DialogueBox.close();
       TutorialModal.close();
+      this.stopMusicAudio();
+      this.stopRegularBgm();
 
       this.phase = 'cutscene_enter';
       this.phaseTime = 0;
@@ -2517,6 +2530,8 @@
       IrisTransition.start('in', 44, 126, 0.65);
       if (this.currentLevel < maxLvl) {
         this.playRegularBgm();
+      } else {
+        this.playSpecialBgm();
       }
 
       if (!this.running) {
@@ -2530,6 +2545,8 @@
       this.prepareCanvasForGame();
       DialogueBox.close();
       TutorialModal.close();
+      this.stopMusicAudio();
+      this.stopRegularBgm();
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
       this.draggedPiece = null;
@@ -2565,6 +2582,16 @@
         IrisTransition.start('in', 160, 90, 0.45);
         return;
       }
+      if (this.worldKey === 'river' && this.currentLevel === 5) {
+        this.startRiverMelodyGame();
+        IrisTransition.start('in', 160, 90, 0.45);
+        return;
+      }
+      if (this.worldKey === 'caatinga' && this.currentLevel === 5) {
+        this.startShellGame();
+        IrisTransition.start('in', 160, 90, 0.45);
+        return;
+      }
       this.floatingBanners = [];
       this.camPanY = 0;
       this.currentStep = 1;
@@ -2582,6 +2609,12 @@
       this.spawnShatter(160, 90, 'pure', 14);
       GameHUD.playSfx('start');
       IrisTransition.start('in', 160, 90, 0.45);
+      const maxLvl = this.worldKey === 'sanctuary' ? 1 : 5;
+      if (this.currentLevel < maxLvl) {
+        this.playRegularBgm();
+      } else {
+        this.playSpecialBgm();
+      }
 
       if (!this.running) {
         this.running = true;
@@ -4041,6 +4074,7 @@
       this.pureEquation = null;
       this.shadowEquation = null;
       this.setupShellRound(0);
+      this.playSpecialBgm();
 
       const cards = StandardTutorialCards.CAATINGA_SHELL_GAME;
       if (cards && cards.length) {
@@ -4398,6 +4432,7 @@
       this.shadowEquation = null;
       this.fractionPlatform = null;
       this.setupRiverMelodyRound(0);
+      this.playSpecialBgm();
 
       const cards = StandardTutorialCards.RIVER_MELODY_SIMON;
       if (cards && cards.length) {
@@ -4734,9 +4769,11 @@
 
       this.phase = 'forest_ninja_vignette';
       this.phaseTime = 0;
+      this.playSpecialBgm();
     },
 
     startForestNinjaStage(stageNum) {
+      this.playSpecialBgm();
       const fn = this.forestNinja;
       if (!fn) return;
       fn.currentStage = clamp(stageNum, 1, 4);
@@ -5727,11 +5764,43 @@
       return 'assets/audio/o-que-um-cristal-pode-fazer.mp3';
     },
 
+    playSpecialBgm() {
+      const specSrc = this.getSpecialBgmSrc();
+      if (!specSrc) return;
+      try {
+        this.stopRegularBgm();
+        global.CrystalAudio?.stopAllMusic?.(this.musicAudio);
+        global.CrystalMenuAudio?.pause?.();
+        global.CaveChapter1?.stopMusicAudio?.();
+        if (!this.musicAudio || this.musicAudio._src !== specSrc) {
+          if (this.musicAudio) {
+            try { this.musicAudio.pause(); } catch (_) {}
+          }
+          this.musicAudio = new Audio(specSrc);
+          this.musicAudio._src = specSrc;
+          this.musicAudio.loop = true;
+          this.musicAudio.preload = 'auto';
+        }
+        GameHUD.syncAudio();
+        const effMus = GameHUD.muted ? 0 : clamp(GameHUD.musicVol / 100, 0, 1);
+        this.musicAudio.muted = GameHUD.muted || effMus <= 0;
+        this.musicAudio.volume = effMus;
+        if (!GameHUD.muted && GameHUD.musicVol > 0 && this.musicAudio.paused) {
+          this.musicAudio.play().catch(() => {});
+        }
+      } catch (_) {}
+    },
+
     playRegularBgm() {
       const src = this.getRegularBgmSrc();
       if (!src) return;
       try {
+        if (this.musicAudio) {
+          try { this.musicAudio.pause(); } catch (_) {}
+        }
+        global.CrystalAudio?.stopAllMusic?.(this.regularAudio);
         global.CrystalMenuAudio?.pause?.();
+        global.CaveChapter1?.stopMusicAudio?.();
         if (!this.regularAudio || this.regularAudio._src !== src) {
           if (this.regularAudio) {
             try { this.regularAudio.pause(); } catch (_) {}
@@ -5784,26 +5853,8 @@
         this.waveRadius = 400;
       }
 
-      try {
-        global.CrystalMenuAudio?.pause?.();
-        const specSrc = this.getSpecialBgmSrc();
-        if (!this.musicAudio || this.musicAudio._src !== specSrc) {
-          if (this.musicAudio) {
-            try { this.musicAudio.pause(); } catch (_) {}
-          }
-          this.musicAudio = new Audio(specSrc);
-          this.musicAudio._src = specSrc;
-          this.musicAudio.preload = 'auto';
-        }
-        GameHUD.syncAudio();
-        this.musicAudio.currentTime = 0;
-        const effMus = GameHUD.muted ? 0 : clamp(GameHUD.musicVol / 100, 0, 1);
-        this.musicAudio.muted = GameHUD.muted || effMus <= 0;
-        this.musicAudio.volume = effMus;
-        if (!GameHUD.muted && GameHUD.musicVol > 0) {
-          this.musicAudio.play().catch(() => {});
-        }
-      } catch (_) {}
+      this.playSpecialBgm();
+      if (this.musicAudio) this.musicAudio.currentTime = 0;
     },
 
     stopMusicAudio() {
@@ -5888,6 +5939,9 @@
       DialogueBox.close();
       TutorialModal.close();
       this.stopMusicAudio();
+      this.stopRegularBgm();
+      global.CrystalAudio?.stopAllMusic?.();
+      global.CrystalMenuAudio?.pause?.();
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
       this.draggedPiece = null;
@@ -6292,6 +6346,9 @@
       if (GameHUD.paused || GameHUD.settingsOpen) {
         if (this.musicAudio && !this.musicAudio.paused) {
           try { this.musicAudio.pause(); } catch (_) {}
+        }
+        if (this.regularAudio && !this.regularAudio.paused) {
+          try { this.regularAudio.pause(); } catch (_) {}
         }
         return;
       }

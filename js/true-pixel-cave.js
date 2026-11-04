@@ -2241,9 +2241,9 @@
           const menuTr = global.CrystalMenuAudio.track;
           menuTr.muted = !!muted || vol <= 0;
           menuTr.volume = vol;
-          if (inMusical || muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
+          if (inMusical || muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen || !this.isActiveGame()) {
             try { menuTr.pause(); } catch (_) {}
-          } else if (this.running && menuTr.paused) {
+          } else if (this.running && menuTr.paused && this.isActiveGame()) {
             try { menuTr.play().catch(() => {}); } catch (_) {}
           }
         }
@@ -2258,6 +2258,7 @@
 
     deactivateCanvas() {
       this.stopMusicAudio();
+      global.CrystalMenuAudio?.pause?.();
       this.phase = 'map_active';
       this.running = false;
       IrisTransition.active = false;
@@ -2482,13 +2483,15 @@
           const b = this.completeBtnRect;
           if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
             GameHUD.playSfx('click');
-            if (this.currentLevel === 1) {
+            if (this.phase === 'world_celebrate_complete' || this.currentLevel >= 4) {
+              this.startForestExitTransition();
+            } else if (this.currentLevel === 1) {
               this.startFase2();
             } else if (this.currentLevel === 2) {
               this.startFase3();
             } else if (this.currentLevel === 3) {
               this.startFase4();
-            } else if (this.currentLevel === 4) {
+            } else {
               this.startForestExitTransition();
             }
           }
@@ -2633,6 +2636,22 @@
 
         if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+            e.preventDefault();
+            GameHUD.playSfx('click');
+            if (this.phase === 'world_celebrate_complete' || this.currentLevel >= 4) {
+              this.startForestExitTransition();
+            } else if (this.currentLevel === 1) {
+              this.startFase2();
+            } else if (this.currentLevel === 2) {
+              this.startFase3();
+            } else if (this.currentLevel === 3) {
+              this.startFase4();
+            } else {
+              this.startForestExitTransition();
+            }
+            return;
+          }
           if (this.phase === 'musical_vignette') {
             e.preventDefault();
             if (this.vignetteCard === 1) {
@@ -3369,6 +3388,7 @@
       if (this.musicAudio) {
         try { this.musicAudio.pause(); } catch (_) {}
       }
+      global.CrystalMenuAudio?.pause?.();
     },
 
     finishMusicalShow() {

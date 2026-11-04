@@ -148,6 +148,8 @@
     if (name !== 'game') {
       window.CaveChapter1?.deactivateCanvas?.();
       window.TruePixelWorlds?.deactivateCanvas?.();
+      window.CaveChapter1?.stopMusicAudio?.();
+      window.TruePixelWorlds?.stopMusicAudio?.();
     }
     if (screen === 'game' && name !== 'game') persist();
 
@@ -184,7 +186,10 @@
       return;
     }
 
+    window.CrystalAudio?.stopAllMusic?.();
     window.CrystalMenuAudio?.pause?.();
+    window.CaveChapter1?.stopMusicAudio?.();
+    window.TruePixelWorlds?.stopMusicAudio?.();
     window.CrystalJourney?.close?.();
     syncTruePixelSockets();
 

@@ -1029,5 +1029,94 @@ test('Fase Especial da Floresta (Nó 10): Mecânica Fruit Ninja em 4 Etapas, Vin
   Worlds.render();
 });
 
+test('Correções de bugs: Conclusão da Caverna (botão e teclado), isolamento de áudio/música e nós visíveis no mapa', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+  await import('../js/audio.js');
+  await import('../js/true-pixel-worlds.js');
+  const Cave = globalThis.CaveChapter1;
+  const Worlds = globalThis.TruePixelWorlds;
+  const CrystalAudio = globalThis.CrystalAudio;
+  const CrystalMenuAudio = globalThis.CrystalMenuAudio;
+
+  // 1. Verificação do Botão de Conclusão da Caverna e Teclado
+  assert.ok(Cave, 'CaveChapter1 deve existir');
+  Cave.init();
+  Cave.phase = 'world_celebrate_complete';
+  Cave.currentLevel = 5;
+  Cave.running = true;
+
+  let exitCalled = 0;
+  const origForestExit = Cave.startForestExitTransition.bind(Cave);
+  Cave.startForestExitTransition = () => {
+    exitCalled++;
+    origForestExit();
+  };
+
+  // Aciona transição de saída para a Floresta
+  Cave.startForestExitTransition();
+  assert.equal(Cave.phase, 'walk_to_forest_exit', 'Fase deve transicionar para walk_to_forest_exit');
+  assert.equal(Cave.protag.state, 'walk', 'Protagonista deve assumir estado de caminhada');
+
+  // Avança tempo da transição walk_to_forest_exit -> inicia Iris Out
+  Cave.update(0.5);
+  assert.equal(Cave._forestExitIrisStarted, true, 'Iris Out de transição para Floresta deve ter sido iniciado');
+
+  // 2. Isolamento de Áudio e Prevenção de Músicas Sobrepostas
+  assert.ok(CrystalAudio, 'CrystalAudio deve existir');
+  assert.equal(typeof CrystalAudio.stopAllMusic, 'function', 'CrystalAudio.stopAllMusic deve ser uma função');
+
+  let stoppedTracks = [];
+  const track1 = { pause() { stoppedTracks.push('caveMusic'); } };
+  const track2 = { pause() { stoppedTracks.push('worldsRegular'); } };
+  const track3 = { pause() { stoppedTracks.push('worldsSpecial'); } };
+
+  Cave.musicAudio = track1;
+  Worlds.regularAudio = track2;
+  Worlds.musicAudio = track3;
+
+  CrystalAudio.stopAllMusic(track2);
+  assert.deepEqual(stoppedTracks, ['caveMusic', 'worldsSpecial'], 'stopAllMusic deve parar todas as faixas exceto a exceção');
+
+  // Verifica que CrystalMenuAudio não toca fora da tela inicial
+  globalThis.document.body.dataset.screen = 'game';
+  let menuPlayed = false;
+  if (CrystalMenuAudio.audio) {
+    CrystalMenuAudio.audio.play = () => { menuPlayed = true; return Promise.resolve(); };
+  }
+  CrystalMenuAudio.play();
+  assert.equal(menuPlayed, false, 'CrystalMenuAudio não deve tocar quando tela !== home');
+
+  // Verifica exclusividade mútua no TruePixelWorlds
+  Worlds.worldKey = 'forest';
+  let specialPaused = false;
+  let regularPaused = false;
+
+  Worlds.regularAudio = new Audio('assets/audio/musica-floresta-fases.mp3');
+  Worlds.regularAudio._src = 'assets/audio/musica-floresta-fases.mp3';
+  Worlds.regularAudio.pause = () => { regularPaused = true; };
+
+  Worlds.playSpecialBgm();
+  assert.equal(regularPaused, true, 'playSpecialBgm deve pausar regularAudio');
+
+  // Worlds.musicAudio agora é a faixa especial ativa
+  assert.ok(Worlds.musicAudio, 'musicAudio especial deve estar instanciado');
+  Worlds.musicAudio.pause = () => { specialPaused = true; };
+
+  Worlds.playRegularBgm();
+  assert.equal(specialPaused, true, 'playRegularBgm deve pausar musicAudio especial');
+
+  // 3. Verificação de Visibilidade dos Nós do Mapa (.journey-node)
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync('css/journey.css', 'utf8');
+  assert.ok(!css.includes('border: 2px solid transparent; background: transparent;'), 'Nós do mapa não podem ter estilos invisíveis transparentes');
+  assert.ok(css.includes('.journey-node{position:absolute;') && css.includes('radial-gradient'), 'Nós do mapa devem ter gradiente visível');
+  assert.ok(css.includes('#a87ffb'), 'Nós do mapa devem usar borda roxa luminosa');
+  assert.ok(css.includes('.journey-node:before'), 'Nós do mapa devem exibir número da fase');
+  assert.ok(css.includes('.journey-node.done:after'), 'Fases concluídas devem exibir marcador de check');
+});
+
+
 
 
