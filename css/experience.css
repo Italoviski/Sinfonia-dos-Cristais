@@ -1,15 +1,16 @@
-.menu-art,.crystal-light,#menuParticles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges}.menu-art{object-fit:fill}.crystal-light{background:url('../assets/story/interface/menu-aprovado.png') center/100% 100%;filter:brightness(1.9) saturate(1.2);mix-blend-mode:normal;opacity:1;image-rendering:pixelated}#menuParticles{z-index:1}.home-screen .home-menu{z-index:2}
+.menu-art,.crystal-light,#menuParticles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges}.menu-art{object-fit:fill}.crystal-light{background:url('../assets/story/interface/menu-aprovado.png') center/100% 100%;filter:brightness(2.1) saturate(1.25);mix-blend-mode:normal;opacity:0.5;image-rendering:pixelated;will-change:opacity;transform:translateZ(0)}#menuParticles{z-index:1}.home-screen .home-menu{z-index:2}
 .game-screen{background:#05030f}
 .reduce-motion .crystal-light{opacity:.3!important}
 /* Interactive Pixel Art Menu Buttons over the Sinfonia dos Cristais Sanctuary Backdrop */
-.home-screen .menu-choice{--menu-color:#a8ff66;position:absolute;left:7%;top:38.2%;width:25%;height:7.8%;padding:0!important;border:none!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;display:flex;align-items:center;justify-content:flex-start;cursor:pointer;transition:transform .09s cubic-bezier(.2,.9,.3,1),filter .09s ease;z-index:2;isolation:isolate}
-.home-screen .menu-choice:nth-child(2){top:48.2%;--menu-color:#9feaff}
-.home-screen .menu-choice:nth-child(3){top:58.2%;--menu-color:#ff8ae2}
-.home-screen .menu-choice:nth-child(4){top:68.2%;--menu-color:#ffd35a}
-.home-screen .menu-choice .menu-btn-art{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:left center;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.75));transition:transform .09s ease,filter .09s ease}
+.home-screen .menu-choice{--menu-color:#a8ff66;position:absolute;left:7%;top:36.2%;width:28%;height:6.8%;padding:0!important;border:none!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;display:flex;align-items:center;justify-content:flex-start;cursor:pointer;transition:transform .05s ease-out;z-index:2;isolation:isolate;will-change:transform;transform:translateZ(0)}
+.home-screen .menu-choice:nth-child(2){top:44.8%;--menu-color:#5ef2ff}
+.home-screen .menu-choice:nth-child(3){top:53.4%;--menu-color:#9feaff}
+.home-screen .menu-choice:nth-child(4){top:62.0%;--menu-color:#ff8ae2}
+.home-screen .menu-choice:nth-child(5){top:70.6%;--menu-color:#ffd35a}
+.home-screen .menu-choice .menu-btn-art{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:left center;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.75));transition:transform .05s ease-out;will-change:transform;transform:translateZ(0)}
 .home-screen .menu-choice:is(:hover,:focus-visible){transform:translateX(5px) scale(1.02)}
 .home-screen .menu-choice:active{transform:translateX(3px) scale(0.98)}
-.home-screen .menu-choice:is(:hover,:focus-visible,:active) .menu-btn-art{filter:drop-shadow(0 0 8px var(--menu-color)) drop-shadow(0 0 18px var(--menu-color)) brightness(1.22) contrast(1.06)}
+.home-screen .menu-choice:is(:hover,:focus-visible,:active) .menu-btn-art{filter:drop-shadow(0 0 7px var(--menu-color)) brightness(1.22) contrast(1.05)}
 .home-screen .menu-choice:focus-visible{outline:2px solid var(--menu-color);outline-offset:6px;border-radius:4px}
 .reduce-motion .home-screen .menu-choice{transform:none!important}
 @media(prefers-reduced-motion:reduce){.home-screen .menu-choice{transform:none!important}}

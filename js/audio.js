@@ -2,27 +2,33 @@
 (() => {
  let ctx, bus, noiseBuf, volume = 0.75, enabled = true, lastClink = -1, lastPulse = -1;
 
- function ensure() {
+ function ensure(silent = false) {
   if (!ctx) {
    const C = window.AudioContext || window.webkitAudioContext;
    if (!C) return null;
-   ctx = new C();
-   bus = ctx.createGain();
-   bus.gain.value = enabled ? volume : 0;
-   const limiter = ctx.createDynamicsCompressor();
-   limiter.threshold.value = -10;
-   limiter.ratio.value = 6;
-   bus.connect(limiter).connect(ctx.destination);
+   try {
+    ctx = new C();
+    bus = ctx.createGain();
+    bus.gain.value = enabled ? volume : 0;
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -10;
+    limiter.ratio.value = 6;
+    bus.connect(limiter).connect(ctx.destination);
 
-   // Pre-build white noise buffer for crystal shatters and Fire Opal crackling
-   const sr = ctx.sampleRate || 44100;
-   noiseBuf = ctx.createBuffer(1, sr * 0.5, sr);
-   const data = noiseBuf.getChannelData(0);
-   for (let i = 0; i < data.length; i++) {
-    data[i] = Math.random() * 2 - 1;
+    // Pre-build white noise buffer for crystal shatters and Fire Opal crackling
+    const sr = ctx.sampleRate || 44100;
+    noiseBuf = ctx.createBuffer(1, Math.floor(sr * 0.5), sr);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+     data[i] = Math.random() * 2 - 1;
+    }
+   } catch {
+    return null;
    }
   }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  if (!silent && ctx.state === 'suspended') {
+   ctx.resume().catch(() => {});
+  }
   return ctx;
  }
 
@@ -79,10 +85,10 @@
  window.CrystalAudio = {
   unlock: ensure,
   hover() {
-   if (!enabled || !ensure()) return;
+   if (!enabled || !ctx || ctx.state === 'suspended') return;
    const t = ctx.currentTime;
-   tone(1046.5, t, 0.055, 'triangle', 0.08, 1318.5);
-   tone(2093, t + 0.01, 0.045, 'sine', 0.05, 2637);
+   tone(1046.5, t, 0.045, 'triangle', 0.07, 1318.5);
+   tone(2093, t + 0.008, 0.035, 'sine', 0.04, 2637);
   },
   click() {
    cue([587.3, 880], 0.038, 'triangle', 0.11, 0.11);
@@ -273,6 +279,104 @@
    });
   },
 
+  // 6. EFEITOS ESPECIAIS DO MUNDO DA CAATINGA (FORMAS GEOMÉTRICAS ELÉTRICAS, TESSELAÇÃO E SHELL GAME)
+  electricHum() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   tone(120, t, 0.18, 'sawtooth', 0.04, 180);
+   tone(240, t + 0.02, 0.16, 'triangle', 0.035, 360);
+  },
+  electricReject() {
+   // Estalo elétrico seco e grave ('bzzz-thump' / 'bzzz-clack') ao rejeitar entrada na barreira elétrica
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.12, 1850, 'bandpass', 2.6, 0.17, 420);
+   tone(165, t, 0.14, 'sawtooth', 0.15, 62);
+   tone(98, t + 0.03, 0.18, 'square', 0.13, 48);
+   tone(1320, t + 0.01, 0.05, 'sawtooth', 0.08, 310);
+  },
+  shapeMaterialize() {
+   // Acoplamento / síntese de forma: tremor sub-grave + clique cristalino facetado
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   tone(82.41, t, 0.22, 'sine', 0.15, 55);
+   noiseBurst(t + 0.02, 0.06, 3200, 'bandpass', 3.2, 0.11, 1800);
+   [587.33, 880, 1174.66, 1760].forEach((f, i) => {
+    tone(f, t + 0.025 + i * 0.028, 0.15, 'triangle', 0.11, f * 1.04);
+   });
+  },
+  shapeSnap() {
+   this.shapeMaterialize();
+  },
+  shapeBanner() {
+   // Jingle triunfante de 3 notas em marimba de quartzo ao exibir o banner flutuante ('QUADRADO!', 'PENTÁGONO!', etc.)
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   [523.25, 659.25, 1046.5].forEach((f, i) => {
+    const dt = i * 0.075;
+    tone(f, t + dt, 0.22, 'triangle', 0.13, f * 0.99);
+    tone(f * 2, t + dt + 0.008, 0.12, 'sine', 0.06, f * 1.98);
+   });
+  },
+  sandSlide() {
+   // Deslize arenoso ('shhh-shhh') + batida oca de argila ao mover os copos de arenito no Shell Game
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.16, 1400, 'bandpass', 1.5, 0.09, 680);
+   tone(196, t + 0.11, 0.08, 'sine', 0.08, 110);
+  },
+  cupStop() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   tone(175, t, 0.09, 'triangle', 0.11, 92);
+   noiseBurst(t, 0.05, 900, 'lowpass', 1.2, 0.08, 400);
+  },
+  shellHit() {
+   // Jingle harmônico ascendente ao encontrar a Opala de Fogo Primordial sob o copo de arenito
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   [587.33, 739.99, 880, 1174.66].forEach((f, i) => {
+    const dt = i * 0.065;
+    tone(f, t + dt, 0.2, 'triangle', 0.13, f * 1.02);
+    tone(f * 1.5, t + dt + 0.01, 0.12, 'sine', 0.06);
+   });
+  },
+  shellMiss() {
+   // Nuvem inofensiva de poeira ao levantar um copo vazio (sem penalidade)
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.18, 950, 'bandpass', 1.1, 0.11, 380);
+   tone(293.66, t, 0.14, 'triangle', 0.08, 220);
+  },
+  playRiverNote(noteIdx = 0) {
+   if (!enabled || !ensure()) return;
+   const freqs = [523.25, 587.33, 659.25, 783.99, 880.00];
+   const f = freqs[Math.max(0, Math.min(freqs.length - 1, noteIdx))] || 523.25;
+   const t = ctx.currentTime;
+   tone(f, t, 0.45, 'sine', 0.18);
+   tone(f * 2.0, t + 0.003, 0.32, 'triangle', 0.10);
+   tone(f * 2.756, t + 0.002, 0.22, 'sine', 0.06);
+  },
+  fractionPinkGlow() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   tone(783.99, t, 0.24, 'triangle', 0.12, 1046.5);
+   tone(1174.66, t + 0.03, 0.26, 'sine', 0.09, 1318.5);
+  },
+  fractionDivide() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   cue([523.25, 659.25, 783.99, 1046.5, 1318.5], 0.045, 'triangle', 0.13, 0.32);
+   noiseBurst(t, 0.24, 2400, 'bandpass', 2.5, 0.11, 800);
+  },
+  errorFairy() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   tone(349.23, t, 0.24, 'triangle', 0.11, 311.13);
+   tone(277.18, t + 0.05, 0.30, 'sawtooth', 0.07, 246.94);
+   noiseBurst(t, 0.14, 600, 'lowpass', 1.0, 0.05);
+  },
+
   setEnabled(v) {
    enabled = Boolean(v);
    if (bus && ctx) bus.gain.setTargetAtTime(enabled ? volume : 0, ctx.currentTime, 0.02);
@@ -374,7 +478,7 @@
   get track() { return menuTrack; },
   get playing() { return Boolean(menuTrack && !menuTrack.paused); },
   play() {
-   if (!menuTrack) return Promise.resolve();
+   if (!menuTrack || !menuTrack.paused) return Promise.resolve();
    if (typeof document !== 'undefined' && document.body?.dataset?.screen && document.body.dataset.screen !== 'home') {
     return Promise.resolve();
    }
@@ -410,6 +514,13 @@
 
  if (typeof window !== 'undefined') {
   setupInteractionUnlock();
+  // Pre-warm audio graph during idle time to eliminate hover latency
+  const prewarm = () => { try { ensure(true); } catch {} };
+  if (typeof requestIdleCallback === 'function') {
+   requestIdleCallback(prewarm);
+  } else {
+   setTimeout(prewarm, 100);
+  }
   if (document.readyState === 'loading') {
    window.addEventListener('DOMContentLoaded', () => window.CrystalMenuAudio?.autoStart?.());
   } else {

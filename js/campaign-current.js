@@ -175,64 +175,63 @@
     {
       id: 11,
       name: 'Margem esquecida',
-      hint: 'Escolha Cortar e deslize sobre a Água-Marinha, ou selecione-a e pressione C. Anule as duas metades.',
-      ...divideAndMatch('aqua', 1, 2)
+      hint: 'Iguale os valores em cima e embaixo da plataforma de fração. Ao brilhar em rosa, clique para quebrar e dividir!',
+      pieces: [piece('aqua', 2, 0.22, 0.38), piece('aqua', 2, 0.45, 0.38), piece('aqua', 1, 0.75, 0.65, true)]
     },
     {
       id: 12,
       name: 'Remanso das frações',
-      hint: 'Corte em metades e depois em quartos. Cada quarto procura uma sombra igual.',
-      ...divideAndMatch('aqua', 1, 4)
+      hint: 'Monte a fração igualando os termos com peças de unidades diferentes. Clique na fração brilhante para dividir!',
+      pieces: [piece('aqua', 4, 0.2, 0.35), piece('aqua', 2, 0.38, 0.35), piece('aqua', 2, 0.54, 0.35), piece('aqua', 1, 0.78, 0.65, true)]
     },
     {
       id: 13,
       name: 'Travessia das ilhas',
-      hint: 'Corte em metades. Conecte as partes e o Quartzo, respeitando a estrutura sombria.',
-      pieces: [piece('aqua', 1, 0.2, 0.3), quartz(1, 0.45, 0.3), piece('aqua', 0.5, 0.61, 0.7, true, 'target'), piece('aqua', 0.5, 0.73, 0.7, true, 'target'), quartz(1, 0.85, 0.7, true, 'target')]
+      hint: 'Divida na plataforma de fração para obter o cristal unitário, depois conecte em Equação Cristalina!',
+      pieces: [piece('aqua', 3, 0.18, 0.3), piece('aqua', 3, 0.36, 0.3), quartz(2, 0.54, 0.3), piece('aqua', 1, 0.7, 0.7, true, 'target'), quartz(2, 0.85, 0.7, true, 'target')]
     },
     {
       id: 14,
       name: 'Nascentes escondidas',
-      hint: 'Corte em quartos e reúna três partes por arrasto. Compare as duas sombras.',
-      pieces: [piece('aqua', 1, 0.22, 0.4), ...shadow('aqua', [0.75, 0.25])]
+      hint: 'Use a Opala de Fogo para subtrair, iguale os termos da fração para quebrar e anule a sombra!',
+      pieces: [quartz(5, 0.18, 0.3), opal(1, 0.35, 0.3), quartz(4, 0.52, 0.3), quartz(1, 0.78, 0.65, true)]
     },
     {
       id: 15,
       name: 'Canto das cascatas',
-      hint: 'Corte em metades, duplique cada uma na Esmeralda e conecte as duas peças para anular a equação.',
-      pieces: [piece('aqua', 1, 0.2, 0.3), ...shadow('aqua', [1, 1], 'target')],
-      portals: [{ x: 0.46, y: 0.35 }]
+      hint: 'Ouça o canto das 5 notas cristalinas e repita a sequência melódica com a fada do rio!',
+      pieces: [piece('aqua', 1, 0.15, 0.4), piece('emerald', 1, 0.32, 0.4), piece('citrine', 1, 0.5, 0.4), piece('opal', 1, 0.68, 0.4), piece('rose', 1, 0.85, 0.4)]
     },
 
     // --- MUNDO 4: CAATINGA (FASES 16 A 20) ---
     {
       id: 16,
-      name: 'Chão rachado',
-      hint: 'Reúna o Quartzo, reduza com a Opala e anule a sombra.',
+      name: 'O despertar do deserto & o círculo sagrado',
+      hint: 'Arraste um cristal unitário até o Círculo Elétrico para cristalizá-lo e anule a sombra.',
       ...basicFusionAndSubtraction(2, 3, 2)
     },
     {
       id: 17,
-      name: 'Cacimba silenciosa',
-      hint: 'Reduza o Quartzo maior com a Opala. Conecte as peças restantes na ordem correta.',
+      name: 'Quadriláteros & a ordem dos fatores',
+      hint: 'Conecte dois cristais em uma Equação Cristalina antes de entrar no Quadrado ou Retângulo Elétrico. A ordem define a cor da borda e do núcleo!',
       ...subtractThenConnect(5, 2, 1)
     },
     {
       id: 18,
-      name: 'Trilha do mandacaru',
-      hint: 'Divida, duplique cada parte e encontre as sombras correspondentes.',
+      name: 'A arte do encaixe (tesselação)',
+      hint: 'Encaixe dois Quadrados idênticos para formar um Retângulo, ou dois Triângulos para formar um Losango!',
       ...divideAndMatch('citrine', 9, 3, true)
     },
     {
       id: 19,
-      name: 'Sombra da jurema',
-      hint: 'Prepare três quartos de Água-Marinha e conecte-os ao Quartzo. A estrutura também precisa corresponder.',
+      name: 'Geometria avançada & equações aninhadas',
+      hint: 'Una um Trapézio e um Triângulo em um Pentágono, ou conecte formas geométricas prontas dentro de uma Equação Aninhada.',
       pieces: [piece('aqua', 1, 0.18, 0.3), quartz(2, 0.43, 0.3), piece('aqua', 0.25, 0.85, 0.28, true), piece('aqua', 0.75, 0.66, 0.7, true, 'target'), quartz(2, 0.83, 0.7, true, 'target')]
     },
     {
       id: 20,
-      name: 'O florescer do sertão',
-      hint: 'Subtraia a Opala, duplique o Quartzo restante e conecte-o à Água-Marinha para restaurar o sertão.',
+      name: 'O santuário da caatinga & o desafio das areias',
+      hint: 'Tessele 6 Triângulos no Hexágono Solar, resolva a Grande Equação e vença o Desafio das Areias para despertar a Opala de Fogo!',
       pieces: [quartz(3, 0.16, 0.3), opal(1, 0.31, 0.3), piece('aqua', 0.5, 0.2, 0.73), quartz(4, 0.68, 0.72, true, 'target'), piece('aqua', 0.5, 0.83, 0.72, true, 'target')],
       portals: [{ x: 0.47, y: 0.3 }]
     }

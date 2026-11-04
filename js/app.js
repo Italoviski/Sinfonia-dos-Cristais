@@ -7,6 +7,7 @@
   let completed = [];
   let records = {};
   let current = 1;
+  let hasSave = false;
   let screen = 'home';
   let toastTimer = null;
 
@@ -16,9 +17,15 @@
   } catch {}
   if (save) {
     settings = { ...defaults, ...cleanSettings(save.settings) };
-    completed = cleanProgress(save.completed);
-    records = save.records && typeof save.records === 'object' ? save.records : {};
-    current = Math.min(21, Math.max(1, Number(save.current) || 1));
+    const loadedCompleted = cleanProgress(save.completed);
+    const loadedRecords = save.records && typeof save.records === 'object' ? save.records : {};
+    const isUnverifiedDefaultDump = loadedCompleted.length === 20 && Object.keys(loadedRecords).length === 0 && !save.hasSave;
+    if (!isUnverifiedDefaultDump) {
+      completed = loadedCompleted;
+      records = loadedRecords;
+      current = Math.min(21, Math.max(1, Number(save.current) || 1));
+      hasSave = Boolean(save.hasSave || completed.length > 0 || current > 1 || Object.keys(records).length > 0);
+    }
   }
 
   function cleanSettings(s) {
@@ -66,7 +73,7 @@
 
   function persist() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ version: 4, settings, completed, current, records }));
+      localStorage.setItem(KEY, JSON.stringify({ version: 4, settings, completed, current, records, hasSave }));
       return true;
     } catch {
       return false;
@@ -156,15 +163,14 @@
       setTimeout(() => document.querySelector('.journey-node.current')?.focus(), 0);
     } else if (name === 'home') {
       updateProgressLabels();
-      $('playButton')?.focus();
+      const targetBtn = ($('continueButton') && hasSave) ? $('continueButton') : ($('newGameButton') || $('playButton'));
+      targetBtn?.focus();
       window.CrystalMenuAudio?.play?.();
     }
   }
 
-  function isLockedLevel(id) {
-    return id === 21
-      ? ![5, 10, 15, 20].every(n => completed.includes(n))
-      : id > unlocked();
+  function isLockedLevel() {
+    return false;
   }
 
   function startLevel(id) {
@@ -183,6 +189,7 @@
     syncTruePixelSockets();
 
     current = levelId;
+    hasSave = true;
     screen = 'game';
     persist();
 
@@ -197,7 +204,9 @@
       if (levelId === 1) window.CaveChapter1.startCutsceneAndFase1();
       else if (levelId === 2) window.CaveChapter1.startFase2();
       else if (levelId === 3) window.CaveChapter1.startFase3();
-      else window.CaveChapter1.startFase4();
+      else if (levelId === 4) window.CaveChapter1.startFase4();
+      else if (typeof window.CaveChapter1.startFase5 === 'function') window.CaveChapter1.startFase5();
+      else window.CaveChapter1.startMusicalShow();
       return;
     }
 
@@ -209,6 +218,58 @@
 
   function startFromMap(id) {
     startLevel(id);
+  }
+
+  function startNewGame() {
+    if (window.CrystalAssetsReady === false) return;
+    unlockAudio();
+    completed = [];
+    records = {};
+    current = 1;
+    hasSave = true;
+    if (window.TruePixelEngine?.GameHUD) {
+      window.TruePixelEngine.GameHUD.diamonds = 0;
+    }
+    if (window.TruePixelEngine?.DialogueBox?.sockets) {
+      window.TruePixelEngine.DialogueBox.sockets.fairy = false;
+      window.TruePixelEngine.DialogueBox.sockets.forest = false;
+      window.TruePixelEngine.DialogueBox.sockets.river = false;
+      window.TruePixelEngine.DialogueBox.sockets.caatinga = false;
+    }
+    syncTruePixelSockets();
+    persist();
+    updateProgressLabels();
+    renderMap();
+    notify('Novo jogo iniciado! Sua jornada começa na Caverna.');
+    startLevel(1);
+  }
+
+  function continueGame() {
+    if (window.CrystalAssetsReady === false) return;
+    unlockAudio();
+    try {
+      const savedRaw = JSON.parse(localStorage.getItem(KEY));
+      if (savedRaw) {
+        const loadedCompleted = cleanProgress(savedRaw.completed);
+        const loadedRecords = savedRaw.records && typeof savedRaw.records === 'object' ? savedRaw.records : {};
+        const isUnverifiedDefaultDump = loadedCompleted.length === 20 && Object.keys(loadedRecords).length === 0 && !savedRaw.hasSave;
+        if (!isUnverifiedDefaultDump && (savedRaw.hasSave || loadedCompleted.length > 0 || Number(savedRaw.current) > 1 || Object.keys(loadedRecords).length > 0)) {
+          completed = loadedCompleted;
+          records = loadedRecords;
+          current = Math.min(21, Math.max(1, Number(savedRaw.current) || 1));
+          hasSave = true;
+        }
+      }
+    } catch {}
+    syncTruePixelSockets();
+    updateProgressLabels();
+    goto('map');
+    const done20 = completed.filter(id => id <= 20).length;
+    if (done20 > 0 || current > 1) {
+      notify(`Continuando sua jornada: ${done20} de 20 fases restauradas.`);
+    } else {
+      notify('Selecione a Fase 1 no mapa para continuar sua jornada.');
+    }
   }
 
   function openSettings() {
@@ -228,6 +289,7 @@
     if (Number.isInteger(nextCurrent) && nextCurrent >= 1 && nextCurrent <= 21) {
       current = nextCurrent;
     }
+    hasSave = true;
     syncTruePixelSockets();
     persist();
     updateProgressLabels();
@@ -312,12 +374,14 @@
       $('exitDialog')?.showModal();
     };
   }
+  if ($('newGameButton')) {
+    $('newGameButton').onclick = startNewGame;
+  }
+  if ($('continueButton')) {
+    $('continueButton').onclick = continueGame;
+  }
   if ($('playButton')) {
-    $('playButton').onclick = () => {
-      if (window.CrystalAssetsReady === false) return;
-      unlockAudio();
-      startLevel(1);
-    };
+    $('playButton').onclick = continueGame;
   }
 
   document.addEventListener('pointerdown', () => {
@@ -327,7 +391,9 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) persist();
   });
-  window.addEventListener('pagehide', persist);
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('pagehide', persist);
+  }
 
   syncTruePixelSockets();
   applySettings();
@@ -340,6 +406,8 @@
     goto,
     startLevel,
     startFromMap,
+    startNewGame,
+    continueGame,
     syncProgress,
     notify,
     openSettings,
@@ -348,6 +416,7 @@
       for (const id of completed) {
         if (!records[id]) records[id] = { stars: 3, points: 300 };
       }
+      hasSave = true;
       syncTruePixelSockets();
       persist();
       renderMap();
@@ -355,7 +424,9 @@
     get state() {
       return {
         completed: [...completed],
+        records: { ...records },
         current,
+        hasSave,
         screen,
         settings: { ...settings }
       };

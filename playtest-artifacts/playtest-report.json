@@ -1,0 +1,180 @@
+{
+  "timestamp": "2026-11-04T13:42:26.444Z",
+  "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "screensTested": [
+    "home",
+    "map"
+  ],
+  "levels": [
+    {
+      "id": 1,
+      "name": "Caverna - Fase 1",
+      "initialPieces": 0,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 2,
+      "name": "Caverna - Fase 2",
+      "initialPieces": 0,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 3,
+      "name": "Caverna - Fase 3",
+      "initialPieces": 0,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 4,
+      "name": "Caverna - Fase 4",
+      "initialPieces": 0,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 5,
+      "name": "Caverna - Fase 5",
+      "initialPieces": 4,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 6,
+      "name": "Floresta - Fase 1",
+      "initialPieces": 2,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 7,
+      "name": "Floresta - Fase 2",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 8,
+      "name": "Floresta - Fase 3",
+      "initialPieces": 5,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 9,
+      "name": "Floresta - Fase 4",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 10,
+      "name": "Floresta - Fase 4",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 11,
+      "name": "Rio - Fase 1",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 12,
+      "name": "Rio - Fase 2",
+      "initialPieces": 4,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 13,
+      "name": "Rio - Fase 3",
+      "initialPieces": 5,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 14,
+      "name": "Rio - Fase 4",
+      "initialPieces": 4,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 15,
+      "name": "Rio - Fase 5",
+      "initialPieces": 5,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 16,
+      "name": "Caatinga - Fase 1",
+      "initialPieces": 2,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 17,
+      "name": "Caatinga - Fase 2",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 18,
+      "name": "Caatinga - Fase 3",
+      "initialPieces": 3,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 19,
+      "name": "Caatinga - Fase 4",
+      "initialPieces": 6,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 20,
+      "name": "Caatinga - Fase 5",
+      "initialPieces": 4,
+      "solved": true,
+      "finished": true
+    },
+    {
+      "id": 21,
+      "name": "Porta - Fase 1",
+      "initialPieces": 5,
+      "solved": true,
+      "finished": true
+    }
+  ],
+  "accessibility": {
+    "highContrastClass": true,
+    "reduceMotionClass": true,
+    "settings": {
+      "music": 0.65,
+      "fx": 0.65,
+      "voice": false,
+      "contrast": true,
+      "motion": true,
+      "assist": true
+    }
+  },
+  "performance": {
+    "samples": 0,
+    "fps": 0,
+    "frameMsMedian": 0,
+    "frameMsP95": 0,
+    "frameMsP99": 0,
+    "updateMsP95": 0,
+    "framesOver25ms": 0
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

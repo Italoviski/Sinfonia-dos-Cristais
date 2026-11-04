@@ -11,7 +11,7 @@
 
   const {
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
-    P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, drawParchmentBox,
+    P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, measurePixelText, drawParchmentBox,
     ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
   } = E;
   const R = Math.round;
@@ -1387,29 +1387,748 @@
     return SECONDARY_VOICE_WINDOWS.some(([a, b]) => mt >= a && mt <= b);
   }
 
-  // Legendas sincronizadas exatas da música enviada (00:00 a 02:46) com acentuação completa
-  const MUSICAL_CAPTIONS = [
-    [0.5, 10.8, '♪ Prelúdio de Violino — O Despertar da Ordem ♪'],
-    [11.0, 22.0, 'Era uma vez um reino envolto em pura alegria, guiado por quatro gemas em harmonia...'],
-    [22.0, 30.0, 'Cada cristal tinha sua rainha, e entre elas a Ordem era minha!'],
-    [30.0, 37.5, 'Mas com o tempo a fumaça e a ambição vieram manchar o ar e envenenar o chão...'],
-    [37.5, 45.0, 'Mesmo com o grito de alerta iminente, chamaram de farsa o perigo presente!'],
-    [45.0, 59.5, 'Na sombra gerada por mãos tão cruéis, viramos cristais voláteis...'],
-    [59.5, 63.5, 'Intensificando o caos e a desordem... E assim chegamos ao fim.'],
-    [63.5, 79.8, '♪ Solo de Violino — A Dança das Sombras e da Luz ♪'],
-    [80.0, 84.5, 'Mas... uma nova luz despertou na Caverna!'],
-    [84.5, 95.5, 'Era uma vez uma criança inocente vagando cá e acolá!'],
-    [95.5, 101.2, 'Em meio a uma aventura, na escuridão da caverna entrou...'],
-    [101.2, 105.8, 'O chão se abriu e no calabouço ela caiu!'],
-    [105.8, 115.5, 'Respira fundo, isso não foi o fim: foi a deixa perfeita pra mim! 1, 2, 3 e vamos lá!'],
-    [115.5, 125.5, 'Olha só que novidade, eu tô livre! Move o cristal aqui, tudo isso é bem facinho!'],
-    [125.5, 129.8, 'Essa luz faz a magia, abriu-se o caminho! Abre o sapatinho! Vai no sapatinho!'],
-    [129.8, 135.5, 'Pequenos passos fazendo a terra inteira florescer!'],
-    [135.5, 143.8, 'Eu sou a Ordem! Chegamos ao topo de novo, o reino inteiro vai renascer!'],
-    [143.8, 148.8, 'Move pra cá! Move pra lá! Que o dom da Ordem faz tudo brilhar!'],
-    [148.8, 153.5, 'Sem bagunça, sem fumaça, pode agradecer!'],
-    [153.5, 166.5, 'O reino vai renascer! A Ordem voltou!']
+  // ============================================================================
+  // MOTOR DE RITMO E KARAOKÊ DA CAVERNA (True Pixel Art Bouncing Ball & Holds)
+  // Sincronização exata das legendas por trecho e palavra com a cantora (00:00 - 02:46)
+  // ============================================================================
+  const KARAOKE_PHRASES = [
+    {
+      t0: 0.5,
+      t1: 10.8,
+      banner: '♪ Prelúdio de Violino — O Despertar da Ordem ♪',
+      words: []
+    },
+    {
+      t0: 11.0,
+      t1: 18.2,
+      words: [
+        { text: 'Era', t: 11.0, dur: 0.6 },
+        { text: 'uma', t: 11.7, dur: 0.6 },
+        { text: 'vez', t: 12.4, dur: 0.8 },
+        { text: 'um', t: 13.3, dur: 0.5 },
+        { text: 'reino', t: 13.9, dur: 0.8 },
+        { text: 'em', t: 14.8, dur: 0.4 },
+        { text: 'pura', t: 15.3, dur: 0.8 },
+        { text: 'alegria,', t: 16.2, dur: 1.8, isHold: true, holdDur: 1.8 }
+      ]
+    },
+    {
+      t0: 18.2,
+      t1: 24.2,
+      words: [
+        { text: 'guiado', t: 18.2, dur: 0.8 },
+        { text: 'por', t: 19.1, dur: 0.5 },
+        { text: 'quatro', t: 19.7, dur: 0.8 },
+        { text: 'gemas', t: 20.6, dur: 0.8 },
+        { text: 'em', t: 21.5, dur: 0.4 },
+        { text: 'harmonia...', t: 22.0, dur: 2.2, isHold: true, holdDur: 2.2 }
+      ]
+    },
+    {
+      t0: 24.5,
+      t1: 29.8,
+      words: [
+        { text: 'Cada', t: 24.5, dur: 0.7 },
+        { text: 'cristal', t: 25.3, dur: 0.9 },
+        { text: 'tinha', t: 26.3, dur: 0.8 },
+        { text: 'a', t: 27.2, dur: 0.3 },
+        { text: 'sua', t: 27.6, dur: 0.5 },
+        { text: 'rainha,', t: 28.2, dur: 1.6, isHold: true, holdDur: 1.6 }
+      ]
+    },
+    {
+      t0: 29.9,
+      t1: 36.2,
+      words: [
+        { text: 'e', t: 29.9, dur: 0.4 },
+        { text: 'entre', t: 30.4, dur: 0.7 },
+        { text: 'elas,', t: 31.2, dur: 0.8 },
+        { text: 'a', t: 32.1, dur: 0.4 },
+        { text: 'Ordem', t: 32.6, dur: 1.0 },
+        { text: 'era', t: 33.7, dur: 0.5 },
+        { text: 'minha!', t: 34.3, dur: 1.9, isHold: true, holdDur: 1.9 }
+      ]
+    },
+    {
+      t0: 36.5,
+      t1: 42.8,
+      words: [
+        { text: 'Mas', t: 36.5, dur: 0.6 },
+        { text: 'com', t: 37.2, dur: 0.4 },
+        { text: 'o', t: 37.7, dur: 0.3 },
+        { text: 'tempo,', t: 38.1, dur: 0.8 },
+        { text: 'a', t: 39.0, dur: 0.3 },
+        { text: 'fumaça', t: 39.4, dur: 0.9 },
+        { text: 'e', t: 40.4, dur: 0.3 },
+        { text: 'a', t: 40.8, dur: 0.3 },
+        { text: 'ambição...', t: 41.1, dur: 1.7, isHold: true, holdDur: 1.7 }
+      ]
+    },
+    {
+      t0: 42.9,
+      t1: 50.0,
+      words: [
+        { text: 'vieram', t: 42.9, dur: 0.8 },
+        { text: 'manchar', t: 43.8, dur: 0.9 },
+        { text: 'o', t: 44.8, dur: 0.3 },
+        { text: 'ar', t: 45.2, dur: 0.7 },
+        { text: 'e', t: 46.0, dur: 0.4 },
+        { text: 'envenenar', t: 46.5, dur: 1.1 },
+        { text: 'o', t: 47.7, dur: 0.3 },
+        { text: 'chão...', t: 48.0, dur: 2.0, isHold: true, holdDur: 2.0 }
+      ]
+    },
+    {
+      t0: 50.2,
+      t1: 56.2,
+      words: [
+        { text: 'Mesmo', t: 50.2, dur: 0.7 },
+        { text: 'com', t: 51.0, dur: 0.4 },
+        { text: 'o', t: 51.5, dur: 0.3 },
+        { text: 'grito', t: 51.9, dur: 0.8 },
+        { text: 'de', t: 52.8, dur: 0.4 },
+        { text: 'alerta', t: 53.3, dur: 0.9 },
+        { text: 'iminente,', t: 54.3, dur: 1.9, isHold: true, holdDur: 1.9 }
+      ]
+    },
+    {
+      t0: 56.3,
+      t1: 64.0,
+      words: [
+        { text: 'viramos', t: 56.3, dur: 1.0 },
+        { text: 'cristais', t: 57.4, dur: 1.1 },
+        { text: 'voláteis...', t: 58.6, dur: 1.4, isHold: true, holdDur: 1.4 },
+        { text: 'chegamos', t: 60.1, dur: 1.1 },
+        { text: 'ao', t: 61.3, dur: 0.4 },
+        { text: 'fim.', t: 61.7, dur: 2.3, isHold: true, holdDur: 2.3 }
+      ]
+    },
+    {
+      t0: 64.0,
+      t1: 79.8,
+      banner: '♪ Solo de Violino — A Dança das Sombras e da Luz ♪',
+      words: []
+    },
+    {
+      t0: 80.0,
+      t1: 85.2,
+      words: [
+        { text: 'Mas...', t: 80.0, dur: 1.2 },
+        { text: 'uma', t: 81.3, dur: 0.6 },
+        { text: 'nova', t: 82.0, dur: 0.8 },
+        { text: 'luz', t: 82.9, dur: 0.8 },
+        { text: 'despertou!', t: 83.7, dur: 1.5, isHold: true, holdDur: 1.5 }
+      ]
+    },
+    {
+      t0: 85.3,
+      t1: 95.0,
+      words: [
+        { text: 'Era', t: 85.3, dur: 0.7 },
+        { text: 'uma', t: 86.1, dur: 0.6 },
+        { text: 'vez', t: 86.8, dur: 0.8 },
+        { text: 'uma', t: 87.7, dur: 0.6 },
+        { text: 'criança', t: 88.4, dur: 0.9 },
+        { text: 'inocente,', t: 89.4, dur: 1.1 },
+        { text: 'vagando', t: 90.6, dur: 1.0 },
+        { text: 'cá', t: 91.7, dur: 0.7 },
+        { text: 'e', t: 92.5, dur: 0.4 },
+        { text: 'acolá!', t: 92.9, dur: 2.1, isHold: true, holdDur: 2.1 }
+      ]
+    },
+    {
+      t0: 95.5,
+      t1: 101.5,
+      words: [
+        { text: 'Na', t: 95.5, dur: 0.5 },
+        { text: 'escuridão', t: 96.1, dur: 1.3 },
+        { text: 'da', t: 97.5, dur: 0.4 },
+        { text: 'caverna', t: 98.0, dur: 1.2 },
+        { text: 'ela', t: 99.3, dur: 0.6 },
+        { text: 'entrou...', t: 99.9, dur: 1.6, isHold: true, holdDur: 1.6 }
+      ]
+    },
+    {
+      t0: 101.6,
+      t1: 106.5,
+      words: [
+        { text: 'O', t: 101.6, dur: 0.4 },
+        { text: 'chão', t: 102.1, dur: 0.7 },
+        { text: 'se', t: 102.9, dur: 0.4 },
+        { text: 'abriu...', t: 103.4, dur: 0.9 },
+        { text: 'ela', t: 104.4, dur: 0.5 },
+        { text: 'caiu!', t: 104.9, dur: 1.6, isHold: true, holdDur: 1.6 }
+      ]
+    },
+    {
+      t0: 106.0,
+      t1: 111.8,
+      words: [
+        { text: 'Respira', t: 106.0, dur: 1.0 },
+        { text: 'fundo!', t: 107.1, dur: 0.9 },
+        { text: 'Isso', t: 108.1, dur: 0.6 },
+        { text: 'não', t: 108.8, dur: 0.5 },
+        { text: 'foi', t: 109.4, dur: 0.5 },
+        { text: 'o', t: 110.0, dur: 0.3 },
+        { text: 'fim!', t: 110.3, dur: 1.5, isHold: true, holdDur: 1.5 }
+      ]
+    },
+    {
+      t0: 111.9,
+      t1: 116.0,
+      words: [
+        { text: 'Foi', t: 111.9, dur: 0.6 },
+        { text: 'a', t: 112.6, dur: 0.3 },
+        { text: 'deixa', t: 113.0, dur: 0.7 },
+        { text: 'perfeita', t: 113.8, dur: 0.8 },
+        { text: 'pra', t: 114.7, dur: 0.3 },
+        { text: 'mim!', t: 115.0, dur: 1.0, isHold: true, holdDur: 1.0 }
+      ]
+    },
+    {
+      t0: 116.1,
+      t1: 121.2,
+      words: [
+        { text: 'Olha', t: 116.1, dur: 0.6 },
+        { text: 'só', t: 116.8, dur: 0.5 },
+        { text: 'que', t: 117.4, dur: 0.4 },
+        { text: 'novidade:', t: 117.9, dur: 1.0 },
+        { text: 'eu', t: 119.0, dur: 0.4 },
+        { text: 'tô', t: 119.5, dur: 0.4 },
+        { text: 'livre!', t: 119.9, dur: 1.3, isHold: true, holdDur: 1.3 }
+      ]
+    },
+    {
+      t0: 121.3,
+      t1: 126.0,
+      words: [
+        { text: 'Move', t: 121.3, dur: 0.6 },
+        { text: 'o', t: 122.0, dur: 0.3 },
+        { text: 'cristal,', t: 122.4, dur: 0.8 },
+        { text: 'tudo', t: 123.3, dur: 0.6 },
+        { text: 'é', t: 124.0, dur: 0.3 },
+        { text: 'bem', t: 124.4, dur: 0.4 },
+        { text: 'facinho!', t: 124.8, dur: 1.2, isHold: true, holdDur: 1.2 }
+      ]
+    },
+    {
+      t0: 126.1,
+      t1: 132.0,
+      words: [
+        { text: 'Essa', t: 126.1, dur: 0.6 },
+        { text: 'luz', t: 126.8, dur: 0.6 },
+        { text: 'faz', t: 127.5, dur: 0.5 },
+        { text: 'a', t: 128.1, dur: 0.3 },
+        { text: 'magia...', t: 128.5, dur: 1.0 },
+        { text: 'abriu-se', t: 129.6, dur: 0.8 },
+        { text: 'o', t: 130.5, dur: 0.3 },
+        { text: 'caminho!', t: 130.8, dur: 1.2, isHold: true, holdDur: 1.2 }
+      ]
+    },
+    {
+      t0: 132.1,
+      t1: 136.2,
+      words: [
+        { text: 'Vai', t: 132.1, dur: 0.5 },
+        { text: 'no', t: 132.7, dur: 0.4 },
+        { text: 'sapatinho!', t: 133.2, dur: 1.1 },
+        { text: 'Pode', t: 134.4, dur: 0.5 },
+        { text: 'aplaudir!', t: 134.9, dur: 1.3, isHold: true, holdDur: 1.3 }
+      ]
+    },
+    {
+      t0: 136.3,
+      t1: 143.0,
+      words: [
+        { text: 'Eu', t: 136.3, dur: 0.5 },
+        { text: 'sou', t: 136.9, dur: 0.5 },
+        { text: 'a', t: 137.5, dur: 0.3 },
+        { text: 'Ordem!', t: 137.9, dur: 1.0 },
+        { text: 'Chegamos', t: 139.0, dur: 0.9 },
+        { text: 'ao', t: 140.0, dur: 0.4 },
+        { text: 'topo', t: 140.5, dur: 0.7 },
+        { text: 'de', t: 141.3, dur: 0.3 },
+        { text: 'novo!', t: 141.7, dur: 1.3, isHold: true, holdDur: 1.3 }
+      ]
+    },
+    {
+      t0: 143.1,
+      t1: 149.8,
+      words: [
+        { text: 'Move', t: 143.1, dur: 0.6 },
+        { text: 'pra', t: 143.8, dur: 0.4 },
+        { text: 'cá!', t: 144.3, dur: 0.7 },
+        { text: 'Move', t: 145.1, dur: 0.6 },
+        { text: 'pra', t: 145.8, dur: 0.4 },
+        { text: 'lá!', t: 146.3, dur: 0.7 },
+        { text: 'Tudo', t: 147.1, dur: 0.6 },
+        { text: 'vai', t: 147.8, dur: 0.5 },
+        { text: 'brilhar!', t: 148.3, dur: 1.5, isHold: true, holdDur: 1.5 }
+      ]
+    },
+    {
+      t0: 149.9,
+      t1: 154.5,
+      words: [
+        { text: 'Sem', t: 149.9, dur: 0.5 },
+        { text: 'bagunça,', t: 150.5, dur: 0.8 },
+        { text: 'sem', t: 151.4, dur: 0.4 },
+        { text: 'fumaça,', t: 151.9, dur: 0.8 },
+        { text: 'pode', t: 152.8, dur: 0.4 },
+        { text: 'agradecer!', t: 153.2, dur: 1.3, isHold: true, holdDur: 1.3 }
+      ]
+    },
+    {
+      t0: 154.6,
+      t1: 166.5,
+      words: [
+        { text: 'O', t: 154.6, dur: 0.4 },
+        { text: 'reino', t: 155.1, dur: 0.8 },
+        { text: 'inteiro', t: 156.0, dur: 1.0 },
+        { text: 'vai...', t: 157.1, dur: 0.9 },
+        { text: 'renascer!', t: 158.0, dur: 4.0, isHold: true, holdDur: 4.0 },
+        { text: 'A', t: 162.1, dur: 0.5 },
+        { text: 'Ordem', t: 162.7, dur: 1.0 },
+        { text: 'voltou!', t: 163.7, dur: 2.5, isHold: true, holdDur: 2.5 }
+      ]
+    }
   ];
+
+  const PRACTICE_PHRASE = {
+    t0: 0.0,
+    t1: 7.2,
+    words: [
+      { text: 'Era', t: 0.8, dur: 0.6 },
+      { text: 'uma', t: 1.8, dur: 0.6 },
+      { text: 'vez...', t: 2.8, dur: 0.6 },
+      { text: 'harmonia!', t: 3.9, dur: 2.3, isHold: true, holdDur: 2.3 }
+    ]
+  };
+
+  // Legendas sincronizadas legadas (compatibilidade de consulta)
+  const MUSICAL_CAPTIONS = KARAOKE_PHRASES.map(p => [
+    p.t0,
+    p.t1,
+    p.banner || p.words.map(w => w.text).join(' ')
+  ]);
+
+  function drawBouncingBall(ctx, x, y, radius = 4, t = 0, isGlowing = false) {
+    const rx = Math.round(x);
+    const ry = Math.round(y);
+    ctx.fillStyle = isGlowing ? 'rgba(255, 234, 49, 0.42)' : 'rgba(122, 234, 255, 0.35)';
+    ctx.fillRect(rx - 4, ry - 3, 9, 7);
+    ctx.fillRect(rx - 3, ry - 4, 7, 9);
+    ctx.fillStyle = isGlowing ? '#ffea31' : '#7aeaff';
+    ctx.fillRect(rx - 3, ry - 2, 7, 5);
+    ctx.fillRect(rx - 2, ry - 3, 5, 7);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(rx - 1, ry - 1, 3, 3);
+    ctx.fillRect(rx - 2, ry - 2, 1, 1);
+  }
+
+  const CaveRhythmKaraoke = {
+    phrases: KARAOKE_PHRASES,
+    practicePhrase: PRACTICE_PHRASE,
+    feedbacks: [],
+    particles: [],
+    practiceHits: 0,
+
+    layoutPhrase(phrase, box = { x: 10, y: 153, w: 300, h: 25 }) {
+      if (!phrase || !phrase.words || !phrase.words.length) return 0;
+      const words = phrase.words;
+      let totalW = 0;
+      const gap = words.length > 7 ? 4 : 5;
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        if (w.width === undefined) w.width = measurePixelText(w.text);
+        totalW += w.width + (i > 0 ? gap : 0);
+      }
+      const startX = Math.round(box.x + Math.max(6, (box.w - totalW) / 2));
+      let curX = startX;
+      const wordY = box.y + 7;
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        w.x = curX;
+        w.y = wordY;
+        w.midX = Math.round(curX + w.width / 2);
+        curX += w.width + gap;
+      }
+      return totalW;
+    },
+
+    initLayouts() {
+      for (const p of this.phrases) {
+        this.layoutPhrase(p);
+      }
+      this.layoutPhrase(this.practicePhrase, { x: 36, y: 56, w: 248, h: 32 });
+    },
+
+    resetSong() {
+      this.feedbacks = [];
+      this.particles = [];
+      for (const phrase of this.phrases) {
+        if (!phrase.words) continue;
+        for (const w of phrase.words) {
+          w.judged = false;
+          w.holding = false;
+          w.holdSuccess = false;
+          w.holdFailed = false;
+          w.missed = false;
+        }
+      }
+    },
+
+    resetPractice() {
+      this.feedbacks = [];
+      this.particles = [];
+      for (const w of this.practicePhrase.words) {
+        w.judged = false;
+        w.holding = false;
+        w.holdSuccess = false;
+        w.holdFailed = false;
+        w.missed = false;
+      }
+    },
+
+    getCurrentPhrase(mt, isPractice = false) {
+      if (isPractice) return this.practicePhrase;
+      for (let i = 0; i < this.phrases.length; i++) {
+        const p = this.phrases[i];
+        if (mt >= p.t0 && mt <= p.t1) return p;
+      }
+      return null;
+    },
+
+    evaluateHit(time, isPractice = false) {
+      const phrase = this.getCurrentPhrase(time, isPractice);
+      if (!phrase || !phrase.words || !phrase.words.length) return null;
+      let target = null;
+      let minDiff = 999;
+      for (let i = 0; i < phrase.words.length; i++) {
+        const w = phrase.words[i];
+        const diff = time - w.t;
+        if (!w.judged && diff >= -0.55 && diff <= 0.28) {
+          if (Math.abs(diff) < Math.abs(minDiff)) {
+            minDiff = diff;
+            target = w;
+          }
+        }
+      }
+      if (!target) return null;
+      const absDiff = Math.abs(minDiff);
+      let grade = 'otimo';
+      let text = 'Ótimo!';
+      let score = 25;
+      let col = '#68e3a2';
+
+      if (minDiff < -0.20) {
+        grade = 'cedo_demais';
+        text = 'Cedo demais';
+        score = 10;
+        col = '#ff9c42';
+      } else if (absDiff <= 0.088) {
+        grade = 'perfeito';
+        text = 'Perfeito!';
+        score = 50;
+        col = '#ffe033';
+      } else {
+        grade = 'otimo';
+        text = 'Ótimo!';
+        score = 25;
+        col = '#68e3a2';
+      }
+      return { grade, text, label: text, score, col, target, diff: minDiff };
+    },
+
+    onInput(isDown, isSpace, time, isPractice = false) {
+      const phrase = this.getCurrentPhrase(time, isPractice);
+      if (!phrase || !phrase.words || !phrase.words.length) return null;
+
+      if (isDown) {
+        const hit = this.evaluateHit(time, isPractice);
+        if (hit) {
+          const target = hit.target;
+          target.judged = true;
+          if (hit.grade === 'cedo_demais') {
+            GameHUD.playSfx('click');
+          } else if (hit.grade === 'perfeito') {
+            GameHUD.playSfx('clink');
+            this.spawnSparks(target.midX || 160, (target.y || 160) - 4, '#ffe033', 6);
+          } else {
+            GameHUD.playSfx('click');
+            this.spawnSparks(target.midX || 160, (target.y || 160) - 4, '#68e3a2', 4);
+          }
+
+          if (target.isHold) {
+            target.holding = true;
+            target.holdFailed = false;
+            target.holdSuccess = false;
+          }
+
+          this.feedbacks.push({
+            text: hit.text,
+            col: hit.col,
+            x: target.midX || 160,
+            y: (target.y || 160) - 12,
+            vy: -15,
+            life: 0.75
+          });
+
+          if (isPractice) {
+            this.practiceHits++;
+          }
+          return hit;
+        }
+      } else {
+        // Release Space/touch
+        for (const w of phrase.words) {
+          if (w.isHold && w.holding && !w.holdSuccess && !w.holdFailed) {
+            const elapsed = time - w.t;
+            if (elapsed < w.holdDur * 0.72) {
+              w.holding = false;
+              w.holdFailed = true;
+              this.feedbacks.push({
+                text: 'Soltou cedo',
+                col: '#ff9c42',
+                x: w.midX || 160,
+                y: (w.y || 160) - 12,
+                vy: -14,
+                life: 0.65
+              });
+            }
+          }
+        }
+      }
+      return null;
+    },
+
+    spawnSparks(x, y, col, count = 4) {
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+        const spd = 12 + Math.random() * 20;
+        this.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 6,
+          col,
+          life: 0.45 + Math.random() * 0.25
+        });
+      }
+    },
+
+    update(dt, time, isHolding, isPractice = false) {
+      for (let i = this.feedbacks.length - 1; i >= 0; i--) {
+        const fb = this.feedbacks[i];
+        fb.y += fb.vy * dt;
+        fb.life -= dt;
+        if (fb.life <= 0) this.feedbacks.splice(i, 1);
+      }
+
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 45 * dt;
+        p.life -= dt;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+
+      const phrase = this.getCurrentPhrase(time, isPractice);
+      if (phrase && phrase.words) {
+        for (const w of phrase.words) {
+          if (!w.judged && time > w.t + 0.30) {
+            w.judged = true;
+            w.missed = true;
+          }
+          if (w.isHold && !w.holdFailed && !w.holdSuccess) {
+            if (w.holding) {
+              if (isHolding && time >= w.t && time <= w.t + w.holdDur) {
+                if (Math.random() < 0.35) {
+                  this.spawnSparks(w.x + clamp((time - w.t) / w.holdDur, 0, 1) * w.width, (w.y || 160) - 3, '#fff6a8', 1);
+                }
+              }
+              if ((time - w.t) >= w.holdDur * 0.88) {
+                w.holdSuccess = true;
+                w.holding = false;
+                GameHUD.playSfx('clink');
+                this.spawnSparks(w.midX || 160, (w.y || 160) - 6, '#ffd700', 8);
+                this.feedbacks.push({
+                  text: 'Sustentado!',
+                  col: '#ffe033',
+                  x: w.midX || 160,
+                  y: (w.y || 160) - 14,
+                  vy: -15,
+                  life: 0.85
+                });
+              }
+            }
+          }
+        }
+      }
+    },
+
+    render(ctx, time, isPractice = false, customBox = null) {
+      const box = customBox || { x: 10, y: 153, w: 300, h: 25 };
+      drawParchmentBox(ctx, box.x, box.y, box.w, box.h);
+
+      const phrase = this.getCurrentPhrase(time, isPractice);
+      if (!phrase) return;
+
+      if (phrase.banner) {
+        drawPixelTextCentered(ctx, phrase.banner, box.x + box.w / 2, box.y + 7, '#ffea31', '#1f1410', box.w - 12, 9);
+        return;
+      }
+
+      const words = phrase.words;
+      if (!words || !words.length) return;
+
+      this.layoutPhrase(phrase, box);
+      const wordY = box.y + 7;
+
+      let activeIndex = -1;
+      let nextIndex = -1;
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const span = w.isHold ? (w.holdDur || w.dur) : w.dur;
+        if (time >= w.t && time <= (w.t + span)) {
+          activeIndex = i;
+        }
+        if (w.t > time && nextIndex === -1) {
+          nextIndex = i;
+        }
+      }
+
+      let ballX = words[0].midX;
+      let ballY = wordY - 5;
+      let ballGlow = false;
+
+      if (activeIndex >= 0) {
+        const curW = words[activeIndex];
+        if (curW.isHold) {
+          const pHold = clamp((time - curW.t) / (curW.holdDur || curW.dur), 0, 1);
+          ballX = Math.round(curW.x + 3 + (curW.width - 6) * pHold);
+          if (curW.holdFailed) {
+            ballY = wordY - 4;
+            ballGlow = false;
+          } else if (curW.holding || curW.holdSuccess) {
+            ballY = wordY - 10 + Math.round(Math.sin(time * 12) * 1.5);
+            ballGlow = true;
+          } else {
+            ballY = wordY - 6 + Math.round(Math.sin(time * 10) * 1.0);
+            ballGlow = true;
+          }
+        } else {
+          const pBounce = clamp((time - curW.t) / 0.16, 0, 1);
+          ballX = curW.midX;
+          ballY = wordY - 5 - Math.round(Math.sin(pBounce * Math.PI) * 2.5);
+          ballGlow = true;
+        }
+      } else if (nextIndex >= 0) {
+        const nextW = words[nextIndex];
+        const prevW = nextIndex === 0 ? null : words[nextIndex - 1];
+        const prevMidX = prevW
+          ? (prevW.isHold ? Math.round(prevW.x + prevW.width - 3) : prevW.midX)
+          : (nextW.midX - 18);
+        const prevEnd = prevW ? (prevW.isHold ? prevW.t + prevW.holdDur : prevW.t + prevW.dur) : phrase.t0;
+        const availableTime = Math.max(0.22, nextW.t - prevEnd);
+        const jumpDur = clamp(availableTime, 0.22, 0.40);
+        const jumpStart = nextW.t - jumpDur;
+        if (time >= jumpStart) {
+          const p = clamp((time - jumpStart) / jumpDur, 0, 1);
+          ballX = Math.round(prevMidX + (nextW.midX - prevMidX) * p);
+          const arcH = 12 + Math.min(8, Math.abs(nextW.midX - prevMidX) * 0.18);
+          ballY = wordY - 5 - Math.round(4 * arcH * p * (1 - p));
+          ballGlow = true;
+        } else {
+          ballX = prevMidX;
+          ballY = wordY - 5;
+          ballGlow = false;
+        }
+      } else {
+        const lastW = words[words.length - 1];
+        ballX = lastW.isHold ? Math.round(lastW.x + lastW.width - 3) : lastW.midX;
+        ballY = wordY - 5;
+        ballGlow = false;
+      }
+
+      // Approach Circle: círculo que se fecha sobre a palavra alvo no tempo exato
+      let targetWord = null;
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        if (!w.judged && time <= w.t + 0.20) {
+          targetWord = w;
+          break;
+        }
+      }
+      if (targetWord && time >= targetWord.t - 0.65) {
+        const pRing = clamp((time - (targetWord.t - 0.65)) / 0.65, 0, 1);
+        const radius = Math.round(20 * (1 - pRing) + 5 * pRing);
+        const ringCol = pRing > 0.85 ? '#ffea31' : '#7aeaff';
+        drawRing(ctx, targetWord.midX, wordY - 4, radius, ringCol);
+        if (targetWord.isHold && pRing > 0.35) {
+          drawRing(ctx, targetWord.midX, wordY - 4, radius + 2, '#ffea31');
+        }
+      }
+
+      // Words render
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const span = w.isHold ? (w.holdDur || w.dur) : w.dur;
+        const isPast = time > (w.t + span);
+        const isCurrent = (i === activeIndex);
+
+        if (isCurrent && w.isHold) {
+          // Palavra apagada na base
+          drawPixelText(ctx, w.text, w.x, w.y, '#6c5b52', null);
+          const pHold = clamp((time - w.t) / (w.holdDur || w.dur), 0, 1);
+          const fillW = Math.round(w.width * pHold);
+          if (fillW > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(w.x, w.y - 3, fillW, 16);
+            ctx.clip();
+            drawPixelText(ctx, w.text, w.x, w.y, '#ffe033', '#2c221e');
+            ctx.restore();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(w.x + fillW, w.y - 1, 1, 9);
+            ctx.fillStyle = '#ffea31';
+            ctx.fillRect(w.x + fillW - 1, w.y, 1, 7);
+          }
+        } else if (isCurrent || isPast) {
+          drawPixelText(ctx, w.text, w.x, w.y, '#ffe033', '#2c221e');
+        } else {
+          // Palavra apagada / dim antes da bolinha pular nela
+          drawPixelText(ctx, w.text, w.x, w.y, '#6c5b52', null);
+        }
+      }
+
+      // Bouncing ball
+      drawBouncingBall(ctx, ballX, ballY, 4, time, ballGlow);
+
+      // Prompt on hold
+      if (activeIndex >= 0 && words[activeIndex].isHold) {
+        const curW = words[activeIndex];
+        const promptText = curW.holding ? '♥ Segurando!' : (curW.holdFailed ? 'Soltou cedo!' : 'Segure ESPAÇO!');
+        const promptCol = curW.holding ? '#fff275' : (curW.holdFailed ? '#ff9c42' : '#ffe033');
+        drawPixelTextCentered(ctx, promptText, ballX, box.y - 12, promptCol, '#1f1410', 90, 8);
+      }
+
+      // Particles
+      for (const p of this.particles) {
+        ctx.fillStyle = p.col;
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), 1.5, 1.5);
+      }
+
+      // Floating Feedbacks
+      for (const fb of this.feedbacks) {
+        drawPixelTextCentered(ctx, fb.text, fb.x, fb.y, fb.col, '#1f1410', 80, 8);
+      }
+    }
+  };
+
+  CaveRhythmKaraoke.initLayouts();
+  global.CaveRhythmKaraoke = CaveRhythmKaraoke;
 
   // ============================================================================
   // CONTROLADOR DO MUNDO 1: CAVERNA (ABERTURA + FASES 1–4 + MUSICAL + MAPA)
@@ -1451,11 +2170,14 @@
     waveRadius: 0,
     waveActive: false,
 
-    // Controle do Show Musical da Fase 4
+    // Controle do Show Musical da Fase 5 (O Sussurro da Fada)
     musicAudio: null,
     musicalTime: 0,
     cloudPopTime: -1,
-    skipMusicalBtnRect: { x: 132, y: 2, w: 56, h: 16 },
+    skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
+    vignetteCard: 1,
+    vignettePracticeTime: 0,
+    isHoldingSpace: false,
 
     pieces: [],
     pureEquation: null,
@@ -1605,9 +2327,14 @@
       this.ceilingCrystalBroken = false;
       this.ordemActor.visible = false;
 
-      // Se estava na parte musical da Fase 4, reinicia a apresentação musical do início
-      if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
-        this.startMusicalShow();
+      // Se estava na parte musical ou na vinheta da Fase 5, reinicia a fase especial do mundo da caverna
+      if (
+        this.phase === 'musical_part1_shadows' ||
+        this.phase === 'musical_part2_bright' ||
+        this.phase === 'musical_vignette' ||
+        this.currentLevel === 5
+      ) {
+        this.startFase5();
         IrisTransition.start('in', 160, 90, 0.45);
         return;
       }
@@ -1732,7 +2459,13 @@
           return;
         }
 
-        // Botão para avançar/concluir durante o show musical caso o jogador queira pular
+        // Interações da Vinheta da Fase 5 (Cards 1 e 2)
+        if (this.phase === 'musical_vignette') {
+          this.handleVignetteClick(x, y);
+          return;
+        }
+
+        // Botão para avançar/concluir durante o show musical caso o jogador queira pular ou tocar no ritmo
         if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
           const sb = this.skipMusicalBtnRect;
           if (x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
@@ -1740,6 +2473,9 @@
             this.finishMusicalShow();
             return;
           }
+          this.isHoldingSpace = true;
+          CaveRhythmKaraoke.onInput(true, false, this.musicalTime, false);
+          return;
         }
 
         if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
@@ -1843,6 +2579,15 @@
       const onUp = () => {
         if (!this.running) return;
 
+        if (this.isHoldingSpace) {
+          this.isHoldingSpace = false;
+          if (this.phase === 'musical_vignette' && this.vignetteCard === 2) {
+            CaveRhythmKaraoke.onInput(false, true, this.vignettePracticeTime, true);
+          } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
+            CaveRhythmKaraoke.onInput(false, false, this.musicalTime, false);
+          }
+        }
+
         if (this.equationPointer && this.pureEquation && !this.pureEquation.broken) {
           const wasTap = !this.equationPointer.moved;
           this.equationPointer = null;
@@ -1882,6 +2627,53 @@
           if (this.isActiveGame()) {
             e.preventDefault();
             this.restartCurrentPhase();
+            return;
+          }
+        }
+
+        if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (this.phase === 'musical_vignette') {
+            e.preventDefault();
+            if (this.vignetteCard === 1) {
+              this.vignetteCard = 2;
+              this.vignettePracticeTime = 0;
+              CaveRhythmKaraoke.resetPractice();
+              GameHUD.playSfx('click');
+              return;
+            }
+            if (this.vignetteCard === 2) {
+              if (e.code === 'Enter' || e.key === 'Enter') {
+                this.startMusicalShow();
+                return;
+              }
+              if (!e.repeat) {
+                this.isHoldingSpace = true;
+                CaveRhythmKaraoke.onInput(true, true, this.vignettePracticeTime, true);
+              }
+              return;
+            }
+          } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
+            if (e.code === 'Space' || e.key === ' ') {
+              e.preventDefault();
+              if (!e.repeat) {
+                this.isHoldingSpace = true;
+                CaveRhythmKaraoke.onInput(true, false, this.musicalTime, false);
+              }
+              return;
+            }
+          }
+        }
+      };
+
+      const onKeyUp = (e) => {
+        if (e.code === 'Space' || e.key === ' ') {
+          if (this.phase === 'musical_vignette' && this.vignetteCard === 2) {
+            this.isHoldingSpace = false;
+            CaveRhythmKaraoke.onInput(false, true, this.vignettePracticeTime, true);
+          } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
+            this.isHoldingSpace = false;
+            CaveRhythmKaraoke.onInput(false, false, this.musicalTime, false);
           }
         }
       };
@@ -1894,6 +2686,7 @@
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onUp);
         window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
       }
     },
 
@@ -2302,6 +3095,158 @@
       }
     },
 
+    startFase5(onFinish = null) {
+      this.prepareCanvasForGame();
+      if (onFinish) this.onChapterFinish = onFinish;
+
+      this.currentLevel = 5;
+      this.currentStep = 1;
+      this.totalSteps = 1;
+      this.openMusicalVignette();
+    },
+
+    openMusicalVignette() {
+      this.currentLevel = 5;
+      this.phase = 'musical_vignette';
+      this.phaseTime = 0;
+      this.vignetteCard = 1;
+      this.vignettePracticeTime = 0;
+      this.isHoldingSpace = false;
+      this.protag.x = 46;
+      this.protag.y = 142;
+      this.protag.state = 'idle';
+      this.ordemActor.visible = true;
+      this.ordemActor.x = 160;
+      this.ordemActor.y = 36;
+      this.ordemActor.state = 'back_silhouette';
+      this.stopMusicAudio();
+      CaveRhythmKaraoke.resetPractice();
+      IrisTransition.start('in', 160, 90, 0.45);
+
+      if (!this.running) {
+        this.running = true;
+        this.lastNow = performance.now();
+        requestAnimationFrame((now) => this.loop(now));
+      }
+    },
+
+    handleVignetteClick(x, y) {
+      const cx = 24, cy = 18, cw = 272, ch = 152;
+      if (this.vignetteCard === 1) {
+        const b = { x: cx + cw - 92, y: cy + ch - 20, w: 82, h: 15 };
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          GameHUD.playSfx('click');
+          this.vignetteCard = 2;
+          this.vignettePracticeTime = 0;
+          CaveRhythmKaraoke.resetPractice();
+        }
+      } else {
+        const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
+        if (x >= bReset.x && x <= bReset.x + bReset.w && y >= bReset.y && y <= bReset.y + bReset.h) {
+          GameHUD.playSfx('click');
+          this.vignettePracticeTime = 0;
+          CaveRhythmKaraoke.resetPractice();
+          return;
+        }
+        const bStart = { x: cx + cw - 124, y: cy + ch - 20, w: 114, h: 15 };
+        if (x >= bStart.x && x <= bStart.x + bStart.w && y >= bStart.y && y <= bStart.y + bStart.h) {
+          GameHUD.playSfx('start');
+          this.startMusicalShow();
+          return;
+        }
+        // Clique no palco de treino aciona o pulo rítmico
+        this.isHoldingSpace = true;
+        CaveRhythmKaraoke.onInput(true, false, this.vignettePracticeTime, true);
+      }
+    },
+
+    renderMusicalVignette(ctx, tq) {
+      ctx.fillStyle = 'rgba(10, 8, 6, 0.65)';
+      ctx.fillRect(0, 20, W, H - 20);
+
+      const cx = 24, cy = 18, cw = 272, ch = 152;
+      drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 18, headerBg: '#3d2b24' });
+
+      if (this.vignetteCard === 1) {
+        drawPixelText(ctx, 'A Canção da Caverna', cx + 10, cy + 6, '#f7e2b8', '#1f1410', 160, 9);
+        drawPixelText(ctx, 'Página 1/2', cx + 10, cy + 6, '#d9c398', '#1f1410', cw - 20, 9, 'right');
+
+        const prevBox = { x: cx + 12, y: cy + 24, w: cw - 24, h: 36 };
+        ctx.fillStyle = '#261c18';
+        ctx.fillRect(prevBox.x, prevBox.y, prevBox.w, prevBox.h);
+        ctx.fillStyle = '#d9a85b';
+        ctx.fillRect(prevBox.x, prevBox.y, prevBox.w, 1);
+        ctx.fillRect(prevBox.x, prevBox.y + prevBox.h - 1, prevBox.w, 1);
+
+        drawPixelText(ctx, 'Era', prevBox.x + 18, prevBox.y + 14, '#ffe033', '#1f1410');
+        drawPixelText(ctx, 'uma', prevBox.x + 62, prevBox.y + 14, '#ffe033', '#1f1410');
+        drawPixelText(ctx, 'vez...', prevBox.x + 112, prevBox.y + 14, '#ffe033', '#1f1410');
+        drawPixelText(ctx, 'harmonia!', prevBox.x + 168, prevBox.y + 14, '#6c5b52', null);
+
+        const demT = (tq % 3.0) / 3.0;
+        const demX = Math.round(prevBox.x + 118 + 58 * demT);
+        const demY = Math.round(prevBox.y + 10 - 4 * 10 * demT * (1 - demT));
+        drawBouncingBall(ctx, demX, demY, 4, tq, false);
+        const ringR = Math.round(18 * (1 - demT) + 5 * demT);
+        drawRing(ctx, prevBox.x + 196, prevBox.y + 10, ringR, '#7aeaff');
+
+        let ty = cy + 68;
+        ty += drawPixelText(ctx, 'A Fada das Gemas canta o renascimento da Caverna!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 4;
+        ty += drawPixelText(ctx, '• A bolinha salta de palavra em palavra no compasso.', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
+        ty += drawPixelText(ctx, '• No fechamento do círculo, aperte ESPAÇO no tempo!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
+        ty += drawPixelText(ctx, '• Em notas longas, SEGURE ESPAÇO para sustentar!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
+
+        const b = { x: cx + cw - 92, y: cy + ch - 20, w: 82, h: 15 };
+        ctx.fillStyle = '#2c221e';
+        ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+        ctx.fillStyle = '#3e7338';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = '#d9a85b';
+        ctx.fillRect(b.x, b.y, b.w, 1);
+        ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+        drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 3, '#ffffff', '#1f1410', b.w - 4, 8);
+      } else {
+        drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#f7e2b8', '#1f1410', 160, 9);
+        drawPixelText(ctx, 'Página 2/2 • Sem penalidade', cx + 10, cy + 6, '#d9c398', '#1f1410', cw - 20, 9, 'right');
+
+        drawPixelText(ctx, 'Experimente o salto! Aperte ESPAÇO na hora certa:', cx + 12, cy + 24, '#2c221e', null, cw - 24, 9);
+
+        const practiceBox = { x: cx + 12, y: cy + 40, w: cw - 24, h: 32 };
+        CaveRhythmKaraoke.render(ctx, this.vignettePracticeTime, true, practiceBox);
+
+        drawPixelTextCentered(
+          ctx,
+          'Aperte ESPAÇO ao fechar o círculo e SEGURE em "harmonia!"',
+          cx + cw / 2,
+          cy + 80,
+          '#633b34',
+          null,
+          cw - 20,
+          9
+        );
+
+        const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
+        ctx.fillStyle = '#2c221e';
+        ctx.fillRect(bReset.x - 1, bReset.y - 1, bReset.w + 2, bReset.h + 2);
+        ctx.fillStyle = '#5c483f';
+        ctx.fillRect(bReset.x, bReset.y, bReset.w, bReset.h);
+        ctx.fillStyle = '#d9a85b';
+        ctx.fillRect(bReset.x, bReset.y, bReset.w, 1);
+        ctx.fillRect(bReset.x, bReset.y + bReset.h - 1, bReset.w, 1);
+        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#1f1410', bReset.w - 4, 8);
+
+        const bStart = { x: cx + cw - 124, y: cy + ch - 20, w: 114, h: 15 };
+        ctx.fillStyle = '#2c221e';
+        ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+        ctx.fillStyle = '#2e6b30';
+        ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+        ctx.fillStyle = '#ffea31';
+        ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+        ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+        drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#1f1410', bStart.w - 4, 8);
+      }
+    },
+
     startStandardLevel(levelNum, totalSteps, onFinish = null) {
       this.prepareCanvasForGame();
       if (onFinish) this.onChapterFinish = onFinish;
@@ -2379,10 +3324,13 @@
     // SEQUÊNCIA MUSICAL DA FASE 4 ("ERA UMA VEZ — A ORDEM")
     // ==========================================================================
     startMusicalShow() {
+      this.currentLevel = 5;
       this.phase = 'musical_part1_shadows';
       this.phaseTime = 0;
       this.musicalTime = 0;
       this.cloudPopTime = -1;
+      this.isHoldingSpace = false;
+      CaveRhythmKaraoke.resetSong();
 
       // Protagonista recua para a esquerda assistindo à libertação grandiosa
       this.protag.x = 46;
@@ -2516,7 +3464,8 @@
               if (lvlId === 1) this.startCutsceneAndFase1();
               else if (lvlId === 2) this.startFase2();
               else if (lvlId === 3) this.startFase3();
-              else if (lvlId === 4 || lvlId === 5) this.startFase4();
+              else if (lvlId === 4) this.startFase4();
+              else if (lvlId === 5) this.startFase5();
               else {
                 this.deactivateCanvas();
                 if (global.CrystalApp?.startLevel) {
@@ -3164,7 +4113,16 @@
 
       this.updateOpalProximity(dt);
 
-      if (this.phase === 'cutscene_fall') {
+      if (this.phase === 'musical_vignette') {
+        if (this.vignetteCard === 2) {
+          this.vignettePracticeTime += dt;
+          if (this.vignettePracticeTime >= 7.2) {
+            this.vignettePracticeTime = 0;
+            CaveRhythmKaraoke.resetPractice();
+          }
+          CaveRhythmKaraoke.update(dt, this.vignettePracticeTime, this.isHoldingSpace, true);
+        }
+      } else if (this.phase === 'cutscene_fall') {
         const pt = this.phaseTime;
         if (pt < 1.1) {
           this.protag.state = 'fall';
@@ -3250,7 +4208,8 @@
           this.spawnShatter(176, 26, 'shadow', 16);
         }
         if (this.phaseTime >= 1.1) {
-          this.startMusicalShow();
+          this.currentLevel = 5;
+          this.openMusicalVignette();
         }
       } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
         // Sincroniza com o áudio real se estiver tocando, ou avança pelo relógio lógico
@@ -3260,6 +4219,7 @@
           this.musicalTime += dt;
         }
         const mt = this.musicalTime;
+        CaveRhythmKaraoke.update(dt, mt, this.isHoldingSpace, false);
 
         if (mt < 80.0) {
           // PARTE 1 DA MÚSICA (00:00 - 01:20): Coreografia contínua da Ordem pelo palco + Teatro de Sombras Hi-Bit
@@ -3661,14 +4621,8 @@
         });
       }
 
-      // Legenda sincronizada da música em pergaminho estilo Owlboy, 100% centralizada
-      for (const [t0, t1, text] of MUSICAL_CAPTIONS) {
-        if (mt >= t0 && mt <= t1) {
-          drawParchmentBox(ctx, 10, 155, 300, 21);
-          drawPixelTextCentered(ctx, text, 160, 162, '#2c221e', null, 286, 9);
-          break;
-        }
-      }
+      // Mecânica interativa de Ritmo & Karaokê (Bolinha saltitante, círculo de tempo, julgamentos e segurar no espaço)
+      CaveRhythmKaraoke.render(ctx, mt, false);
     },
 
     render() {
@@ -3803,6 +4757,10 @@
         drawPixelTextCentered(ctx, 'Pular >>', sb.x + sb.w / 2, sb.y + 4, '#f7e2b8', '#120d0b', sb.w - 4, 8);
       }
 
+      if (this.phase === 'musical_vignette') {
+        this.renderMusicalVignette(ctx, tq);
+      }
+
       DialogueBox.render(ctx, tq);
       TutorialModal.render(ctx, tq);
 
@@ -3832,14 +4790,27 @@
 
   function hookPlayButton() {
     ActorAnimator.adaptMapFairyIcon();
-    const playBtn = document.getElementById('playButton');
-    if (playBtn && !playBtn._truePixelHooked) {
-      playBtn._truePixelHooked = true;
-      playBtn.addEventListener('click', (ev) => {
+    if (global.CrystalApp) return;
+    const newGameBtn = document.getElementById('newGameButton');
+    if (newGameBtn && !newGameBtn._truePixelHooked) {
+      newGameBtn._truePixelHooked = true;
+      newGameBtn.addEventListener('click', (ev) => {
+        if (global.CrystalApp) return;
         ev.stopImmediatePropagation();
         ev.preventDefault();
         if (global.CrystalAssetsReady === false) return;
         CaveChapter1.startCutsceneAndFase1();
+      }, true);
+    }
+    const continueBtn = document.getElementById('continueButton');
+    if (continueBtn && !continueBtn._truePixelHooked) {
+      continueBtn._truePixelHooked = true;
+      continueBtn.addEventListener('click', (ev) => {
+        if (global.CrystalApp) return;
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+        if (global.CrystalAssetsReady === false) return;
+        CaveChapter1.enterJourneyMapWithIrisIn(false);
       }, true);
     }
   }
@@ -3850,5 +4821,6 @@
     hookPlayButton();
   }
 
+  CaveChapter1.CaveRhythmKaraoke = CaveRhythmKaraoke;
   global.CaveChapter1 = CaveChapter1;
 })(typeof window !== 'undefined' ? window : globalThis);

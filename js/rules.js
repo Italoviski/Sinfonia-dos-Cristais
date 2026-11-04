@@ -54,6 +54,7 @@
   boost(id){const p=this.get(id);if(p.dark||p.boosted)return false;p.value=p.value.multiply(2);p.boosted=true;return true;}
   introduceDiamonds(){if(!this.diamondsIntroduced){this.diamondsIntroduced=true;this.diamonds+=10;return true;}return false;}
   reward(){this.diamonds++;}
+  fractionDivide(topIds,bottomIds){if(!Array.isArray(topIds)||!Array.isArray(bottomIds)||topIds.length===0||bottomIds.length===0)return{type:'invalid',reason:'empty'};const top=topIds.map(id=>this.pieces.get(id)),bottom=bottomIds.map(id=>this.pieces.get(id));if(top.some(p=>!p||p.dark)||bottom.some(p=>!p||p.dark))return{type:'invalid',reason:'invalid_piece'};const sumTop=top.reduce((acc,p)=>acc.add(p.value),new Quantity(0)),sumBottom=bottom.reduce((acc,p)=>acc.add(p.value),new Quantity(0));if(!sumTop.equals(sumBottom)||sumTop.n<=0)return{type:'invalid',reason:'mismatch'};const allIds=[...topIds,...bottomIds],kind=top[0]?.kind||'aqua',res=this.replace(allIds,[{kind,value:new Quantity(1),x:.5,y:.5}]);return{type:'divided',piece:res[0],pieces:res};}
   dissolve(id){const p=this.get(id);if(!p.group||p.dark||this.diamonds<1)return{type:'invalid',reason:'diamond'};const ids=[...this.groups.get(p.group)];this.groups.delete(p.group);ids.forEach(id=>this.get(id).group=null);this.diamonds--;return{type:'dissolved',ids};}
   get solved(){return this.pieces.size===0;}
  }

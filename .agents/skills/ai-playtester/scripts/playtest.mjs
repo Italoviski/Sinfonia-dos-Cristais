@@ -162,14 +162,15 @@ async function runViaDirectCDP(browserPath) {
     };
 
     // 1. Home Screen inspection & screenshot
+    await evalJS('window.CrystalTestAPI.closeDialogs()');
     const homeState = await evalJS('window.CrystalTestAPI.getState()');
     report.screensTested.push(homeState.screen);
     await new Promise(r => setTimeout(r, 150));
     await takeScreenshot('01-home-screen.png');
 
     // 1b. Intro Cutscene inspection & screenshot
-    await evalJS('void window.CrystalEntrance.play(() => {}, () => {})');
-    await new Promise(r => setTimeout(r, 1200));
+    await evalJS('void (window.CrystalEntrance?.play ? window.CrystalEntrance.play(() => {}, () => {}) : window.CrystalApp?.startLevel?.(1))');
+    await new Promise(r => setTimeout(r, 600));
     await takeScreenshot('01b-intro-cutscene.png');
     await evalJS('document.getElementById("entrySkipBtn")?.click()');
     await new Promise(r => setTimeout(r, 80));
@@ -188,7 +189,7 @@ async function runViaDirectCDP(browserPath) {
       await new Promise(r => setTimeout(r, 120));
       await evalJS('window.CrystalTestAPI.skipStory()');
 
-      if ([1, 2, 3, 4, 5, 6, 11, 16, 21].includes(lvl)) {
+      if ([1, 2, 3, 4, 5, 6, 11, 16, 17, 18, 19, 20, 21].includes(lvl)) {
         await new Promise(r => setTimeout(r, 120));
         await takeScreenshot(`level-${String(lvl).padStart(2, '0')}-start.png`);
       }
@@ -199,10 +200,10 @@ async function runViaDirectCDP(browserPath) {
 
       report.levels.push({
         id: lvl,
-        name: beforeSolve.board?.levelName || `Fase ${lvl}`,
-        initialPieces: beforeSolve.board?.pieces?.length || 0,
+        name: beforeSolve.worldRuntime?.worldLabel ? `${beforeSolve.worldRuntime.worldLabel} - Fase ${beforeSolve.worldRuntime.currentLevel}` : (beforeSolve.board?.levelName || `Fase ${lvl}`),
+        initialPieces: beforeSolve.worldRuntime?.pieces?.length ?? beforeSolve.board?.pieces?.length ?? 0,
         solved: !!solveResult?.ok,
-        finished: !!solveResult?.finished
+        finished: Boolean(solveResult?.finished || solveResult?.phase)
       });
     }
 

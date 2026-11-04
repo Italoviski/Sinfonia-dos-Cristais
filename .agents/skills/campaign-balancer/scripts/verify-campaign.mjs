@@ -116,36 +116,50 @@ for (const level of CrystalCampaign.levels) {
         ops = 1 + parts.length + (parts.length - 1);
         break;
       }
-      case 11:
-        split(kind('aqua')[0]);
+      case 11: {
+        const qs = kind('aqua');
+        b.fractionDivide([qs[0].id], [qs[1].id]);
         ops = 1;
         break;
-      case 12:
-        quarters();
-        ops = 3;
-        break;
-      case 13: {
-        const parts = split(kind('aqua')[0]);
-        connect([...parts, ...kind('quartz')]);
-        ops = 3;
+      }
+      case 12: {
+        const qs = kind('aqua');
+        const four = qs.find(p => p.value.value === 4);
+        const twos = qs.filter(p => p.value.value === 2);
+        b.fractionDivide([four.id], twos.map(p => p.id));
+        ops = 2;
         break;
       }
-      case 14:
+      case 13: {
+        const qs = kind('aqua');
+        const threes = qs.filter(p => p.value.value === 3);
+        const res = b.fractionDivide([threes[0].id], [threes[1].id]);
+        connect([res.piece, kind('quartz')[0]]);
+        ops = 2;
+        break;
+      }
+      case 14: {
+        const q5 = kind('quartz').find(p => p.value.value === 5);
+        const op = kind('opal')[0];
+        const qSub = drag(op, q5)[0];
+        const q4 = kind('quartz').find(p => p.value.value === 4 && p !== qSub);
+        b.fractionDivide([qSub.id], [q4.id]);
+        ops = 2;
+        break;
+      }
+      case 15: {
+        for (const p of normal()) b.pieces.delete(p.id);
+        ops = 5;
+        break;
+      }
       case 19: {
         quarters();
         const parts = kind('aqua');
         let merged = drag(parts[0], parts[1])[0];
         merged = drag(merged, parts[2])[0];
         annul();
-        if (level.id === 19) connect([merged, ...kind('quartz')]);
+        connect([merged, ...kind('quartz')]);
         ops = 5;
-        break;
-      }
-      case 15: {
-        const parts = split(kind('aqua')[0]);
-        parts.forEach(p => b.boost(p.id));
-        connect(parts);
-        ops = 4;
         break;
       }
       case 20: {

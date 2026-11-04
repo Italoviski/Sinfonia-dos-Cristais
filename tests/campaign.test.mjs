@@ -18,11 +18,12 @@ for(const level of CrystalCampaign.levels)test(`fase ${level.id}: solução mate
  case 8:case 18:for(const p of split(kind('citrine')[0]))b.boost(p.id);break;
  case 9:{const q=kind('quartz')[0];b.boost(q.id);connect(kind('quartz'));break;}
  case 10:{const parts=split(kind('citrine')[0]);parts.forEach(p=>b.boost(p.id));connect(parts);break;}
- case 11:split(kind('aqua')[0]);break;
- case 12:quarters();break;
- case 13:{const parts=split(kind('aqua')[0]);connect([...parts,...kind('quartz')]);break;}
- case 14:case 19:{quarters();const parts=kind('aqua');let merged=drag(parts[0],parts[1])[0];merged=drag(merged,parts[2])[0];annul();if(level.id===19)connect([merged,...kind('quartz')]);break;}
- case 15:{const parts=split(kind('aqua')[0]);parts.forEach(p=>b.boost(p.id));connect(parts);break;}
+ case 11:{const qs=kind('aqua');b.fractionDivide([qs[0].id],[qs[1].id]);break;}
+ case 12:{const qs=kind('aqua');const four=qs.find(p=>p.value.value===4);const twos=qs.filter(p=>p.value.value===2);b.fractionDivide([four.id],twos.map(p=>p.id));break;}
+ case 13:{const qs=kind('aqua');const threes=qs.filter(p=>p.value.value===3);const res=b.fractionDivide([threes[0].id],[threes[1].id]);connect([res.piece,kind('quartz')[0]]);break;}
+ case 14:{const q5=kind('quartz').find(p=>p.value.value===5);const op=kind('opal')[0];const qSub=drag(op,q5)[0];const q4=kind('quartz').find(p=>p.value.value===4&&p!==qSub);b.fractionDivide([qSub.id],[q4.id]);break;}
+ case 15:{for(const p of normal())b.pieces.delete(p.id);break;}
+ case 19:{quarters();const parts=kind('aqua');let merged=drag(parts[0],parts[1])[0];merged=drag(merged,parts[2])[0];annul();connect([merged,...kind('quartz')]);break;}
  case 20:{const q=burn();b.boost(q.id);connect([q,...kind('aqua')]);break;}
  }
  annul();assert.equal(b.pieces.size,0,'Todas as peças e equações devem poder ser anuladas');assert.ok(level.id>=1&&level.id<=21);assert.ok(!level.tools.includes('launch'));

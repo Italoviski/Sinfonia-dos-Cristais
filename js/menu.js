@@ -116,21 +116,34 @@
     '....oGo....'
   ], { o: '#4a2b0d', G: '#e59a28', H: '#ffe478', R: '#c83214', O: '#ff781e', Y: '#ffd84a', W: '#ffffd0' });
 
-  // Pixel-art Menu Button Icons (11x11 crisp pixel grid)
+  // Pixel-art Menu Button Icons (11x11 crisp pixel grid: Novo Jogo, Continuar, Opções, Créditos, Sair)
   const MENU_ICONS = [
     fromMap([
-      '..oGo......',
-      '..oGLo.....',
-      '..oGLLo....',
-      '..oGLLWo...',
-      '..oGLLLWo..',
-      '..oGLLLLWo.',
-      '..oGLLLWo..',
-      '..oGLLWo...',
-      '..oGLLo....',
-      '..oGLo.....',
-      '..oGo......'
+      '.....o.....',
+      '....oGo....',
+      '....oLo....',
+      '..ooLWLoo..',
+      '.oGLLWLLGo.',
+      'oGLWWWWWLo.',
+      '.oGLLWLLGo.',
+      '..ooLWLoo..',
+      '....oLo....',
+      '....oGo....',
+      '.....o.....'
     ], { o: '#143818', G: '#5ec93a', L: '#a8ff66', W: '#ecffd8' }),
+    fromMap([
+      '.oo..oGo...',
+      'oCCo.oGLo..',
+      'oCWooGLLo..',
+      'oCWooGLLWo.',
+      'oCWooGLLLWo',
+      'oCWooGLLLLW',
+      'oCWooGLLLWo',
+      'oCWooGLLWo.',
+      'oCWooGLLo..',
+      'oCCo.oGLo..',
+      '.oo..oGo...'
+    ], { o: '#10303a', G: '#28b8d8', C: '#40d8f8', L: '#7ef4ff', W: '#e4ffff' }),
     fromMap([
       '....ooo....',
       '...oCCCo...',
@@ -192,13 +205,16 @@
     return el;
   });
 
-  // Pixel dust & fireflies in 320x180 space — posicoes 2D independentes ja no frame 0 (sem alinhamento diagonal)
-  const particles = Array.from({ length: 48 }, (_, i) => ({
+  // Ambient luminescent crystal particles in 320x180 space (smooth 60 FPS organic float & gentle breathing)
+  const particles = Array.from({ length: 56 }, (_, i) => ({
     x: hash(i * 19 + 73),
     y: hash(i * 37 + 211),
     phase: hash(i * 53 + 409) * Math.PI * 2,
-    s: 1 + (i % 2),
-    speed: 0.015 + hash(i * 11 + 29) * 0.022,
+    freq: 1.1 + hash(i * 71 + 13) * 1.6,
+    amp: 0.006 + hash(i * 43 + 31) * 0.012,
+    speed: 0.038 + hash(i * 11 + 29) * 0.052,
+    twinkle: 1.6 + hash(i * 89 + 17) * 2.2,
+    s: (i % 3 === 0) ? 2 : 1,
     kind: i % 5 === 0 ? 'gold' : i % 3 === 0 ? 'pink' : 'cyan'
   }));
 
@@ -261,20 +277,19 @@
     });
   }
 
-  // Hook hover & focus interactions on the 4 menu buttons with immediate visual & audio feedback
+  // Hook hover & focus interactions on the 5 menu buttons with immediate visual & audio feedback
   const buttons = [...frame.querySelectorAll('.menu-choice')];
   function activateMenuHover(idx) {
-    if (hoveredChoice !== idx) {
-      window.CrystalAudio?.unlock?.();
-      window.CrystalAudio?.hover?.();
-    }
-    window.CrystalMenuAudio?.play?.();
+    if (hoveredChoice === idx) return;
     hoveredChoice = idx;
-    doorPulse = Math.max(doorPulse, idx === 0 ? 1.2 : 0.55);
+    doorPulse = Math.max(doorPulse, (idx === 0 || idx === 1) ? 1.2 : 0.55);
+    window.CrystalAudio?.hover?.();
+    if (window.CrystalMenuAudio && !window.CrystalMenuAudio.playing) {
+      window.CrystalMenuAudio.play();
+    }
   }
   buttons.forEach((btn, idx) => {
     btn.addEventListener('pointerenter', () => activateMenuHover(idx));
-    btn.addEventListener('mouseenter', () => activateMenuHover(idx));
     btn.addEventListener('focus', () => activateMenuHover(idx));
     btn.addEventListener('pointerleave', () => {
       if (hoveredChoice === idx) hoveredChoice = -1;
@@ -303,7 +318,7 @@
 
   function drawAncientDoorEnhancements(f12, f8) {
     const completed = window.CrystalApp?.state?.completed || [];
-    const boost = hoveredChoice === 0 || doorPulse > 0.1;
+    const boost = hoveredChoice === 0 || hoveredChoice === 1 || doorPulse > 0.1;
 
     // 1. Arch Keystone & Golden Filigree Nodes along the Monumental Door
     const goldCore = (f12 % 4 === 0 || boost) ? '#fff6b8' : '#ffd35a';
@@ -366,11 +381,11 @@
   }
 
   function drawMenuSelector(f12) {
-    if (hoveredChoice < 0 || hoveredChoice > 3) return;
-    // Button vertical centers in 320x180 space matching .menu-choice tops
-    const ys = [76, 94, 112, 130];
-    const cols = ['#a8ff66', '#9ef0ff', '#ff8ae2', '#ffd35a'];
-    const bws = [70, 78, 86, 62];
+    if (hoveredChoice < 0 || hoveredChoice > 4) return;
+    // Button vertical centers in 320x180 space matching .menu-choice tops (36.2%, 44.8%, 53.4%, 62.0%, 70.6% with height 6.8%)
+    const ys = [71, 87, 102, 118, 133];
+    const cols = ['#a8ff66', '#5ef2ff', '#9ef0ff', '#ff8ae2', '#ffd35a'];
+    const bws = [76, 72, 60, 64, 46];
     const cy = ys[hoveredChoice];
     const col = cols[hoveredChoice] || '#9ef0ff';
     const bw = bws[hoveredChoice] || 72;
@@ -382,7 +397,7 @@
     P1(12 + shift, cy + bob, '#ffffff');
 
     // Colchetes de canto em pixel art + trilha energética sob o botão focado
-    const bx = 18, by = cy - 8, bh = 16;
+    const bx = 18, by = cy - 7, bh = 14;
     ctx.fillStyle = col;
     // Canto superior esquerdo e inferior esquerdo
     ctx.fillRect(bx, by, 5, 1);
@@ -423,9 +438,11 @@
         const f12 = Math.floor(time * 12);
         const f8 = Math.floor(time * 8);
 
+        // GPU-composited light pulsation via opacity (avoids expensive full-screen filter recalculations)
         lamps.forEach((el, i) => {
-          const boost = hoveredChoice === 0 && (i === 3 || i === 4) ? 0.45 : 0;
-          el.style.filter = `brightness(${0.35 + boost + 1.45 * (0.5 + 0.5 * Math.sin(time * (0.55 + i * 0.07) + i * 1.8))}) saturate(1.22)`;
+          const boost = (hoveredChoice === 0 || hoveredChoice === 1) && (i === 3 || i === 4) ? 0.35 : 0;
+          const osc = 0.5 + 0.5 * Math.sin(time * (0.55 + i * 0.07) + i * 1.8);
+          el.style.opacity = (0.2 + boost + osc * 0.7).toFixed(2);
         });
 
         ctx.clearRect(0, 0, W, H);
@@ -441,20 +458,37 @@
           }
         });
 
-        // Ascending True Pixel Art particles (quantized to integer coordinates, scattered from frame 0)
+        // Ascending True Pixel Art particles (smooth 60 FPS float, organic drift & soft alpha breathing)
         for (const p of particles) {
           p.y -= dt * p.speed;
-          if (p.y < 0) p.y += 1;
-          const px = R((p.x + Math.sin(time * 0.55 + p.phase) * 0.012) * W);
+          if (p.y < -0.04) {
+            p.y = 1.04;
+            p.x = hash(p.phase * 1000 + Math.floor(time * 12));
+          }
+          const drift = Math.sin(time * p.freq + p.phase) * p.amp;
+          const px = R((p.x + drift) * W);
           const py = R(p.y * H);
-          const col = p.kind === 'gold' ? '#ffd35a' : p.kind === 'pink' ? '#ff8ae2' : '#9ef0ff';
-          ctx.fillStyle = col;
-          ctx.fillRect(px, py, p.s, p.s);
-          if (p.s > 1 && (f8 + px) % 5 === 0) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(px, py, 1, 1);
+
+          // Smooth vertical envelope: gentle fade-in near bottom, fade-out near top
+          const vEnvelope = Math.sin(clamp(p.y, 0, 1) * Math.PI);
+          // Harmonic breathing twinkle (gentle luminescence without harsh 8 FPS strobing)
+          const breathing = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin(time * p.twinkle + p.phase));
+          const alpha = vEnvelope * breathing;
+
+          if (alpha > 0.02) {
+            const col = p.kind === 'gold' ? '#ffd35a' : p.kind === 'pink' ? '#ff8ae2' : '#9ef0ff';
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = col;
+            ctx.fillRect(px, py, p.s, p.s);
+            if (p.s > 1) {
+              // Glowing soft core for fairy motes
+              ctx.globalAlpha = alpha * 0.85;
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(px, py, 1, 1);
+            }
           }
         }
+        ctx.globalAlpha = 1.0;
       }
     }
     requestAnimationFrame(tick);

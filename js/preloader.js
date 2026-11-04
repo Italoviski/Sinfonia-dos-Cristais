@@ -13,7 +13,8 @@
   // Manifest completo dos recursos essenciais ativos do jogo (Menu, Mapa e Trilhas)
   const IMAGE_MANIFEST = [
     { id: 'menu_aprovado', src: 'assets/story/interface/menu-aprovado.png', label: 'Pórtico do Menu' },
-    { id: 'btn_jogar', src: 'assets/story/interface/btn-jogar.png', label: 'Botão Jogar' },
+    { id: 'btn_novo_jogo', src: 'assets/story/interface/btn-novo-jogo.png', label: 'Botão Novo Jogo' },
+    { id: 'btn_continuar', src: 'assets/story/interface/btn-continuar.png', label: 'Botão Continuar' },
     { id: 'btn_opcoes', src: 'assets/story/interface/btn-opcoes.png', label: 'Botão Opções' },
     { id: 'btn_creditos', src: 'assets/story/interface/btn-creditos.png', label: 'Botão Créditos' },
     { id: 'btn_sair', src: 'assets/story/interface/btn-sair.png', label: 'Botão Sair' },
@@ -488,10 +489,29 @@
     },
 
     drawPixelText(ctx, text, x, y, col, center = false, size = 8) {
+      if (global.TruePixelEngine) {
+        const shadow = col === '#100c1e' ? null : '#100c1e';
+        if (center && typeof global.TruePixelEngine.drawPixelTextCentered === 'function') {
+          global.TruePixelEngine.drawPixelTextCentered(ctx, text, R(x), R(y), col, shadow, 320, size);
+          return;
+        }
+        if (typeof global.TruePixelEngine.drawPixelText === 'function') {
+          global.TruePixelEngine.drawPixelText(ctx, text, R(x), R(y), col, shadow, 320, size);
+          return;
+        }
+      }
       ctx.fillStyle = col;
-      ctx.font = `${size}px monospace`;
+      ctx.font = `bold ${Math.max(9, Math.round(size * 1.15))}px "Fredoka", "Trebuchet MS", sans-serif`;
+      if (typeof ctx.strokeText === 'function') {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2.4;
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.strokeText(text, R(x), R(y));
+      }
       ctx.textAlign = center ? 'center' : 'left';
       ctx.textBaseline = 'top';
+      ctx.fillStyle = col;
       ctx.fillText(text, R(x), R(y));
     }
   };

@@ -39,6 +39,12 @@
   }
 
   function closeDialogs() {
+    if (window.AssetPreloader) {
+      window.AssetPreloader.active = false;
+      window.AssetPreloader.fadingOut = true;
+    }
+    const pre = document.getElementById('preloaderScreen');
+    if (pre) pre.remove();
     skipStory();
     for (const id of ['settingsDialog', 'creditsDialog', 'exitDialog']) {
       const dlg = document.getElementById(id);
@@ -64,7 +70,11 @@
             value: p.value,
             shadow: !!p.shadow,
             inEquation: p.inEquation || null,
+            inFraction: p.inFraction || null,
             boosted: !!p.boosted,
+            shape: p.shape || null,
+            borderType: p.borderType || null,
+            coreType: p.coreType || null,
             x: p.x,
             y: p.y
           }))
@@ -87,6 +97,41 @@
             currentStep: mod.currentStep,
             totalSteps: mod.totalSteps,
             emeraldAltar: mod.emeraldAltar ? { x: mod.emeraldAltar.x, y: mod.emeraldAltar.y } : null,
+            fractionPlatform: mod.fractionPlatform
+              ? {
+                  x: mod.fractionPlatform.x,
+                  y: mod.fractionPlatform.y,
+                  topSum: mod.fractionPlatform.topSum,
+                  bottomSum: mod.fractionPlatform.bottomSum,
+                  glowing: !!mod.fractionPlatform.glowing,
+                  broken: !!mod.fractionPlatform.broken
+                }
+              : null,
+            riverMelody: mod.riverMelody
+              ? {
+                  roundIndex: mod.riverMelody.roundIndex,
+                  phase: mod.riverMelody.phase,
+                  playerIndex: mod.riverMelody.playerIndex,
+                  calmMode: !!mod.riverMelody.calmMode,
+                  crystalsCount: (mod.riverMelody.crystals || []).length
+                }
+              : null,
+            electricShapes: (mod.electricShapes || []).map(es => ({
+              id: es.id,
+              shape: es.shape,
+              x: es.x,
+              y: es.y,
+              used: !!es.used
+            })),
+            shellGame: mod.shellGame
+              ? {
+                  round: mod.shellGame.round,
+                  totalRounds: mod.shellGame.totalRounds,
+                  calmMode: !!mod.shellGame.calmMode,
+                  opalCupIdx: mod.shellGame.opalCupIdx,
+                  cupsCount: (mod.shellGame.cups || []).length
+                }
+              : null,
             pureEquation: mod.pureEquation
               ? { x: mod.pureEquation.x, y: mod.pureEquation.y, expanded: !!mod.pureEquation.expanded, broken: !!mod.pureEquation.broken }
               : null,
@@ -116,6 +161,10 @@
 
   function goto(screenName) {
     closeDialogs();
+    if (screenName !== 'game') {
+      window.CaveChapter1?.deactivateCanvas?.();
+      window.TruePixelWorlds?.deactivateCanvas?.();
+    }
     window.CrystalApp?.goto?.(screenName);
     return getState();
   }
@@ -150,7 +199,11 @@
     }
     if (mod.shadowEquation) mod.shadowEquation.broken = true;
     if (mod.pureEquation) mod.pureEquation.broken = true;
-    mod.checkStepCleared?.();
+    if (typeof mod.checkIfAllStepTargetsCleared === 'function') {
+      mod.checkIfAllStepTargetsCleared(160, 88);
+    } else {
+      mod.checkStepCleared?.();
+    }
     return {
       ok: true,
       module: active.kind,

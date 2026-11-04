@@ -215,7 +215,26 @@
     '\'': ['#', '#', '.', '.', '.', '.', '.'],
     '>': ['#..', '.#.', '..#', '.#.', '#..', '...', '...'],
     '<': ['..#', '.#.', '#..', '.#.', '..#', '...', '...'],
-    '%': ['#..#', '...#', '..#.', '.#..', '#...', '#..#', '....']
+    '%': ['#..#', '...#', '..#.', '.#..', '#...', '#..#', '....'],
+    '•': ['.#.', '###', '.#.', '...', '...', '...', '...'],
+    '♪': ['..##', '..##', '..#.', '..#.', '.##.', '####', '.##.'],
+    '↺': ['.###.', '#...#', '#.###', '#.#..', '#....', '#...#', '.###.'],
+    '↻': ['.###.', '#...#', '###.#', '..#.#', '....#', '#...#', '.###.'],
+    '♥': ['.#.#.', '#####', '#####', '.###.', '..#..', '.....', '.....'],
+    '❚': ['##', '##', '##', '##', '##', '##', '##'],
+    '—': ['.....', '.....', '.....', '#####', '.....', '.....', '.....'],
+    '–': ['....', '....', '....', '####', '....', '....', '....'],
+    '…': ['.....', '.....', '.....', '.....', '.....', '.....', '#.#.#'],
+    '&': ['.##..', '#..#.', '.##..', '#..#.', '#.#..', '#..#.', '.##.#'],
+    '*': ['.#.', '###', '.#.', '...', '...', '...', '...'],
+    '[': ['##', '#.', '#.', '#.', '#.', '#.', '##'],
+    ']': ['##', '.#', '.#', '.#', '.#', '.#', '##'],
+    '_': ['....', '....', '....', '....', '....', '....', '####'],
+    '°': ['###', '#.#', '###', '...', '...', '...', '...'],
+    'º': ['###', '#.#', '###', '...', '###', '...', '...'],
+    'ª': ['###', '#.#', '###', '...', '###', '...', '...'],
+    '▶': ['#...', '##..', '###.', '####', '###.', '##..', '#...'],
+    '◀': ['...#', '..##', '.###', '####', '.###', '..##', '...#']
   };
 
   const ACCENT_MAP = {
@@ -230,10 +249,25 @@
     'í': ['i', 'acute', true],
     'ó': ['o', 'acute', true], 'ô': ['o', 'circ', true], 'õ': ['o', 'tilde', true],
     'ú': ['u', 'acute', true],
-    'ç': ['c', 'cedilla', true]
+    'ç': ['c', 'cedilla', true],
+    'ü': ['u', 'umlaut', true],
+    'Ü': ['U', 'umlaut', false]
   };
 
+  const FALLBACK_GLYPH = [
+    '###',
+    '#.#',
+    '#.#',
+    '#.#',
+    '#.#',
+    '#.#',
+    '###'
+  ];
+
   function getGlyphInfo(ch) {
+    if (ch === '’' || ch === '‘') ch = '\'';
+    else if (ch === '“' || ch === '”') ch = '"';
+
     let acc = ACCENT_MAP[ch];
     let key = acc ? acc[0] : ch;
     let g = BASE_GLYPHS[key];
@@ -243,7 +277,7 @@
       key = acc ? acc[0] : up;
       g = BASE_GLYPHS[key];
     }
-    if (!g) return { g: null, acc: null, w: 3 };
+    if (!g) return { g: FALLBACK_GLYPH, acc: null, w: 3 };
     return { g, acc, w: g[0].length };
   }
 
@@ -285,11 +319,14 @@
         ctx.fillRect(ax + 2, ay + 1, 1, 1);
       } else if (type === 'tilde') {
         ctx.fillRect(ax, ay + 1, 1, 1);
-        ctx.fillRect(ax + 1, ay, 1, 1);
+        ctx.fillRect(ax + 1, ay + 1, 1, 1);
         ctx.fillRect(ax + 2, ay + 1, 1, 1);
       } else if (type === 'cedilla') {
         ctx.fillRect(ox + 1, oy + 7, 1, 1);
         ctx.fillRect(ox, oy + 8, 2, 1);
+      } else if (type === 'umlaut') {
+        ctx.fillRect(ax, ay + 1, 1, 1);
+        ctx.fillRect(ax + 2, ay + 1, 1, 1);
       }
     };
 
@@ -297,12 +334,12 @@
       ctx.fillStyle = shadowCol;
       for (let j = 0; j < rows; j++) {
         for (let i = 0; i < w; i++) {
-          if (g[j][i] === '#') ctx.fillRect(x + i + 0.5, y + j + 0.5, 1, 1);
+          if (g[j][i] === '#') ctx.fillRect(x + i + 1, y + j + 1, 1, 1);
         }
       }
-      drawAccent(x + 0.5, y + 0.5);
+      drawAccent(x + 1, y + 1);
     }
-    ctx.fillStyle = col;
+    ctx.fillStyle = col || '#2c221e';
     for (let j = 0; j < rows; j++) {
       for (let i = 0; i < w; i++) {
         if (g[j][i] === '#') ctx.fillRect(x + i, y + j, 1, 1);
@@ -375,6 +412,7 @@
       }
       cy += lineHeight;
     }
+    return lines.length * lineHeight;
   }
 
   // ============================================================================
@@ -2012,20 +2050,33 @@
         arrowX = bx + bw - 12;
       }
 
+      // Suporte a tremor cômico de impacto ("QUE CALOR!!!") sem quebrar o alinhamento inteiro de pixels
+      let shakeX = 0, shakeY = 0;
+      if (cur.shake && !GameHUD.reducedMotion) {
+        const f24 = Math.floor(t * 24);
+        const J = [[-2, 0], [2, -1], [-1, 1], [2, 1], [-2, -1], [1, -1], [-1, 0], [1, 1]];
+        [shakeX, shakeY] = J[((f24 % 8) + 8) % 8];
+      }
+
       // Balão de Diálogo em Pergaminho (#f4eedf com borda dupla #2c221e e #8c7d70)
-      drawParchmentBox(ctx, bx, by, bw, bh);
+      drawParchmentBox(ctx, bx + shakeX, by + shakeY, bw, bh);
+      if (cur.shake) {
+        ctx.fillStyle = '#FBBF24';
+        ctx.fillRect(bx + shakeX + 1, by + shakeY + 1, bw - 2, 1);
+        ctx.fillRect(bx + shakeX + 1, by + shakeY + bh - 2, bw - 2, 1);
+      }
 
       // Barra simétrica dos 4 encaixes alinhada na borda superior direita da caixa
-      this.drawSocketCrest(ctx, crestCx, by, f12);
+      this.drawSocketCrest(ctx, crestCx + shakeX, by + shakeY, f12);
 
       // Plaqueta do nome alinhada na mesma linha de base superior (sem colidir com os slots)
       const speaker = cur.speaker || 'Protagonista';
       const maxNameW = Math.max(54, R(crestCx - 34 - nx));
       const nameW = Math.min(112, maxNameW, measurePixelText(speaker, 9) + 18);
-      this.drawNamePlate(ctx, nx, by - 6, nameW, speaker);
+      this.drawNamePlate(ctx, nx + shakeX, by - 6 + shakeY, nameW, speaker);
 
       // Texto com tipografia Owlboy (maiúsculas, minúsculas e acentos)
-      drawPixelText(ctx, fullText.slice(0, visibleCount), textX, by + 9, '#2c221e', null, textW, 10);
+      drawPixelText(ctx, fullText.slice(0, visibleCount), textX + shakeX, by + 9 + shakeY, cur.shake ? '#8c2d1f' : '#2c221e', null, textW, 10);
 
       // Setinha indicadora no canto inferior direito quando o texto terminou
       if (!isTalking) {
@@ -2311,6 +2362,125 @@
           drawMiniOrb(ctx, mx + sep + 3, cy - 11, orbCol, rimCol);
           if (phase < 0.65) drawStar(ctx, mx, cy - 2, 3, '#ffffff', orbCol);
         }
+      } else if (type === 'caatinga_circle') {
+        const sx = R(vx + vw / 2 + 24);
+        drawRing(ctx, sx, cy, 11, '#FBBF24');
+        if (phase < 0.52) {
+          const px = R(vx + 44 + easeInOut(phase / 0.52) * (sx - (vx + 44)));
+          ctx.drawImage(SPR_OPAL, px - 6, cy - 7);
+          for (const dx of [-4, 0, 4]) drawMiniOrb(ctx, px + dx, cy - 11, '#f7c97e', '#541812');
+        } else {
+          drawRing(ctx, sx, cy, 7, '#e68a49');
+          ctx.fillStyle = '#c45131';
+          ctx.fillRect(sx - 4, cy - 4, 9, 9);
+          for (let k = 0; k < 6; k++) {
+            const ang = (k / 6) * Math.PI * 2 + t * 2;
+            P1(ctx, R(sx + Math.cos(ang) * 9), R(cy + Math.sin(ang) * 9), '#fff6cc');
+          }
+          drawStar(ctx, sx, cy - 10, 3, '#ffffff', '#FBBF24');
+        }
+      } else if (type === 'caatinga_square' || type === 'caatinga_order') {
+        const mx = R(vx + vw / 2);
+        const swapped = type === 'caatinga_order' && phase >= 0.5;
+        const borderCol = swapped ? '#e396b1' : '#a8d8e6';
+        const coreCol = swapped ? '#6caac4' : '#bf6588';
+        ctx.drawImage(swapped ? SPR_ROSE : SPR_PURE, mx - 54, cy - 7);
+        ctx.drawImage(swapped ? SPR_PURE : SPR_ROSE, mx - 34, cy - 7);
+        ctx.fillStyle = '#9b72cf';
+        ctx.fillRect(mx - 42, cy, 8, 2);
+        ctx.fillStyle = '#FBBF24';
+        ctx.fillRect(mx + 14, cy - 10, 20, 20);
+        ctx.fillStyle = borderCol;
+        ctx.fillRect(mx + 15, cy - 9, 18, 18);
+        ctx.fillStyle = coreCol;
+        ctx.fillRect(mx + 19, cy - 5, 10, 10);
+        drawStar(ctx, mx + 24, cy - 11, 2, '#ffffff', '#FBBF24');
+      } else if (type === 'caatinga_rectangle' || type === 'caatinga_trapezoid') {
+        const mx = R(vx + vw / 2);
+        ctx.drawImage(SPR_PURE, mx - 54, cy - 7);
+        ctx.drawImage(SPR_OPAL, mx - 34, cy - 7);
+        ctx.fillStyle = '#9b72cf';
+        ctx.fillRect(mx - 42, cy, 8, 2);
+        if (type === 'caatinga_rectangle') {
+          ctx.fillStyle = '#FBBF24';
+          ctx.fillRect(mx + 10, cy - 8, 26, 16);
+          ctx.fillStyle = '#a8d8e6';
+          ctx.fillRect(mx + 11, cy - 7, 24, 14);
+          ctx.fillStyle = '#c45131';
+          ctx.fillRect(mx + 15, cy - 4, 16, 8);
+        } else {
+          for (let dy = -8; dy <= 7; dy++) {
+            const hw = R(8 + ((dy + 8) / 15) * 6);
+            ctx.fillStyle = dy === -8 || dy === 7 ? '#FBBF24' : '#a8d8e6';
+            ctx.fillRect(mx + 22 - hw, cy + dy, hw * 2, 1);
+            if (dy > -5 && dy < 4) {
+              ctx.fillStyle = '#c45131';
+              ctx.fillRect(mx + 22 - (hw - 3), cy + dy, (hw - 3) * 2, 1);
+            }
+          }
+        }
+      } else if (type === 'caatinga_tessellation' || type === 'caatinga_nested') {
+        const mx = R(vx + vw / 2);
+        const sep = phase < 0.5 ? R(14 * (1 - easeInOut(phase / 0.5))) : 0;
+        ctx.fillStyle = '#a8d8e6';
+        ctx.fillRect(mx - 14 - sep, cy - 7, 13, 14);
+        ctx.fillStyle = '#6caac4';
+        ctx.fillRect(mx - 11 - sep, cy - 4, 7, 8);
+        ctx.fillStyle = '#a8d8e6';
+        ctx.fillRect(mx + sep, cy - 7, 13, 14);
+        ctx.fillStyle = '#6caac4';
+        ctx.fillRect(mx + 3 + sep, cy - 4, 7, 8);
+        if (sep === 0) {
+          ctx.fillStyle = '#FBBF24';
+          ctx.fillRect(mx - 15, cy - 8, 29, 1);
+          ctx.fillRect(mx - 15, cy + 7, 29, 1);
+          drawStar(ctx, mx, cy - 10, 3, '#ffffff', '#FBBF24');
+        }
+      } else if (type === 'caatinga_shell_game') {
+        const mx = R(vx + vw / 2);
+        const swap = Math.sin(phase * Math.PI * 2) * 26;
+        const cups = [R(mx - 26 + swap), mx, R(mx + 26 - swap)];
+        for (let i = 0; i < 3; i++) {
+          const cxCup = cups[i];
+          ctx.fillStyle = '#D97706';
+          ctx.fillRect(cxCup - 8, cy - 6, 16, 12);
+          ctx.fillStyle = '#FBBF24';
+          ctx.fillRect(cxCup - 6, cy - 8, 12, 2);
+          ctx.fillStyle = '#92400e';
+          ctx.fillRect(cxCup - 9, cy + 5, 18, 2);
+        }
+        if (phase < 0.25 || phase > 0.8) {
+          drawStar(ctx, cups[0], cy - 11, 3, '#ffffff', '#FBBF24');
+        }
+      } else if (type === 'river_fraction' || type === 'river_divide') {
+        const mx = R(vx + vw / 2);
+        const glow = Math.sin(t * 8) * 0.5 + 0.5;
+        ctx.fillStyle = '#1c2c3d';
+        ctx.fillRect(mx - 24, cy - 14, 48, 28);
+        ctx.fillStyle = type === 'river_divide' || phase > 0.4 ? '#ff69b4' : '#57d1de';
+        ctx.fillRect(mx - 22, cy - 1, 44, 2);
+        ctx.drawImage(SPR_PURE, mx - 6, cy - 13);
+        ctx.drawImage(SPR_PURE, mx - 6, cy + 3);
+        if (type === 'river_divide' || phase > 0.4) {
+          drawRing(ctx, mx, cy, 18 + glow * 4, '#ff69b4');
+          drawStar(ctx, mx - 18, cy - 8, 2, '#ffffff', '#ff69b4');
+          drawStar(ctx, mx + 18, cy + 6, 2, '#ffffff', '#ffaae5');
+        }
+      } else if (type === 'river_melody') {
+        const mx = R(vx + vw / 2);
+        const activeIdx = Math.floor(t * 2) % 5;
+        const freqsCols = ['#5ee7ff', '#70ea85', '#ffd64d', '#ff8c3b', '#ff6bc9'];
+        for (let i = 0; i < 5; i++) {
+          const cxGem = mx - 40 + i * 20;
+          const isAct = i === activeIdx;
+          const gemY = cy + (isAct ? -6 : 2);
+          ctx.fillStyle = freqsCols[i];
+          ctx.fillRect(cxGem - 4, gemY - 4, 8, 8);
+          if (isAct) {
+            drawStar(ctx, cxGem, gemY - 9, 2, '#ffffff', freqsCols[i]);
+            drawPixelChar(ctx, '♪', cxGem - 2, gemY - 14, '#ffffff', '#111338');
+          }
+        }
       }
     },
 
@@ -2388,6 +2558,7 @@
 
     // Botões na barra superior (320x20):
     buttons: {
+      map:      { x: 154, y: 2, w: 32, h: 16 },
       pause:    { x: 188, y: 2, w: 20, h: 16 },
       restart:  { x: 210, y: 2, w: 64, h: 16 },
       mute:     { x: 276, y: 2, w: 20, h: 16 },
@@ -2508,6 +2679,17 @@
     },
 
     handleClick(x, y) {
+      if (this.inRect(x, y, this.buttons.map, 2)) {
+        this.paused = false;
+        this.settingsOpen = false;
+        this.playSfx('click');
+        if (typeof this.onGoMap === 'function') {
+          this.onGoMap();
+        } else if (global.CrystalApp?.goto) {
+          global.CrystalApp.goto('map');
+        }
+        return true;
+      }
       if (this.inRect(x, y, this.buttons.pause, 2)) {
         this.settingsOpen = false;
         this.paused = !this.paused;
@@ -2672,17 +2854,22 @@
 
       // Indicador visual de Etapas no centro-esquerda (oculto durante apresentações musicais com botão Pular)
       if (!hideSteps) {
-        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 96, 6, '#a8d8e6', '#120d0b', 62, 9);
+        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 94, 6, '#a8d8e6', '#120d0b', 46, 8);
         for (let s = 1; s <= totalSteps; s++) {
-          const dx = 148 + (s - 1) * 10, dy = 9;
+          const dx = 136 + (s - 1) * 6, dy = 9;
           const done = s < currentStep;
           const cur = s === currentStep;
           ctx.fillStyle = done ? '#539e43' : cur ? '#68b8c4' : '#3b3332';
-          ctx.fillRect(dx - 3, dy - 3, 6, 6);
+          ctx.fillRect(dx - 2, dy - 2, 4, 4);
           ctx.fillStyle = done || cur ? '#ffffff' : '#8c7d70';
           ctx.fillRect(dx - 1, dy - 1, 2, 2);
         }
       }
+
+      // 0. Botão MAPA (Acesso rápido a todas as fases para o dev/jogador)
+      const bmap = this.buttons.map;
+      this.drawButtonBox(ctx, bmap, false);
+      drawPixelTextCentered(ctx, 'Mapa', bmap.x + bmap.w / 2, bmap.y + 4, '#f7e2b8', '#120d0b', bmap.w - 4, 8);
 
       // 1. Botão PAUSE (❚❚)
       const bp = this.buttons.pause;
@@ -2860,6 +3047,90 @@
         vignette: 'aqua_drop',
         body: 'Toque rápido em uma Água-Marinha par para reparti-la ao meio, ou arraste gotas iguais para somá-las!'
       }
+    ],
+    RIVER_FRACTION_PLATFORM: [
+      {
+        id: 'tut_river_fraction',
+        title: 'Plataforma de Frações',
+        vignette: 'river_fraction',
+        body: 'Arraste cristais para dentro da plataforma. Depois que entram, não podem mais sair! Iguale os valores de cima e de baixo.'
+      },
+      {
+        id: 'tut_river_divide',
+        title: 'Divisão Cristalina',
+        vignette: 'river_divide',
+        body: 'Quando os valores se igualarem, a fração brilhará em rosa! Clique nela para quebrar e realizar a divisão de tudo!'
+      }
+    ],
+    RIVER_MELODY_SIMON: [
+      {
+        id: 'tut_river_melody',
+        title: 'O Canto dos 5 Cristais',
+        vignette: 'river_melody',
+        body: 'Observe os 5 cristais: cada um flutua e toca sua própria nota na sequência. Toque-os na ordem exata para harmonizar o rio!'
+      }
+    ],
+    CAATINGA_CIRCLE: [
+      {
+        id: 'tut_caatinga_circle',
+        title: 'O Círculo Elétrico',
+        vignette: 'caatinga_circle',
+        body: 'Arraste 1 único cristal até o Círculo Elétrico amarelo para criar um Círculo Cristalino de pontos orbitais e anular a sombra circular!'
+      }
+    ],
+    CAATINGA_SQUARE: [
+      {
+        id: 'tut_caatinga_square',
+        title: 'O Quadrado Elétrico',
+        vignette: 'caatinga_square',
+        body: 'Todas as formas (exceto o círculo) exigem 2 cristais conectados! O Quadrado exige 2 elementos de mesmo valor matemático.'
+      },
+      {
+        id: 'tut_caatinga_order',
+        title: 'A Ordem dos Fatores',
+        vignette: 'caatinga_order',
+        body: 'A ordem importa! O 1º cristal define a cor da borda externa e o 2º cristal define a cor do núcleo interno da forma.'
+      }
+    ],
+    CAATINGA_RECTANGLE: [
+      {
+        id: 'tut_caatinga_rectangle',
+        title: 'O Retângulo Elétrico',
+        vignette: 'caatinga_rectangle',
+        body: 'Conecte 2 cristais com quantidades diferentes em uma Equação Cristalina e leve-os ao Retângulo Elétrico!'
+      }
+    ],
+    CAATINGA_TRAPEZOID: [
+      {
+        id: 'tut_caatinga_trapezoid',
+        title: 'O Trapézio Elétrico',
+        vignette: 'caatinga_trapezoid',
+        body: 'Conecte 2 cristais em uma Equação Cristalina e atravesse o Trapézio Elétrico para moldar uma matriz trapezoidal!'
+      }
+    ],
+    CAATINGA_TESSELLATION: [
+      {
+        id: 'tut_caatinga_tessellation',
+        title: 'A Arte do Encaixe',
+        vignette: 'caatinga_tessellation',
+        body: 'Conecte duas formas prontas para criar polígonos maiores (2 Quadrados = Retângulo, Trapézio + Triângulo = Pentágono). Arraste para desmontar!'
+      }
+    ],
+    CAATINGA_NESTED: [
+      {
+        id: 'tut_caatinga_nested',
+        title: 'Geometria Avançada',
+        vignette: 'caatinga_nested',
+        body: 'Una Triângulos em Losangos ou Hexágonos e encaixe formas dentro de Equações Cristalinas para anular sombras compostas em cascata!'
+      }
+    ],
+    CAATINGA_SHELL_GAME: [
+      {
+        id: 'tut_caatinga_shell_game',
+        title: 'O Desafio das Areias',
+        vignette: 'caatinga_shell_game',
+        body: 'A Opala de Fogo Primordial se escondeu sob uma cúpula de arenito! Acompanhe os movimentos em 6 rodadas e toque no copo certo!'
+      }
     ]
   };
 
@@ -2880,6 +3151,7 @@
     drawRing,
     drawStar,
     measurePixelText,
+    wrapPixelLines,
     drawPixelChar,
     drawPixelText,
     drawPixelTextCentered,

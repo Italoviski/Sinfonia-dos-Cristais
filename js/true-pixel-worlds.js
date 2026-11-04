@@ -11,8 +11,8 @@
   if (!E) return;
 
   const {
-    W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap,
-    P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, drawParchmentBox,
+    W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
+    P1, drawRing, drawStar, measurePixelText, drawPixelChar, drawPixelText, drawPixelTextCentered, drawParchmentBox,
     ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
   } = E;
 
@@ -206,16 +206,398 @@
     return { core: '#fffdf2', mid: '#7fd4e6', rim: '#1e3a4d', link: '#569bb0' };
   }
 
-  function drawCrystalPiece(ctx, piece, t) {
+  const SHAPE_COLOR_MAP = {
+    white:   { hi: '#ffffff', mid: '#e2e8f0', lo: '#64748b', rim: '#1e293b' },
+    rose:    { hi: '#ffe4ef', mid: '#ff6ba8', lo: '#b82562', rim: '#4a0d26' },
+    opal:    { hi: '#fff0b8', mid: '#ff7b24', lo: '#b83209', rim: '#4a1204' },
+    citrine: { hi: '#fffbd1', mid: '#ffd426', lo: '#b87d00', rim: '#422c00' },
+    aqua:    { hi: '#d9fffb', mid: '#1ad1c2', lo: '#0d7a73', rim: '#06373a' },
+    emerald: { hi: '#e3ffe8', mid: '#38d968', lo: '#197a38', rim: '#0a3618' },
+    shadow:  { hi: '#e2d4f7', mid: '#6e5794', lo: '#392a54', rim: '#171026' }
+  };
+
+  const SHAPE_BANNERS = {
+    circle:    'CÍRCULO!',
+    square:    'QUADRADO!',
+    rectangle: 'RETÂNGULO!',
+    triangle:  'TRIÂNGULO!',
+    trapezoid: 'TRAPÉZIO!',
+    rhombus:   'LOSANGO!',
+    pentagon:  'PENTÁGONO!',
+    hexagon:   'HEXÁGONO!'
+  };
+
+  function getShapeTone(typeKey, isShadow = false) {
+    const base = SHAPE_COLOR_MAP[typeKey] || SHAPE_COLOR_MAP.white;
+    if (!isShadow) return base;
+    // Mantém as cores reais da borda e do núcleo 100% legíveis mesmo nas peças sombrias,
+    // adicionando contorno violeta profundo (e halo sombrio externo na renderização).
+    return {
+      hi: base.hi,
+      mid: base.mid,
+      lo: base.lo,
+      rim: '#2e1065'
+    };
+  }
+
+  function drawOrbsForValue(ctx, x, y, rawVal, pal, recentlyChanged) {
+    const total = clamp(Math.round(rawVal || 1), 1, 12);
+    const row1 = Math.min(6, total);
+    const row2 = Math.max(0, total - 6);
+    const arcs1 = EXTERNAL_ORB_ARCS[row1] || EXTERNAL_ORB_ARCS[1];
+
+    ctx.fillStyle = pal.link;
+    for (let i = 0; i < arcs1.length; i++) {
+      const [ox, oy] = arcs1[i];
+      ctx.fillRect(RH(x + ox * 0.65), RH(y + oy * 0.72), 1, 1);
+      if (i < arcs1.length - 1) {
+        const [nx, ny] = arcs1[i + 1];
+        ctx.fillRect(RH(x + (ox + nx) * 0.5), RH(y + (oy + ny) * 0.5), 1, 1);
+      }
+    }
+    for (let i = 0; i < arcs1.length; i++) {
+      const [ox, oy] = arcs1[i];
+      drawExternalOrb(ctx, x + ox, y + oy, pal.core, pal.mid, pal.rim, recentlyChanged);
+    }
+    if (row2 > 0) {
+      const arcs2 = EXTERNAL_ORB_ARCS[row2] || EXTERNAL_ORB_ARCS[1];
+      for (let i = 0; i < arcs2.length; i++) {
+        const [ox, oy] = arcs2[i];
+        drawExternalOrb(ctx, x + ox, y + oy - 6, pal.core, pal.mid, pal.rim, recentlyChanged);
+      }
+    }
+  }
+
+  function drawMaterializedShapePiece(ctx, piece, x, y, t) {
+    const shape = piece.shape;
+    const isShadow = Boolean(piece.shadow);
+    const bPal = getShapeTone(piece.borderType || piece.type || 'white', isShadow);
+    const cPal = getShapeTone(piece.coreType || piece.type || 'white', isShadow);
+    const highContrast = typeof document !== 'undefined' && document.body?.classList?.contains('high-contrast');
+    const f12 = Math.floor(t * SPRITE_FPS);
+    const cx = R(x), cy = R(y);
+
+    // Aura sombria externa inconfundível para formas-alvo sombrias (sem apagar as cores reais da borda/núcleo)
+    if (isShadow) {
+      const pulse = (f12 & 1) ? 13 : 12;
+      drawRing(ctx, cx, cy, pulse, '#7e22ce');
+      drawRing(ctx, cx, cy, pulse + 1, '#3b0764');
+      for (let k = 0; k < 4; k++) {
+        const ang = (k / 4) * Math.PI * 2 + f12 * 0.15;
+        P1(ctx, R(cx + Math.cos(ang) * (pulse + 1)), R(cy + Math.sin(ang) * (pulse + 1)), '#d8b4fe');
+      }
+    }
+
+    const rot = Number(piece.rotAngle) || 0;
+    const hasRot = Math.abs(rot) > 0.01 && typeof ctx.save === 'function' && typeof ctx.rotate === 'function';
+    const ox = hasRot ? 0 : cx;
+    const oy = hasRot ? 0 : cy;
+    if (hasRot) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rot);
+    }
+
+    if (shape === 'circle') {
+      // Circunferência pontilhada composta por múltiplos cristais orbitais + núcleo circular facetado
+      drawRing(ctx, ox, oy, 8, bPal.rim);
+      for (let dy = -6; dy <= 6; dy++) {
+        for (let dx = -6; dx <= 6; dx++) {
+          const d = Math.hypot(dx, dy);
+          if (d <= 6.2) {
+            ctx.fillStyle = d > 4.2 ? bPal.mid : (dx + dy < -2 ? cPal.hi : (dx + dy > 2 ? cPal.lo : cPal.mid));
+            ctx.fillRect(ox + dx, oy + dy, 1, 1);
+          }
+        }
+      }
+      for (let k = 0; k < 8; k++) {
+        const ang = (k / 8) * Math.PI * 2 + (isShadow ? -1 : 1) * (f12 * 0.18);
+        const rx = R(ox + Math.cos(ang) * 9.5);
+        const ry = R(oy + Math.sin(ang) * 9.5);
+        ctx.fillStyle = bPal.rim;
+        ctx.fillRect(rx - 1, ry - 1, 3, 3);
+        P1(ctx, rx, ry, (k & 1) ? bPal.hi : bPal.mid);
+      }
+    } else if (shape === 'square' || shape === 'rectangle') {
+      const hw = shape === 'rectangle' ? 11 : 8;
+      const hh = shape === 'rectangle' ? 7 : 8;
+      const isJoinedSquares = shape === 'rectangle' && (
+        piece.joinedSquares ||
+        (piece.components && piece.components.length === 2 && piece.components[0].shape === 'square')
+      );
+      ctx.fillStyle = bPal.rim;
+      ctx.fillRect(ox - hw - 1, oy - hh - 1, (hw + 1) * 2, (hh + 1) * 2);
+      // Borda externa (3px) determinada pelo 1º elemento
+      ctx.fillStyle = bPal.mid;
+      ctx.fillRect(ox - hw, oy - hh, hw * 2, hh * 2);
+      ctx.fillStyle = bPal.hi;
+      ctx.fillRect(ox - hw, oy - hh, hw * 2, 2);
+      ctx.fillRect(ox - hw, oy - hh, 2, hh * 2);
+      ctx.fillStyle = bPal.lo;
+      ctx.fillRect(ox - hw, oy + hh - 2, hw * 2, 2);
+      ctx.fillRect(ox + hw - 2, oy - hh, 2, hh * 2);
+      // Núcleo interno determinado pelo 2º elemento
+      const iw = hw - 3, ih = hh - 3;
+      for (let dy = -ih; dy < ih; dy++) {
+        for (let dx = -iw; dx < iw; dx++) {
+          if (isJoinedSquares && Math.abs(dx) <= 1) {
+            // Costura vertical de junção mostrando claramente os 2 quadrados unidos lado a lado ([■|■])
+            ctx.fillStyle = dx === 0 ? '#ffffff' : bPal.mid;
+          } else {
+            let col = cPal.mid;
+            if (dx + dy < -2) col = cPal.hi;
+            else if (dx + dy > 2) col = cPal.lo;
+            ctx.fillStyle = col;
+          }
+          ctx.fillRect(ox + dx, oy + dy, 1, 1);
+        }
+      }
+    } else if (shape === 'triangle' && (!piece.subTriangles || piece.subTriangles <= 1)) {
+      const h = 15;
+      for (let row = 0; row < h; row++) {
+        const py = oy - 7 + row;
+        const hw = Math.max(1, R((row / (h - 1)) * 9));
+        ctx.fillStyle = bPal.rim;
+        ctx.fillRect(ox - hw - 1, py, (hw + 1) * 2 + 1, 1);
+        for (let dx = -hw; dx <= hw; dx++) {
+          const isBorder = row < 3 || row >= h - 3 || Math.abs(dx) >= hw - 2;
+          const pal = isBorder ? bPal : cPal;
+          const col = dx < -2 ? pal.hi : (dx > 2 ? pal.lo : pal.mid);
+          ctx.fillStyle = col;
+          ctx.fillRect(ox + dx, py, 1, 1);
+        }
+      }
+    } else if (shape === 'trapezoid') {
+      for (let dy = -7; dy <= 7; dy++) {
+        const tRatio = (dy + 7) / 14;
+        const hw = R(5 + tRatio * 5);
+        ctx.fillStyle = bPal.rim;
+        ctx.fillRect(ox - hw - 1, oy + dy, (hw + 1) * 2 + 1, 1);
+        for (let dx = -hw; dx <= hw; dx++) {
+          const isBorder = dy <= -5 || dy >= 5 || Math.abs(dx) >= hw - 2;
+          const pal = isBorder ? bPal : cPal;
+          ctx.fillStyle = dx < -2 ? pal.hi : (dx > 2 ? pal.lo : pal.mid);
+          ctx.fillRect(ox + dx, oy + dy, 1, 1);
+        }
+      }
+    } else if (shape === 'rhombus') {
+      // Losango formado visivelmente por 2 Triângulos unidos pela base (▲ em cima + ▼ girado 180° embaixo)
+      const r = 9;
+      for (let dy = -r; dy <= r; dy++) {
+        const hw = r - Math.abs(dy);
+        ctx.fillStyle = bPal.rim;
+        ctx.fillRect(ox - hw - 1, oy + dy, (hw + 1) * 2 + 1, 1);
+        for (let dx = -hw; dx <= hw; dx++) {
+          if (dy === 0) {
+            ctx.fillStyle = Math.abs(dx) >= hw - 1 ? bPal.hi : '#ffffff';
+          } else {
+            const isBorder = Math.abs(dx) >= hw - 2 || Math.abs(dy) >= r - 1;
+            const pal = isBorder ? bPal : cPal;
+            ctx.fillStyle = dx < -1 ? pal.hi : (dx > 1 ? pal.lo : pal.mid);
+          }
+          ctx.fillRect(ox + dx, oy + dy, 1, 1);
+        }
+      }
+    } else if (shape === 'pentagon') {
+      // Pentágono: preserva 100% as cores do Triângulo no topo (dy < -1) e do Trapézio na base (dy > -1)
+      const triBorderPal = getShapeTone(piece.triBorder || piece.upperType || piece.coreType || 'white', isShadow);
+      const triCorePal   = getShapeTone(piece.triCore   || piece.upperType || piece.coreType || 'white', isShadow);
+      const trapBorderPal = getShapeTone(piece.trapBorder || piece.borderType || piece.type || 'citrine', isShadow);
+      const trapCorePal   = getShapeTone(piece.trapCore   || piece.lowerType  || piece.coreType || 'aqua', isShadow);
+      for (let dy = -9; dy <= 8; dy++) {
+        const hw = dy < -1 ? R(2 + ((dy + 9) / 8) * 8) : R(10 - ((dy + 1) / 9) * 3);
+        const halfRim = dy < -1 ? triBorderPal.rim : trapBorderPal.rim;
+        ctx.fillStyle = halfRim;
+        ctx.fillRect(ox - hw - 1, oy + dy, (hw + 1) * 2 + 1, 1);
+        for (let dx = -hw; dx <= hw; dx++) {
+          if (dy === -1) {
+            // Linha de junção luminosa onde o Triângulo assenta sobre o Trapézio
+            ctx.fillStyle = Math.abs(dx) >= hw - 1 ? trapBorderPal.hi : '#ffffff';
+          } else if (dy < -1) {
+            // Metade superior = Triângulo com sua borda e seu núcleo exatos
+            const isBorder = dy <= -7 || Math.abs(dx) >= hw - 2;
+            const pal = isBorder ? triBorderPal : triCorePal;
+            ctx.fillStyle = dx < -2 ? pal.hi : (dx > 2 ? pal.lo : pal.mid);
+          } else {
+            // Metade inferior = Trapézio com sua borda e seu núcleo exatos
+            const isBorder = dy >= 6 || Math.abs(dx) >= hw - 2;
+            const pal = isBorder ? trapBorderPal : trapCorePal;
+            ctx.fillStyle = dx < -2 ? pal.hi : (dx > 2 ? pal.lo : pal.mid);
+          }
+          ctx.fillRect(ox + dx, oy + dy, 1, 1);
+        }
+      }
+    } else if (shape === 'hexagon' || (shape === 'triangle' && piece.subTriangles > 1)) {
+      // Hexágono (ou construção progressiva de 2..5 fatias triangulares radiais de 60°)
+      const slices = shape === 'hexagon' ? 6 : clamp(piece.subTriangles || 2, 2, 6);
+      for (let dy = -9; dy <= 9; dy++) {
+        const ady = Math.abs(dy);
+        const hw = ady <= 4 ? 10 : R(10 - (ady - 4) * 1.2);
+        for (let dx = -hw; dx <= hw; dx++) {
+          // Determina em qual das 6 fatias radiais de 60° o pixel (dx, dy) está
+          let ang = Math.atan2(dy, dx) + Math.PI / 2;
+          if (ang < 0) ang += Math.PI * 2;
+          const sector = Math.floor((ang / (Math.PI * 2)) * 6) % 6;
+          if (sector >= slices) {
+            // Guia pontilhada das fatias restantes para completar o Hexágono
+            if ((ady === 8 || Math.abs(dx) === hw) && ((dx + dy) & 1) === 0) {
+              ctx.fillStyle = '#FBBF24';
+              ctx.fillRect(ox + dx, oy + dy, 1, 1);
+            }
+            continue;
+          }
+          const isOuterRim = ady >= 9 || Math.abs(dx) >= hw;
+          const isBorder = ady >= 7 || Math.abs(dx) >= hw - 2;
+          const isRadialSeam = dy === 0 || Math.abs(Math.abs(dx) - Math.round(ady * 0.58)) <= 0;
+          if (isOuterRim) {
+            ctx.fillStyle = bPal.rim;
+          } else if (isRadialSeam && !isBorder) {
+            ctx.fillStyle = '#ffffff';
+          } else {
+            const pal = isBorder ? bPal : cPal;
+            ctx.fillStyle = (dx + dy < 0) ? pal.hi : pal.mid;
+          }
+          ctx.fillRect(ox + dx, oy + dy, 1, 1);
+        }
+      }
+      P1(ctx, ox, oy, '#FBBF24');
+    }
+
+    if (hasRot) {
+      ctx.restore();
+    }
+
+    if (highContrast) {
+      // Padrão de hachura + sublinhado de alto contraste para acessibilidade daltônica
+      ctx.fillStyle = isShadow ? '#ffffff' : '#FBBF24';
+      ctx.fillRect(cx - 7, cy + 10, 14, 1);
+      for (let hx = -4; hx <= 4; hx += 4) {
+        P1(ctx, cx + hx, cy, '#ffffff');
+      }
+    }
+  }
+
+  function drawElectricShapeNode(ctx, node, t) {
+    if (!node || node.used) return;
+    const cx = R(node.x), cy = R(node.y);
+    const f18 = Math.floor(t * 18);
+    const isRejected = Boolean(node.barrierUntil && t < node.barrierUntil);
+    const highContrast = typeof document !== 'undefined' && document.body?.classList?.contains('high-contrast');
+    const mainCol = isRejected ? '#ef4444' : (node.hover ? '#ffffff' : '#FBBF24');
+    const subCol = isRejected ? '#fca5a5' : '#D97706';
+
+    const plotPerimeter = (px, py, idx) => {
+      if (((idx + f18) % 3) !== 0 || node.hover || isRejected) {
+        P1(ctx, px, py, ((idx + f18) & 1) ? mainCol : subCol);
+      }
+      if (highContrast && (idx & 3) === 0) {
+        P1(ctx, px, py + 1, '#ffffff');
+      }
+    };
+
+    let idx = 0;
+    if (node.shape === 'circle') {
+      const r = 13;
+      for (let a = 0; a < 36; a++) {
+        const ang = (a / 36) * Math.PI * 2;
+        plotPerimeter(R(cx + Math.cos(ang) * r), R(cy + Math.sin(ang) * r), idx++);
+      }
+    } else if (node.shape === 'square' || node.shape === 'rectangle') {
+      const hw = node.shape === 'rectangle' ? 15 : 12;
+      const hh = node.shape === 'rectangle' ? 10 : 12;
+      for (let dx = -hw; dx <= hw; dx++) {
+        plotPerimeter(cx + dx, cy - hh, idx++);
+        plotPerimeter(cx + dx, cy + hh, idx++);
+      }
+      for (let dy = -hh; dy <= hh; dy++) {
+        plotPerimeter(cx - hw, cy + dy, idx++);
+        plotPerimeter(cx + hw, cy + dy, idx++);
+      }
+    } else if (node.shape === 'triangle') {
+      const h = 22;
+      for (let row = 0; row <= h; row++) {
+        const py = cy - 11 + row;
+        const hw = R((row / h) * 13);
+        plotPerimeter(cx - hw, py, idx++);
+        plotPerimeter(cx + hw, py, idx++);
+        if (row === h) {
+          for (let dx = -hw; dx <= hw; dx++) plotPerimeter(cx + dx, py, idx++);
+        }
+      }
+    } else if (node.shape === 'trapezoid') {
+      for (let dy = -10; dy <= 10; dy++) {
+        const hw = R(7 + ((dy + 10) / 20) * 7);
+        plotPerimeter(cx - hw, cy + dy, idx++);
+        plotPerimeter(cx + hw, cy + dy, idx++);
+        if (dy === -10 || dy === 10) {
+          for (let dx = -hw; dx <= hw; dx++) plotPerimeter(cx + dx, cy + dy, idx++);
+        }
+      }
+    }
+
+    // Pequenos arcos de eletricidade estática a 12-24 FPS
+    const sparkAng = (f18 * 0.9) % (Math.PI * 2);
+    const sx = R(cx + Math.cos(sparkAng) * 12);
+    const sy = R(cy + Math.sin(sparkAng) * 10);
+    P1(ctx, sx, sy, '#FEF3C7');
+    P1(ctx, sx + ((f18 & 1) ? 1 : -1), sy - 1, '#FBBF24');
+
+    // Barreira de eletricidade estática amarela quando uma entrada inválida é bloqueada (Seção 2.2)
+    if (isRejected) {
+      for (let dy = -9; dy <= 9; dy += 3) {
+        for (let dx = -11; dx <= 11; dx += 2) {
+          const jitter = ((dx + dy + f18) & 1) ? 1 : -1;
+          P1(ctx, cx + dx, cy + dy + jitter, (dx & 2) ? '#FBBF24' : '#FEF3C7');
+        }
+      }
+    }
+
+    if (highContrast) {
+      ctx.fillStyle = '#FEF3C7';
+      ctx.fillRect(cx - 10, cy + 14, 20, 1);
+    }
+  }
+
+  function drawFloatingBanners(ctx, banners, t) {
+    if (!banners || !banners.length) return;
+    for (const b of banners) {
+      const elapsed = t - b.t0;
+      if (elapsed < 0 || elapsed > 1.35) continue;
+      const p = clamp(elapsed / 1.35, 0, 1);
+      const bx = R(b.x), by = R(b.y - p * 18);
+      const textW = typeof measurePixelText === 'function' ? measurePixelText(b.text, 9) : String(b.text || '').length * 6;
+      const bw = Math.max(58, textW + 14);
+      ctx.fillStyle = '#2c221e';
+      ctx.fillRect(bx - R(bw / 2) - 1, by - 7, bw + 2, 13);
+      ctx.fillStyle = '#D97706';
+      ctx.fillRect(bx - R(bw / 2), by - 6, bw, 11);
+      ctx.fillStyle = '#FBBF24';
+      ctx.fillRect(bx - R(bw / 2), by - 6, bw, 1);
+      ctx.fillRect(bx - R(bw / 2), by + 4, bw, 1);
+      drawPixelTextCentered(ctx, b.text, bx, by - 4, '#FEF3C7', '#2c221e', bw - 4, 9);
+      if ((Math.floor(t * 16) & 1) === 0) {
+        drawStar(ctx, bx - R(bw / 2) - 4, by - 2, 2, '#ffffff', '#FBBF24');
+        drawStar(ctx, bx + R(bw / 2) + 4, by - 2, 2, '#ffffff', '#FBBF24');
+      }
+    }
+  }
+
+  function drawCrystalPiece(ctx, piece, t, isSelected = false, isTutorialHighlight = false) {
     if (!piece || piece.broken || piece.value <= 0) return;
 
     const isTrembling = Boolean(piece.trembling) || Boolean(piece.rejectUntil && t < piece.rejectUntil);
     const [tx, ty] = ActorAnimator.getCrystalTrembleOffset(t, isTrembling, ctx, piece.x, piece.y);
     const x = RH(piece.x + tx), y = RH(piece.y + ty);
 
-    if (piece.dragging) {
-      drawRing(ctx, R(x), R(y), 14, '#e6cf9c');
-    } else if (!piece.shadow && (piece.type === 'citrine' || piece.type === 'aqua') && piece.value >= 2 && piece.value % 2 === 0) {
+    if (isTutorialHighlight && !piece.shadow) {
+      const pulseR = 14 + (Math.floor(t * 8) & 1) * 2;
+      drawRing(ctx, R(x), R(y), pulseR, '#FBBF24');
+      drawRing(ctx, R(x), R(y), pulseR + 2, '#FEF3C7');
+    }
+
+    if (piece.dragging || isSelected) {
+      drawRing(ctx, R(x), R(y), 14, isSelected ? '#c084fc' : '#e6cf9c');
+    } else if (!piece.shadow && !piece.shape && (piece.type === 'citrine' || piece.type === 'aqua') && piece.value >= 2 && piece.value % 2 === 0) {
       // Halo sutil indicando que o cristal par pode ser dividido com um toque rápido
       if ((Math.floor(t * 6) & 1) === 0) {
         P1(ctx, R(x - 10), R(y), piece.type === 'citrine' ? '#f7df86' : '#a8f0f0');
@@ -223,34 +605,22 @@
       }
     }
 
-    const spr = getPieceSprite(piece);
-    const gw = spr.width * 0.5, gh = spr.height * 0.5;
-    ctx.drawImage(spr, RH(x - gw / 2), RH(y - gh / 2), gw, gh);
+    if (piece.shape) {
+      drawMaterializedShapePiece(ctx, piece, x, y, t);
+    } else {
+      const spr = getPieceSprite(piece);
+      const gw = spr.width * 0.5, gh = spr.height * 0.5;
+      ctx.drawImage(spr, RH(x - gw / 2), RH(y - gh / 2), gw, gh);
+    }
 
     // Selo dourado-esmeralda caso o cristal já tenha sido abençoado pelo Altar de Esmeralda
     if (piece.boosted && !piece.shadow) {
       drawStar(ctx, R(x), R(y + 9), 2, '#ffffff', '#8ed46a');
     }
 
-    const val = clamp(piece.value || 1, 1, 6);
-    const orbCoords = EXTERNAL_ORB_ARCS[val] || EXTERNAL_ORB_ARCS[1];
     const recentlyChanged = Boolean(piece.lastValChangeAt && (t - piece.lastValChangeAt) < 0.28);
     const pal = getOrbPalette(piece);
-
-    ctx.fillStyle = pal.link;
-    for (let i = 0; i < orbCoords.length; i++) {
-      const [ox, oy] = orbCoords[i];
-      ctx.fillRect(RH(x + ox * 0.65), RH(y + oy * 0.72), 1, 1);
-      if (i < orbCoords.length - 1) {
-        const [nx, ny] = orbCoords[i + 1];
-        ctx.fillRect(RH(x + (ox + nx) * 0.5), RH(y + (oy + ny) * 0.5), 1, 1);
-      }
-    }
-
-    for (let i = 0; i < orbCoords.length; i++) {
-      const [ox, oy] = orbCoords[i];
-      drawExternalOrb(ctx, x + ox, y + oy, pal.core, pal.mid, pal.rim, recentlyChanged);
-    }
+    drawOrbsForValue(ctx, x, y - (piece.shape ? 2 : 0), piece.value || 1, pal, recentlyChanged);
   }
 
   function drawEmeraldAltar(ctx, altar, t) {
@@ -275,6 +645,103 @@
     if ((f12 & 1) === 0) {
       drawStar(ctx, ax - 9, ay - 10, 2, '#ffffff', '#a5e06c');
       drawStar(ctx, ax + 9, ay - 8, 2, '#ffffff', '#f2cc6b');
+    }
+  }
+
+  function drawFractionPlatform(ctx, fp, t) {
+    if (!fp || fp.broken) return;
+    const f12 = Math.floor(t * SPRITE_FPS);
+    const fx = R(fp.x), fy = R(fp.y);
+    const fw = fp.w || 64, fh = fp.h || 76;
+    const halfW = R(fw * 0.5), halfH = R(fh * 0.5);
+    const isGlowing = Boolean(fp.glowing);
+    const glowWave = Math.sin(t * 8) * 0.5 + 0.5;
+
+    // Fundo da plataforma: pedra cristalina esculpida do rio
+    ctx.fillStyle = '#101724';
+    ctx.fillRect(fx - halfW - 2, fy - halfH - 2, fw + 4, fh + 4);
+
+    // Corpo interno texturizado
+    ctx.fillStyle = isGlowing ? '#24142a' : '#182436';
+    ctx.fillRect(fx - halfW, fy - halfH, fw, fh);
+
+    // Bordas de cantos em relevo
+    const cornerCol = isGlowing ? '#ff79c6' : '#57d1de';
+    const darkCorner = isGlowing ? '#9e2d67' : '#23606e';
+    ctx.fillStyle = darkCorner;
+    ctx.fillRect(fx - halfW, fy - halfH, 6, 2);
+    ctx.fillRect(fx - halfW, fy - halfH, 2, 6);
+    ctx.fillRect(fx + halfW - 6, fy - halfH, 6, 2);
+    ctx.fillRect(fx + halfW - 2, fy - halfH, 2, 6);
+    ctx.fillRect(fx - halfW, fy + halfH - 2, 6, 2);
+    ctx.fillRect(fx - halfW, fy + halfH - 6, 2, 6);
+    ctx.fillRect(fx + halfW - 6, fy + halfH - 2, 6, 2);
+    ctx.fillRect(fx + halfW - 2, fy + halfH - 6, 2, 6);
+
+    ctx.fillStyle = cornerCol;
+    ctx.fillRect(fx - halfW + 1, fy - halfH + 1, 4, 1);
+    ctx.fillRect(fx - halfW + 1, fy - halfH + 1, 1, 4);
+    ctx.fillRect(fx + halfW - 5, fy - halfH + 1, 4, 1);
+    ctx.fillRect(fx + halfW - 2, fy - halfH + 1, 1, 4);
+    ctx.fillRect(fx - halfW + 1, fy + halfH - 2, 4, 1);
+    ctx.fillRect(fx - halfW + 1, fy + halfH - 5, 1, 4);
+    ctx.fillRect(fx + halfW - 5, fy + halfH - 2, 4, 1);
+    ctx.fillRect(fx + halfW - 2, fy + halfH - 5, 1, 4);
+
+    // Receptores / slots para Topo e Fundo (em cima e embaixo)
+    const topHov = Boolean(fp.topHover);
+    ctx.fillStyle = topHov ? '#2c425e' : (isGlowing ? '#381c3e' : '#1c2838');
+    ctx.fillRect(fx - halfW + 4, fy - halfH + 4, fw - 8, halfH - 6);
+    if (topHov) {
+      ctx.strokeStyle = '#6fe4f5';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(fx - halfW + 4.5, fy - halfH + 4.5, fw - 9, halfH - 7);
+    }
+
+    const botHov = Boolean(fp.bottomHover);
+    ctx.fillStyle = botHov ? '#2c425e' : (isGlowing ? '#381c3e' : '#1c2838');
+    ctx.fillRect(fx - halfW + 4, fy + 2, fw - 8, halfH - 6);
+    if (botHov) {
+      ctx.strokeStyle = '#6fe4f5';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(fx - halfW + 4.5, fy + 2.5, fw - 9, halfH - 7);
+    }
+
+    // Barra de fração centralizada
+    const barW = fw - 10;
+    if (isGlowing) {
+      drawRing(ctx, fx, fy, 28 + glowWave * 4, '#ff69b4');
+      drawRing(ctx, fx, fy, 38 + glowWave * 6, '#ffaae5');
+      ctx.fillStyle = '#ff2a8d';
+      ctx.fillRect(fx - R(barW * 0.5) - 1, fy - 2, barW + 2, 4);
+      ctx.fillStyle = '#ff85c8';
+      ctx.fillRect(fx - R(barW * 0.5), fy - 1, barW, 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(fx - R(barW * 0.5) + 4, fy, barW - 8, 1);
+
+      if ((f12 & 3) === 0) {
+        drawStar(ctx, fx - 22 + (f12 % 5) * 11, fy - 14 - (f12 % 3) * 4, 2, '#ffffff', '#ff69b4');
+      }
+      if ((f12 & 3) === 2) {
+        drawStar(ctx, fx - 16 + ((f12 + 2) % 5) * 8, fy + 12 + (f12 % 4) * 3, 2, '#ffffff', '#ffaae5');
+      }
+
+      const btnW = 44, btnH = 11;
+      const bbx = fx - R(btnW * 0.5), bby = fy - 5;
+      ctx.fillStyle = '#3a0d24';
+      ctx.fillRect(bbx - 1, bby - 1, btnW + 2, btnH + 2);
+      ctx.fillStyle = (f12 & 2) ? '#ff409a' : '#ff6eb5';
+      ctx.fillRect(bbx, bby, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bbx + 1, bby + 1, btnW - 2, 1);
+      drawPixelTextCentered(ctx, 'DIVIDIR!', fx, bby + 2, '#ffffff', '#3a0d24');
+    } else {
+      ctx.fillStyle = '#0f1a24';
+      ctx.fillRect(fx - R(barW * 0.5) - 1, fy - 2, barW + 2, 4);
+      ctx.fillStyle = '#3ba7b8';
+      ctx.fillRect(fx - R(barW * 0.5), fy - 1, barW, 2);
+      ctx.fillStyle = '#8ce8f5';
+      ctx.fillRect(fx - R(barW * 0.5) + 6, fy - 1, barW - 12, 1);
     }
   }
 
@@ -1168,37 +1635,53 @@
         1: { ids: [11], next: 12 },
         2: { ids: [11, 12], next: 13 },
         3: { ids: [11, 12, 13], next: 14 },
-        4: { ids: [11, 12, 13, 14, 15], next: 16 }
+        4: { ids: [11, 12, 13, 14], next: 15 },
+        5: { ids: [11, 12, 13, 14, 15], next: 16 }
       },
       introDialogues: {
         1: [
           { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'As cachoeiras pararam de correr... a água parece pesada e escura.' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A melodia de uma flauta ecoa sob as pedras do Rio!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Repartam as gotas de Água-Marinha para devolver o fluxo da correnteza!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Veja aquela plataforma de pedra no centro da correnteza!' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'É o Altar de Frações! Coloquem valores iguais em cima e embaixo para liberar a divisão!' }
+        ],
+        2: [
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A correnteza acelera! Não importa a quantidade de peças: o valor total de cima e de baixo precisa ser idêntico!' }
+        ],
+        3: [
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'As frações agora revelam caminhos para Equações Cristalinas! Divida primeiro para conectar depois!' }
         ],
         4: [
           { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Um prisma imenso de Turmalina Paraíba está represando a nascente!' },
           { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Estou presa no gelo turvo da cachoeira! Harmonizem as águas e o fogo com cuidado!' },
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Aguente firme! Vamos libertar a nascente agora mesmo!' }
+        ],
+        5: [
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Vocês alcançaram o coração da cascata! Agora, a música das águas nos libertará!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Cinco cristais sonoros estão flutuando sobre a água!' },
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Ouçam a melodia e toquem os cristais na ordem exata para harmonizar o rio!' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Que limpidez! As gotas de Água-Marinha fluem como notas na correnteza!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Que limpidez! A fração se quebrou e a divisão fez a primeira gota pura correr!' }
         ],
         2: [
           { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Maravilhoso! Já consigo ouvir a espuma das corredeiras despertando!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Chegamos à grande queda d’água! Vamos libertar a Guardiã do Rio!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Equações e frações unificadas! A correnteza está ganhando força cristalina!' }
         ],
         4: [
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Chegamos à grande queda d’água! Vamos libertar a Guardiã do Rio!' }
+        ],
+        5: [
           { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Obrigada! Eu sou Irecê, e as Águas Claras voltaram a cantar!' },
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Resta apenas uma gema primordial! Vamos levar essa brisa até a Caatinga!' }
         ]
       },
       tutorialsByLevel: {
-        1: 'RIVER_AQUA'
+        1: 'RIVER_FRACTION_PLATFORM',
+        5: 'RIVER_MELODY_SIMON'
       },
       musicalCaptions: [
         [0.5, 8.0, 'Corria o rio em turquesa e cristal, levando canções pelo vale ancestral...'],
@@ -1212,111 +1695,108 @@
       levels: {
         1: [
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'aqua', resultValue: 1 },
             pieces: [
-              { id: 'ri1_1_a', type: 'aqua', value: 4, shadow: false, x: 106, y: 96 },
-              { id: 'ri1_1_s1', type: 'aqua', value: 2, shadow: true, x: 208, y: 78 },
-              { id: 'ri1_1_s2', type: 'aqua', value: 2, shadow: true, x: 208, y: 114 }
+              { id: 'ri1_1_top', type: 'aqua', value: 2, shadow: false, inFraction: 'top' },
+              { id: 'ri1_1_free', type: 'aqua', value: 2, shadow: false, x: 88, y: 104 },
+              { id: 'ri1_1_s', type: 'aqua', value: 1, shadow: true, x: 226, y: 104 }
             ]
           },
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'aqua', resultValue: 1 },
             pieces: [
-              { id: 'ri1_2_a1', type: 'aqua', value: 4, shadow: false, x: 96, y: 80 },
-              { id: 'ri1_2_a2', type: 'aqua', value: 2, shadow: false, x: 96, y: 114 },
-              { id: 'ri1_2_s1', type: 'aqua', value: 4, shadow: true, x: 214, y: 68 },
-              { id: 'ri1_2_s2', type: 'aqua', value: 1, shadow: true, x: 214, y: 96 },
-              { id: 'ri1_2_s3', type: 'aqua', value: 1, shadow: true, x: 214, y: 122 }
+              { id: 'ri1_2_top', type: 'aqua', value: 4, shadow: false, inFraction: 'top' },
+              { id: 'ri1_2_free1', type: 'aqua', value: 2, shadow: false, x: 82, y: 84 },
+              { id: 'ri1_2_free2', type: 'aqua', value: 2, shadow: false, x: 82, y: 124 },
+              { id: 'ri1_2_s', type: 'aqua', value: 1, shadow: true, x: 226, y: 104 }
             ]
           }
         ],
         2: [
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'aqua', resultValue: 1 },
             pieces: [
-              { id: 'ri2_1_a', type: 'aqua', value: 4, shadow: false, x: 102, y: 96 },
-              { id: 'ri2_1_s1', type: 'aqua', value: 1, shadow: true, x: 196, y: 72 },
-              { id: 'ri2_1_s2', type: 'aqua', value: 1, shadow: true, x: 222, y: 72 },
-              { id: 'ri2_1_s3', type: 'aqua', value: 1, shadow: true, x: 196, y: 116 },
-              { id: 'ri2_1_s4', type: 'aqua', value: 1, shadow: true, x: 222, y: 116 }
+              { id: 'ri2_1_a4', type: 'aqua', value: 4, shadow: false, x: 84, y: 80 },
+              { id: 'ri2_1_a2a', type: 'aqua', value: 2, shadow: false, x: 84, y: 108 },
+              { id: 'ri2_1_a2b', type: 'aqua', value: 2, shadow: false, x: 84, y: 134 },
+              { id: 'ri2_1_s', type: 'aqua', value: 1, shadow: true, x: 226, y: 104 }
             ]
           },
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'aqua', resultValue: 1 },
             pieces: [
-              { id: 'ri2_2_a', type: 'aqua', value: 6, shadow: false, x: 98, y: 86 },
-              { id: 'ri2_2_o', type: 'opal', value: 1, shadow: false, x: 138, y: 116 },
-              { id: 'ri2_2_s1', type: 'aqua', value: 3, shadow: true, x: 214, y: 78 },
-              { id: 'ri2_2_s2', type: 'aqua', value: 2, shadow: true, x: 214, y: 114 }
+              { id: 'ri2_2_top', type: 'aqua', value: 3, shadow: false, inFraction: 'top' },
+              { id: 'ri2_2_bot', type: 'aqua', value: 1, shadow: false, inFraction: 'bottom' },
+              { id: 'ri2_2_free', type: 'aqua', value: 2, shadow: false, x: 84, y: 104 },
+              { id: 'ri2_2_s', type: 'aqua', value: 1, shadow: true, x: 226, y: 104 }
             ]
           },
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'white', resultValue: 1 },
             pieces: [
-              { id: 'ri2_3_a', type: 'aqua', value: 4, shadow: false, x: 94, y: 78 },
-              { id: 'ri2_3_r', type: 'rose', value: 4, shadow: false, x: 94, y: 114 },
-              { id: 'ri2_3_o', type: 'opal', value: 2, shadow: false, x: 142, y: 96 },
-              { id: 'ri2_3_sa', type: 'aqua', value: 3, shadow: true, x: 214, y: 78 },
-              { id: 'ri2_3_sr', type: 'rose', value: 3, shadow: true, x: 214, y: 114 }
+              { id: 'ri2_3_top', type: 'white', value: 2, shadow: false, inFraction: 'top' },
+              { id: 'ri2_3_free_w2', type: 'white', value: 2, shadow: false, x: 84, y: 88 },
+              { id: 'ri2_3_free_w1', type: 'white', value: 1, shadow: false, x: 84, y: 124 },
+              { id: 'ri2_3_s', type: 'white', value: 2, shadow: true, x: 226, y: 104 }
             ]
           }
         ],
         3: [
           {
+            fractionPlatform: { x: 144, y: 110, resultType: 'aqua', resultValue: 1 },
+            shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
-              { id: 'ri3_1_a', type: 'aqua', value: 4, shadow: false, x: 102, y: 96 },
-              { id: 'ri3_1_s1', type: 'aqua', value: 3, shadow: true, x: 214, y: 78 },
-              { id: 'ri3_1_s2', type: 'aqua', value: 1, shadow: true, x: 214, y: 114 }
+              { id: 'ri3_1_top', type: 'aqua', value: 3, shadow: false, inFraction: 'top' },
+              { id: 'ri3_1_a3', type: 'aqua', value: 3, shadow: false, x: 84, y: 94 },
+              { id: 'ri3_1_q2', type: 'white', value: 2, shadow: false, x: 84, y: 126 },
+              { id: 'ri3_1_sa', type: 'aqua', value: 1, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
+              { id: 'ri3_1_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
           },
           {
-            pureEq: { x: 118, y: 74, expanded: false },
-            shadowEq: { x: 210, y: 74, expanded: false },
+            fractionPlatform: { x: 144, y: 110, resultType: 'aqua', resultValue: 1 },
+            emeraldAltar: { x: 92, y: 110 },
+            shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
-              { id: 'ri3_2_a', type: 'aqua', value: 4, shadow: false, x: 92, y: 114 },
-              { id: 'ri3_2_q', type: 'white', value: 2, shadow: false, x: 136, y: 114 },
-              { id: 'ri3_2_sa', type: 'aqua', value: 2, shadow: true, x: 202, y: 74, inEquation: 'shadow' },
-              { id: 'ri3_2_sq', type: 'white', value: 2, shadow: true, x: 220, y: 74, inEquation: 'shadow' },
-              { id: 'ri3_2_sl', type: 'aqua', value: 2, shadow: true, x: 214, y: 116 }
-            ]
-          },
-          {
-            emeraldAltar: { x: 148, y: 114 },
-            pureEq: { x: 114, y: 72, expanded: false },
-            shadowEq: { x: 210, y: 72, expanded: false },
-            pieces: [
-              { id: 'ri3_3_a', type: 'aqua', value: 4, shadow: false, x: 92, y: 114 },
-              { id: 'ri3_3_s1', type: 'aqua', value: 4, shadow: true, x: 202, y: 72, inEquation: 'shadow' },
-              { id: 'ri3_3_s2', type: 'aqua', value: 2, shadow: true, x: 220, y: 72, inEquation: 'shadow' }
+              { id: 'ri3_2_top', type: 'aqua', value: 2, shadow: false, inFraction: 'top' },
+              { id: 'ri3_2_a2', type: 'aqua', value: 2, shadow: false, x: 80, y: 74 },
+              { id: 'ri3_2_q2', type: 'white', value: 2, shadow: false, x: 108, y: 74 },
+              { id: 'ri3_2_sa', type: 'aqua', value: 2, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
+              { id: 'ri3_2_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
           }
         ],
         4: [
           {
+            fractionPlatform: { x: 154, y: 104, resultType: 'white', resultValue: 1 },
             pieces: [
-              { id: 'ri4_1_a', type: 'aqua', value: 4, shadow: false, x: 94, y: 84 },
-              { id: 'ri4_1_c', type: 'citrine', value: 4, shadow: false, x: 94, y: 116 },
-              { id: 'ri4_1_sa1', type: 'aqua', value: 2, shadow: true, x: 216, y: 68 },
-              { id: 'ri4_1_sa2', type: 'aqua', value: 2, shadow: true, x: 216, y: 96 },
-              { id: 'ri4_1_sc', type: 'citrine', value: 4, shadow: true, x: 216, y: 122 }
+              { id: 'ri4_1_top', type: 'white', value: 4, shadow: false, inFraction: 'top' },
+              { id: 'ri4_1_q5', type: 'white', value: 5, shadow: false, x: 84, y: 84 },
+              { id: 'ri4_1_o1', type: 'opal', value: 1, shadow: false, x: 84, y: 122 },
+              { id: 'ri4_1_s', type: 'white', value: 1, shadow: true, x: 226, y: 104 }
             ]
           },
           {
-            pureEq: { x: 116, y: 78, expanded: false },
-            shadowEq: { x: 212, y: 78, expanded: false },
+            fractionPlatform: { x: 144, y: 112, resultType: 'aqua', resultValue: 1 },
+            shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
-              { id: 'ri4_2_a', type: 'aqua', value: 6, shadow: false, x: 92, y: 116 },
-              { id: 'ri4_2_r', type: 'rose', value: 2, shadow: false, x: 132, y: 116 },
-              { id: 'ri4_2_sa', type: 'aqua', value: 3, shadow: true, x: 204, y: 78, inEquation: 'shadow' },
-              { id: 'ri4_2_sr', type: 'rose', value: 2, shadow: true, x: 222, y: 78, inEquation: 'shadow' },
-              { id: 'ri4_2_sl', type: 'aqua', value: 3, shadow: true, x: 216, y: 116 }
+              { id: 'ri4_2_top', type: 'aqua', value: 4, shadow: false, inFraction: 'top' },
+              { id: 'ri4_2_a4', type: 'aqua', value: 4, shadow: false, x: 80, y: 84 },
+              { id: 'ri4_2_q3', type: 'white', value: 3, shadow: false, x: 108, y: 84 },
+              { id: 'ri4_2_o1', type: 'opal', value: 1, shadow: false, x: 94, y: 120 },
+              { id: 'ri4_2_sa', type: 'aqua', value: 1, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
+              { id: 'ri4_2_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
-          },
+          }
+        ],
+        5: [
           {
-            pureEq: { x: 114, y: 78, expanded: false },
-            shadowEq: { x: 212, y: 78, expanded: false },
             pieces: [
-              { id: 'ri4_3_a', type: 'aqua', value: 4, shadow: false, x: 84, y: 114 },
-              { id: 'ri4_3_q', type: 'white', value: 4, shadow: false, x: 114, y: 114 },
-              { id: 'ri4_3_o', type: 'opal', value: 1, shadow: false, x: 144, y: 114 },
-              { id: 'ri4_3_sa', type: 'aqua', value: 2, shadow: true, x: 204, y: 78, inEquation: 'shadow' },
-              { id: 'ri4_3_sq', type: 'white', value: 3, shadow: true, x: 222, y: 78, inEquation: 'shadow' },
-              { id: 'ri4_3_sl', type: 'aqua', value: 2, shadow: true, x: 216, y: 116 }
+              { id: 'ri_bell_0', type: 'aqua', value: 1, shadow: false, x: 76, y: 110, bellIndex: 0 },
+              { id: 'ri_bell_1', type: 'emerald', value: 1, shadow: false, x: 118, y: 110, bellIndex: 1 },
+              { id: 'ri_bell_2', type: 'citrine', value: 1, shadow: false, x: 160, y: 110, bellIndex: 2 },
+              { id: 'ri_bell_3', type: 'opal', value: 1, shadow: false, x: 202, y: 110, bellIndex: 3 },
+              { id: 'ri_bell_4', type: 'rose', value: 1, shadow: false, x: 244, y: 110, bellIndex: 4 }
             ]
           }
         ]
@@ -1336,41 +1816,62 @@
       worldClearedTitle: 'Mundo 4 Restaurado!',
       worldClearedLine1: 'Jurema acendeu a Opala da Caatinga!',
       worldClearedLine2: 'As 4 Gemas estão prontas para o Portão!',
-      phaseClearedLine: 'O alvorecer do sertão abriu o caminho!',
+      phaseClearedLine: 'A geometria solar abriu passagem no sertão!',
       nodeSyncByLevel: {
         1: { ids: [16], next: 17 },
         2: { ids: [16, 17], next: 18 },
         3: { ids: [16, 17, 18], next: 19 },
-        4: { ids: [16, 17, 18, 19, 20], next: 21 }
+        4: { ids: [16, 17, 18, 19], next: 20 },
+        5: { ids: [16, 17, 18, 19, 20], next: 21 }
       },
       introDialogues: {
         1: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Que calor silencioso... até os mandacarus adormeceram na seca.' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Escute a rabeca distante! A última Guardiã resiste nas chapadas da Caatinga!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Combinem todas as gemas da jornada para despertar a flor do sertão!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Bem, chegamos à Caatinga!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Uf... uf... uf...', protagState: 'panting' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'QUE CALOR!!!', shake: true, protagState: 'shock' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Desde quando existe um Deserto do Saara no Brasil?! Não vejo uma planta ou árvore sequer aqui, só areia e rochas...' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Bem, na verdade a Caatinga não era assim...' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Mas eu explico no caminho... Veja só, tem uns cristais ali! Quebre eles!', pointRight: true }
+        ],
+        2: [
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Veja as linhas elétricas nas rochas! Quando dois cristais se unem, eles moldam quadriláteros sagrados!' }
+        ],
+        3: [
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'As formas cristalinas também se atraem! Una duas formas prontas para revelar polígonos ainda maiores!' }
         ],
         4: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Encontramos! É um geodo monumental de Opala de Fogo!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'O calor descontrolado trancou minha canção aqui dentro! Equilibrem fogo, água e luz!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É a última Gema Primordial! Vamos libertá-la!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Chegamos aos mosaicos ancestrais! Triângulos formam Losangos e Hexágonos, e cabem dentro de equações!' }
+        ],
+        5: [
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Encontramos o Santuário da Caatinga! A Opala de Fogo Primordial está selada no Altar!' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A tempestade de areia trancou minha canção! Usem todas as formas sagradas para purificar o núcleo!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É a última Gema Primordial! Vamos libertar o Altar!' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A brisa dourada voltou a soprar entre as chapadas!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O Círculo Sagrado despertou a primeira brisa dourada entre as chapadas!' }
         ],
         2: [
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'As cacimbas estão brilhando de novo! Continuem, falta bem pouco!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Quadrados, Retângulos e Trapézios alinhados! Você dominou a ordem das cores e facetas!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O alto da chapada está logo ali! Vamos despertar a Guardiã da Caatinga!' }
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'As cacimbas estão brilhando com seus encaixes! Continuem rumo ao santuário!' }
         ],
         4: [
-          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Viva! Eu sou Jurema, e a Caatinga inteira floresceu sob o sol!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Reunimos todas as 4 Gemas Primordiais! Voltemos à Caverna para abrir a Porta das Gemas!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O Hexágono Solar abriu os portões do Santuário da Caatinga! Vamos despertar sua Guardiã!' }
+        ],
+        5: [
+          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Viva! Eu sou Jurema, e a Caatinga inteira floresceu com mandacarus e água cristalina!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Reunimos todas as 4 Gemas Primordiais! Voltemos à Caverna para abrir a Porta Ancestral!' }
         ]
       },
-      tutorialsByLevel: {},
+      tutorialsByLevel: {
+        1: 'CAATINGA_CIRCLE',
+        2: 'CAATINGA_SQUARE',
+        3: 'CAATINGA_TESSELLATION',
+        4: 'CAATINGA_NESTED'
+      },
       musicalCaptions: [
         [0.5, 8.0, 'Sob o céu do sertão reluzia o calor, cada flor de mandacaru tinha seu valor...'],
         [8.5, 16.0, 'Veio a sombra cruel ressecar o torrão, trancando a rabeca na pedra em carvão...'],
@@ -1381,133 +1882,214 @@
         [47.5, 55.5, 'Quatro gemas acesas num só esplendor: o Portão Ancestral vai se abrir com amor!']
       ],
       levels: {
+        // FASE 1 (Nó 16): O Despertar do Deserto & O Círculo Sagrado
         1: [
           {
+            // Etapa 1: Opala de Fogo (3) + Pequeno Círculo Elétrico -> Círculo de Opala (3) -> Anula Círculo Sombrio de Opala (3)
+            tutorialHighlightId: 'ca1_1_o',
+            disableOpalDrain: true,
+            electricShapes: [
+              { id: 'ca1_1_ec', shape: 'circle', x: 148, y: 96 }
+            ],
             pieces: [
-              { id: 'ca1_1_q1', type: 'white', value: 2, shadow: false, x: 88, y: 82 },
-              { id: 'ca1_1_q2', type: 'white', value: 3, shadow: false, x: 88, y: 114 },
-              { id: 'ca1_1_o', type: 'opal', value: 1, shadow: false, x: 136, y: 98 },
-              { id: 'ca1_1_s', type: 'white', value: 4, shadow: true, x: 212, y: 96 }
+              { id: 'ca1_1_o', type: 'opal', value: 3, shadow: false, x: 92, y: 96 },
+              { id: 'ca1_1_s', type: 'opal', value: 3, shadow: true, shape: 'circle', borderType: 'opal', coreType: 'opal', x: 214, y: 96 }
             ]
           },
           {
+            // Etapa 2: Fusão de Quartzos + Círculos Elétricos
+            electricShapes: [
+              { id: 'ca1_2_ec1', shape: 'circle', x: 150, y: 78 },
+              { id: 'ca1_2_ec2', shape: 'circle', x: 150, y: 114 }
+            ],
             pieces: [
-              { id: 'ca1_2_c', type: 'citrine', value: 6, shadow: false, x: 96, y: 84 },
-              { id: 'ca1_2_o', type: 'opal', value: 2, shadow: false, x: 136, y: 114 },
-              { id: 'ca1_2_s1', type: 'citrine', value: 2, shadow: true, x: 214, y: 78 },
-              { id: 'ca1_2_s2', type: 'citrine', value: 2, shadow: true, x: 214, y: 114 }
+              { id: 'ca1_2_q1', type: 'white', value: 2, shadow: false, x: 86, y: 68 },
+              { id: 'ca1_2_q2', type: 'white', value: 2, shadow: false, x: 86, y: 96 },
+              { id: 'ca1_2_r', type: 'rose', value: 3, shadow: false, x: 112, y: 116 },
+              { id: 'ca1_2_sq', type: 'white', value: 4, shadow: true, shape: 'circle', borderType: 'white', coreType: 'white', x: 214, y: 78 },
+              { id: 'ca1_2_sr', type: 'rose', value: 3, shadow: true, shape: 'circle', borderType: 'rose', coreType: 'rose', x: 214, y: 114 }
             ]
           },
           {
-            emeraldAltar: { x: 152, y: 108 },
+            // Etapa 3: Subtração com Opala de Fogo antes da entrada no Círculo Elétrico
+            electricShapes: [
+              { id: 'ca1_3_ec1', shape: 'circle', x: 154, y: 78 },
+              { id: 'ca1_3_ec2', shape: 'circle', x: 154, y: 114 }
+            ],
             pieces: [
-              { id: 'ca1_3_c', type: 'citrine', value: 4, shadow: false, x: 92, y: 78 },
-              { id: 'ca1_3_r', type: 'rose', value: 2, shadow: false, x: 92, y: 114 },
-              { id: 'ca1_3_sc', type: 'citrine', value: 4, shadow: true, x: 216, y: 78 },
-              { id: 'ca1_3_sr', type: 'rose', value: 4, shadow: true, x: 216, y: 114 }
+              { id: 'ca1_3_q', type: 'white', value: 5, shadow: false, x: 86, y: 78 },
+              { id: 'ca1_3_o', type: 'opal', value: 2, shadow: false, x: 116, y: 78 },
+              { id: 'ca1_3_c', type: 'citrine', value: 4, shadow: false, x: 96, y: 114 },
+              { id: 'ca1_3_sq', type: 'white', value: 3, shadow: true, shape: 'circle', borderType: 'white', coreType: 'white', x: 216, y: 78 },
+              { id: 'ca1_3_sc', type: 'citrine', value: 4, shadow: true, shape: 'circle', borderType: 'citrine', coreType: 'citrine', x: 216, y: 114 }
             ]
           }
         ],
+        // FASE 2 (Nó 17): Quadriláteros & A Ordem dos Fatores
         2: [
           {
-            emeraldAltar: { x: 152, y: 108 },
+            // Etapa 1: Quartzo Branco (2) + Quartzo Rosa (2) + Quadrado Elétrico (exige valores iguais e respeita ordem borda/núcleo)
+            pureEq: { x: 102, y: 74, expanded: false },
+            electricShapes: [
+              { id: 'ca2_1_es', shape: 'square', x: 158, y: 96 }
+            ],
             pieces: [
-              { id: 'ca2_1_a', type: 'aqua', value: 4, shadow: false, x: 94, y: 96 },
-              { id: 'ca2_1_s1', type: 'aqua', value: 4, shadow: true, x: 216, y: 78 },
-              { id: 'ca2_1_s2', type: 'aqua', value: 2, shadow: true, x: 216, y: 114 }
+              { id: 'ca2_1_q', type: 'white', value: 2, shadow: false, x: 84, y: 114 },
+              { id: 'ca2_1_r', type: 'rose', value: 2, shadow: false, x: 118, y: 114 },
+              { id: 'ca2_1_ss', type: 'white', value: 4, shadow: true, shape: 'square', borderType: 'white', coreType: 'rose', x: 216, y: 96 }
             ]
           },
           {
+            // Etapa 2: Quartzo Branco (3) + Opala (6) + Retângulo Elétrico (exige valores diferentes: Base != Altura)
+            stepTutorial: 'CAATINGA_RECTANGLE',
+            disableOpalDrain: true,
+            pureEq: { x: 102, y: 74, expanded: false },
+            electricShapes: [
+              { id: 'ca2_2_er', shape: 'rectangle', x: 158, y: 96 }
+            ],
             pieces: [
-              { id: 'ca2_2_a', type: 'aqua', value: 4, shadow: false, x: 92, y: 78 },
-              { id: 'ca2_2_q', type: 'white', value: 5, shadow: false, x: 92, y: 114 },
-              { id: 'ca2_2_o', type: 'opal', value: 2, shadow: false, x: 138, y: 114 },
-              { id: 'ca2_2_sa1', type: 'aqua', value: 3, shadow: true, x: 214, y: 66 },
-              { id: 'ca2_2_sa2', type: 'aqua', value: 1, shadow: true, x: 214, y: 94 },
-              { id: 'ca2_2_sq', type: 'white', value: 3, shadow: true, x: 214, y: 122 }
+              { id: 'ca2_2_q', type: 'white', value: 3, shadow: false, x: 84, y: 114 },
+              { id: 'ca2_2_o', type: 'opal', value: 6, shadow: false, x: 118, y: 114 },
+              { id: 'ca2_2_sr', type: 'white', value: 9, shadow: true, shape: 'rectangle', borderType: 'white', coreType: 'opal', x: 216, y: 96 }
             ]
           },
           {
+            // Etapa 3: Trapézio Elétrico + Círculo Elétrico em síntese combinada
+            stepTutorial: 'CAATINGA_TRAPEZOID',
+            pureEq: { x: 102, y: 68, expanded: false },
+            electricShapes: [
+              { id: 'ca2_3_et', shape: 'trapezoid', x: 156, y: 78 },
+              { id: 'ca2_3_ec', shape: 'circle', x: 156, y: 116 }
+            ],
             pieces: [
-              { id: 'ca2_3_c', type: 'citrine', value: 6, shadow: false, x: 92, y: 78 },
-              { id: 'ca2_3_a', type: 'aqua', value: 4, shadow: false, x: 92, y: 114 },
-              { id: 'ca2_3_o', type: 'opal', value: 1, shadow: false, x: 136, y: 96 },
-              { id: 'ca2_3_sc1', type: 'citrine', value: 2, shadow: true, x: 198, y: 68 },
-              { id: 'ca2_3_sc2', type: 'citrine', value: 3, shadow: true, x: 222, y: 68 },
-              { id: 'ca2_3_sa1', type: 'aqua', value: 3, shadow: true, x: 198, y: 116 },
-              { id: 'ca2_3_sa2', type: 'aqua', value: 1, shadow: true, x: 222, y: 116 }
+              { id: 'ca2_3_c', type: 'citrine', value: 2, shadow: false, x: 82, y: 102 },
+              { id: 'ca2_3_a', type: 'aqua', value: 4, shadow: false, x: 112, y: 102 },
+              { id: 'ca2_3_r', type: 'rose', value: 3, shadow: false, x: 96, y: 122 },
+              { id: 'ca2_3_st', type: 'citrine', value: 6, shadow: true, shape: 'trapezoid', borderType: 'citrine', coreType: 'aqua', x: 216, y: 78 },
+              { id: 'ca2_3_sc', type: 'rose', value: 3, shadow: true, shape: 'circle', borderType: 'rose', coreType: 'rose', x: 216, y: 116 }
             ]
           }
         ],
+        // FASE 3 (Nó 18): A Arte do Encaixe (Tesselação Básica)
         3: [
           {
-            pureEq: { x: 118, y: 72, expanded: false },
-            shadowEq: { x: 210, y: 72, expanded: false },
+            // Etapa 1: Quadrado + Quadrado -> Encaixe gerando Retângulo Cristalino -> Anula Retângulo Cristalino Sombrio
             pieces: [
-              { id: 'ca3_1_c', type: 'citrine', value: 4, shadow: false, x: 92, y: 114 },
-              { id: 'ca3_1_a', type: 'aqua', value: 4, shadow: false, x: 134, y: 114 },
-              { id: 'ca3_1_sc', type: 'citrine', value: 2, shadow: true, x: 202, y: 72, inEquation: 'shadow' },
-              { id: 'ca3_1_sa', type: 'aqua', value: 2, shadow: true, x: 220, y: 72, inEquation: 'shadow' },
-              { id: 'ca3_1_sl1', type: 'citrine', value: 2, shadow: true, x: 196, y: 116 },
-              { id: 'ca3_1_sl2', type: 'aqua', value: 2, shadow: true, x: 222, y: 116 }
+              { id: 'ca3_1_sq1', type: 'citrine', value: 4, shadow: false, shape: 'square', borderType: 'citrine', coreType: 'rose', x: 94, y: 80 },
+              { id: 'ca3_1_sq2', type: 'citrine', value: 4, shadow: false, shape: 'square', borderType: 'citrine', coreType: 'rose', x: 94, y: 114 },
+              { id: 'ca3_1_sr', type: 'citrine', value: 8, shadow: true, shape: 'rectangle', borderType: 'citrine', coreType: 'rose', joinedSquares: true, x: 214, y: 96 }
             ]
           },
           {
-            emeraldAltar: { x: 148, y: 114 },
-            pureEq: { x: 114, y: 72, expanded: false },
-            shadowEq: { x: 210, y: 72, expanded: false },
+            // Etapa 2: Síntese de Triângulo via cristais + conexão com Trapézio existente -> Forma Pentágono -> Anula Pentágono Sombrio
+            pureEq: { x: 98, y: 68, expanded: false },
+            electricShapes: [
+              { id: 'ca3_2_etr', shape: 'triangle', x: 148, y: 78 }
+            ],
             pieces: [
-              { id: 'ca3_2_r', type: 'rose', value: 2, shadow: false, x: 88, y: 114 },
-              { id: 'ca3_2_a', type: 'aqua', value: 2, shadow: false, x: 116, y: 114 },
-              { id: 'ca3_2_sr', type: 'rose', value: 4, shadow: true, x: 202, y: 72, inEquation: 'shadow' },
-              { id: 'ca3_2_sa', type: 'aqua', value: 4, shadow: true, x: 220, y: 72, inEquation: 'shadow' }
+              { id: 'ca3_2_q', type: 'white', value: 2, shadow: false, x: 82, y: 104 },
+              { id: 'ca3_2_r', type: 'rose', value: 2, shadow: false, x: 112, y: 104 },
+              { id: 'ca3_2_trap', type: 'citrine', value: 5, shadow: false, shape: 'trapezoid', borderType: 'citrine', coreType: 'aqua', x: 148, y: 116 },
+              { id: 'ca3_2_sp', type: 'citrine', value: 9, shadow: true, shape: 'pentagon', borderType: 'citrine', coreType: 'white', upperType: 'white', lowerType: 'aqua', triBorder: 'white', triCore: 'rose', trapBorder: 'citrine', trapCore: 'aqua', x: 216, y: 96 }
             ]
           },
           {
-            pureEq: { x: 116, y: 72, expanded: false },
-            shadowEq: { x: 210, y: 72, expanded: false },
+            // Etapa 3: Fusão de cristais + Quadrado Elétrico + Tesselação em cadeia
+            pureEq: { x: 98, y: 68, expanded: false },
+            electricShapes: [
+              { id: 'ca3_3_es', shape: 'square', x: 148, y: 78 },
+              { id: 'ca3_3_ec', shape: 'circle', x: 148, y: 116 }
+            ],
             pieces: [
-              { id: 'ca3_3_q', type: 'white', value: 5, shadow: false, x: 86, y: 114 },
-              { id: 'ca3_3_c', type: 'citrine', value: 4, shadow: false, x: 116, y: 114 },
-              { id: 'ca3_3_o', type: 'opal', value: 2, shadow: false, x: 146, y: 114 },
-              { id: 'ca3_3_sq', type: 'white', value: 3, shadow: true, x: 202, y: 72, inEquation: 'shadow' },
-              { id: 'ca3_3_sc', type: 'citrine', value: 2, shadow: true, x: 220, y: 72, inEquation: 'shadow' },
-              { id: 'ca3_3_sl', type: 'citrine', value: 2, shadow: true, x: 214, y: 116 }
+              { id: 'ca3_3_q1', type: 'white', value: 1, shadow: false, x: 76, y: 98 },
+              { id: 'ca3_3_q2', type: 'white', value: 1, shadow: false, x: 98, y: 98 },
+              { id: 'ca3_3_r', type: 'rose', value: 2, shadow: false, x: 120, y: 98 },
+              { id: 'ca3_3_sq2', type: 'white', value: 4, shadow: false, shape: 'square', borderType: 'white', coreType: 'rose', x: 112, y: 120 },
+              { id: 'ca3_3_c', type: 'citrine', value: 3, shadow: false, x: 82, y: 120 },
+              { id: 'ca3_3_sr', type: 'white', value: 8, shadow: true, shape: 'rectangle', borderType: 'white', coreType: 'rose', joinedSquares: true, x: 216, y: 78 },
+              { id: 'ca3_3_sc', type: 'citrine', value: 3, shadow: true, shape: 'circle', borderType: 'citrine', coreType: 'citrine', x: 216, y: 116 }
             ]
           }
         ],
+        // FASE 4 (Nó 19): Geometria Avançada & Equações Aninhadas
         4: [
           {
-            emeraldAltar: { x: 150, y: 108 },
+            // Etapa 1: Múltiplos triângulos conectados aos pares para formar Losangos e anular pares sombrios
             pieces: [
-              { id: 'ca4_1_q', type: 'white', value: 3, shadow: false, x: 92, y: 98 },
-              { id: 'ca4_1_o', type: 'opal', value: 1, shadow: false, x: 122, y: 116 },
-              { id: 'ca4_1_s', type: 'white', value: 5, shadow: true, x: 216, y: 98 }
+              { id: 'ca4_1_t1', type: 'white', value: 3, shadow: false, shape: 'triangle', borderType: 'white', coreType: 'aqua', x: 88, y: 68 },
+              { id: 'ca4_1_t2', type: 'white', value: 3, shadow: false, shape: 'triangle', borderType: 'white', coreType: 'aqua', x: 122, y: 68 },
+              { id: 'ca4_1_t3', type: 'rose', value: 4, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'citrine', x: 88, y: 114 },
+              { id: 'ca4_1_t4', type: 'rose', value: 4, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'citrine', x: 122, y: 114 },
+              { id: 'ca4_1_sr1', type: 'white', value: 6, shadow: true, shape: 'rhombus', borderType: 'white', coreType: 'aqua', x: 216, y: 76 },
+              { id: 'ca4_1_sr2', type: 'rose', value: 8, shadow: true, shape: 'rhombus', borderType: 'rose', coreType: 'citrine', x: 216, y: 114 }
             ]
           },
           {
-            emeraldAltar: { x: 148, y: 114 },
-            pureEq: { x: 114, y: 78, expanded: false },
-            shadowEq: { x: 212, y: 78, expanded: false },
+            // Etapa 2: Construção progressiva de um Hexágono completo a partir de 6 triângulos equiláteros conectados radialmente
             pieces: [
-              { id: 'ca4_2_a', type: 'aqua', value: 4, shadow: false, x: 88, y: 116 },
-              { id: 'ca4_2_c', type: 'citrine', value: 2, shadow: false, x: 116, y: 116 },
-              { id: 'ca4_2_sa', type: 'aqua', value: 2, shadow: true, x: 204, y: 78, inEquation: 'shadow' },
-              { id: 'ca4_2_sc', type: 'citrine', value: 4, shadow: true, x: 222, y: 78, inEquation: 'shadow' },
-              { id: 'ca4_2_sl', type: 'aqua', value: 2, shadow: true, x: 216, y: 116 }
+              { id: 'ca4_2_t1', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 82, y: 68 },
+              { id: 'ca4_2_t2', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 114, y: 68 },
+              { id: 'ca4_2_t3', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 146, y: 68 },
+              { id: 'ca4_2_t4', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 82, y: 112 },
+              { id: 'ca4_2_t5', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 114, y: 112 },
+              { id: 'ca4_2_t6', type: 'citrine', value: 2, shadow: false, shape: 'triangle', borderType: 'citrine', coreType: 'white', subTriangles: 1, x: 146, y: 112 },
+              { id: 'ca4_2_sh', type: 'citrine', value: 12, shadow: true, shape: 'hexagon', borderType: 'citrine', coreType: 'white', x: 216, y: 92 }
             ]
           },
           {
-            emeraldAltar: { x: 146, y: 116 },
-            pureEq: { x: 112, y: 78, expanded: false },
-            shadowEq: { x: 212, y: 78, expanded: false },
+            // Etapa 3: Quebra-cabeça mestre com Equações Aninhadas em Formas (formas geométricas dentro da Equação Cristalina)
+            pureEq: { x: 116, y: 72, expanded: false },
+            shadowEq: { x: 210, y: 72, expanded: false },
+            electricShapes: [
+              { id: 'ca4_3_ec', shape: 'circle', x: 148, y: 114 }
+            ],
             pieces: [
-              { id: 'ca4_3_r', type: 'rose', value: 3, shadow: false, x: 82, y: 114 },
-              { id: 'ca4_3_a', type: 'aqua', value: 4, shadow: false, x: 106, y: 114 },
-              { id: 'ca4_3_o', type: 'opal', value: 1, shadow: false, x: 126, y: 98 },
-              { id: 'ca4_3_sr', type: 'rose', value: 5, shadow: true, x: 204, y: 78, inEquation: 'shadow' },
-              { id: 'ca4_3_sa', type: 'aqua', value: 2, shadow: true, x: 222, y: 78, inEquation: 'shadow' },
-              { id: 'ca4_3_sl', type: 'aqua', value: 2, shadow: true, x: 216, y: 116 }
+              { id: 'ca4_3_t1', type: 'aqua', value: 2, shadow: false, shape: 'triangle', borderType: 'aqua', coreType: 'white', x: 78, y: 114 },
+              { id: 'ca4_3_t2', type: 'aqua', value: 2, shadow: false, shape: 'triangle', borderType: 'aqua', coreType: 'white', x: 104, y: 114 },
+              { id: 'ca4_3_c', type: 'rose', value: 3, shadow: false, x: 126, y: 114 },
+              { id: 'ca4_3_sr', type: 'aqua', value: 4, shadow: true, shape: 'rhombus', borderType: 'aqua', coreType: 'white', x: 200, y: 72, inEquation: 'shadow' },
+              { id: 'ca4_3_sc', type: 'rose', value: 3, shadow: true, shape: 'circle', borderType: 'rose', coreType: 'rose', x: 220, y: 72, inEquation: 'shadow' }
+            ]
+          }
+        ],
+        // FASE 5 (Nó 20): O Santuário da Caatinga & O Clímax da Opala de Fogo (+ Minigame Shell Game de 6 Rodadas)
+        5: [
+          {
+            // Etapa 1 (Santuário Superior): Corte fracionário da Água-Marinha + Quadrado Elétrico + Círculo Elétrico
+            pureEq: { x: 102, y: 68, expanded: false },
+            electricShapes: [
+              { id: 'ca5_1_es', shape: 'square', x: 152, y: 78 },
+              { id: 'ca5_1_ec', shape: 'circle', x: 152, y: 116 }
+            ],
+            pieces: [
+              { id: 'ca5_1_a', type: 'aqua', value: 4, shadow: false, x: 84, y: 106 },
+              { id: 'ca5_1_r', type: 'rose', value: 2, shadow: false, x: 114, y: 106 },
+              { id: 'ca5_1_ss', type: 'aqua', value: 4, shadow: true, shape: 'square', borderType: 'aqua', coreType: 'rose', x: 216, y: 78 },
+              { id: 'ca5_1_sc', type: 'aqua', value: 2, shadow: true, shape: 'circle', borderType: 'aqua', coreType: 'aqua', x: 216, y: 116 }
+            ]
+          },
+          {
+            // Etapa 2 (Câmara Selada): Polígonos mistos (Pentágono + Losango) para neutralizar defesas intermediárias
+            pieces: [
+              { id: 'ca5_2_trap', type: 'citrine', value: 5, shadow: false, shape: 'trapezoid', borderType: 'citrine', coreType: 'opal', x: 86, y: 76 },
+              { id: 'ca5_2_tri', type: 'white', value: 3, shadow: false, shape: 'triangle', borderType: 'white', coreType: 'white', x: 122, y: 76 },
+              { id: 'ca5_2_t1', type: 'rose', value: 3, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'aqua', x: 86, y: 114 },
+              { id: 'ca5_2_t2', type: 'rose', value: 3, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'aqua', x: 122, y: 114 },
+              { id: 'ca5_2_sp', type: 'citrine', value: 8, shadow: true, shape: 'pentagon', borderType: 'citrine', coreType: 'white', upperType: 'white', lowerType: 'opal', triBorder: 'white', triCore: 'white', trapBorder: 'citrine', trapCore: 'opal', x: 216, y: 76 },
+              { id: 'ca5_2_sr', type: 'rose', value: 6, shadow: true, shape: 'rhombus', borderType: 'rose', coreType: 'aqua', x: 216, y: 114 }
+            ]
+          },
+          {
+            // Etapa 3 (O Núcleo do Altar): Encaixe monumental de três formas distintas (Quadrado, Pentágono e Hexágono) na Grande Equação
+            pureEq: { x: 112, y: 72, expanded: false },
+            shadowEq: { x: 208, y: 72, expanded: false },
+            pieces: [
+              { id: 'ca5_3_sq', type: 'white', value: 4, shadow: false, shape: 'square', borderType: 'white', coreType: 'rose', x: 78, y: 114 },
+              { id: 'ca5_3_pe', type: 'citrine', value: 7, shadow: false, shape: 'pentagon', borderType: 'citrine', coreType: 'aqua', upperType: 'aqua', lowerType: 'citrine', triBorder: 'aqua', triCore: 'white', trapBorder: 'citrine', trapCore: 'rose', x: 112, y: 114 },
+              { id: 'ca5_3_hx', type: 'opal', value: 12, shadow: false, shape: 'hexagon', borderType: 'opal', coreType: 'citrine', x: 146, y: 114 },
+              { id: 'ca5_3_ssq', type: 'white', value: 4, shadow: true, shape: 'square', borderType: 'white', coreType: 'rose', x: 190, y: 72, inEquation: 'shadow' },
+              { id: 'ca5_3_spe', type: 'citrine', value: 7, shadow: true, shape: 'pentagon', borderType: 'citrine', coreType: 'aqua', upperType: 'aqua', lowerType: 'citrine', triBorder: 'aqua', triCore: 'white', trapBorder: 'citrine', trapCore: 'rose', x: 208, y: 72, inEquation: 'shadow' },
+              { id: 'ca5_3_shx', type: 'opal', value: 12, shadow: true, shape: 'hexagon', borderType: 'opal', coreType: 'citrine', x: 226, y: 72, inEquation: 'shadow' }
             ]
           }
         ]
@@ -1635,9 +2217,19 @@
     waveActive: false,
 
     pieces: [],
+    electricShapes: [],
+    floatingBanners: [],
+    selectedPiece: null,
+    tutorialHighlightId: null,
+    disableOpalDrain: false,
+    camPanY: 0,
+    shellGame: null,
+    shellCalmBtnRect: { x: 8, y: 23, w: 98, h: 14 },
     emeraldAltar: null,
     pureEquation: null,
     shadowEquation: null,
+    fractionPlatform: null,
+    riverMelody: null,
     draggedPiece: null,
     dragStartPos: null,
     dragMovedDist: 0,
@@ -1655,17 +2247,18 @@
     STAGE_MAX_Y: 125,
 
     completeBtnRect: { x: 108, y: 115, w: 104, h: 15 },
-    skipMusicalBtnRect: { x: 120, y: 2, w: 64, h: 16 },
+    skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
     gameOverBtnRect: { x: 96, y: 118, w: 128, h: 16 },
     _exitIrisStarted: false,
     _bound: false,
+    WORLD_SPECS,
 
     getSpec() {
       return WORLD_SPECS[this.worldKey] || WORLD_SPECS.forest;
     },
 
     isWorldFinale() {
-      return this.worldKey === 'sanctuary' || this.currentLevel === 4;
+      return this.worldKey === 'sanctuary' || this.currentLevel === ((this.worldKey === 'caatinga' || this.worldKey === 'river') ? 5 : 4);
     },
 
     init() {
@@ -1806,10 +2399,10 @@
         return { worldKey: 'forest', levelNum: id >= 9 ? 4 : (id - 5), nodeId: id };
       }
       if (id >= 11 && id <= 15) {
-        return { worldKey: 'river', levelNum: id >= 14 ? 4 : (id - 10), nodeId: id };
+        return { worldKey: 'river', levelNum: id - 10, nodeId: id };
       }
       if (id >= 16 && id <= 20) {
-        return { worldKey: 'caatinga', levelNum: id >= 19 ? 4 : (id - 15), nodeId: id };
+        return { worldKey: 'caatinga', levelNum: id - 15, nodeId: id };
       }
       return { worldKey: 'sanctuary', levelNum: 1, nodeId: 21 };
     },
@@ -1826,7 +2419,7 @@
     startWorldLevel(worldKey, levelNum = 1, nodeId = null) {
       this.worldKey = WORLD_SPECS[worldKey] ? worldKey : 'forest';
       const spec = this.getSpec();
-      const maxLvl = this.worldKey === 'sanctuary' ? 1 : 4;
+      const maxLvl = this.worldKey === 'sanctuary' ? 1 : ((this.worldKey === 'caatinga' || this.worldKey === 'river') ? 5 : 4);
       this.currentLevel = clamp(levelNum, 1, maxLvl);
       const stepList = spec.levels[this.currentLevel] || spec.levels[1];
       this.totalSteps = stepList.length;
@@ -1847,6 +2440,11 @@
       this.waveActive = false;
       this.waveRadius = 0;
       this.pieces = [];
+      this.electricShapes = [];
+      this.floatingBanners = [];
+      this.selectedPiece = null;
+      this.shellGame = null;
+      this.camPanY = (this.worldKey === 'caatinga' && this.currentLevel === 1) ? -14 : 0;
       this.emeraldAltar = null;
       this.pureEquation = null;
       this.shadowEquation = null;
@@ -1903,6 +2501,12 @@
       }
 
       this.stopMusicAudio();
+      this.shellGame = null;
+      this.riverMelody = null;
+      this.fractionPlatform = null;
+      this.selectedPiece = null;
+      this.floatingBanners = [];
+      this.camPanY = 0;
       this.currentStep = 1;
       this.protag.x = 30;
       this.protag.y = 142;
@@ -1935,9 +2539,40 @@
 
       this.opalDrainTimer = 0;
       this.magneticAnim = null;
+      this.selectedPiece = null;
+      this.tessellationPreview = null;
+      this.tutorialHighlightId = stepDef.tutorialHighlightId || null;
+      this.disableOpalDrain = Boolean(stepDef.disableOpalDrain);
       this.emeraldAltar = stepDef.emeraldAltar ? { x: stepDef.emeraldAltar.x, y: stepDef.emeraldAltar.y } : null;
       this.pureEquation = stepDef.pureEq ? { x: stepDef.pureEq.x, y: stepDef.pureEq.y, expanded: Boolean(stepDef.pureEq.expanded) } : null;
       this.shadowEquation = stepDef.shadowEq ? { x: stepDef.shadowEq.x, y: stepDef.shadowEq.y, expanded: Boolean(stepDef.shadowEq.expanded) } : null;
+      this.fractionPlatform = stepDef.fractionPlatform ? {
+        x: stepDef.fractionPlatform.x,
+        y: stepDef.fractionPlatform.y,
+        topY: stepDef.fractionPlatform.y - 18,
+        bottomY: stepDef.fractionPlatform.y + 18,
+        w: stepDef.fractionPlatform.w || 64,
+        h: stepDef.fractionPlatform.h || 52,
+        resultType: stepDef.fractionPlatform.resultType || 'aqua',
+        resultValue: stepDef.fractionPlatform.resultValue || 1,
+        glowing: false,
+        broken: false,
+        topHover: false,
+        bottomHover: false,
+        topPieces: [],
+        bottomPieces: [],
+        topSum: 0,
+        bottomSum: 0
+      } : null;
+      this.electricShapes = (stepDef.electricShapes || []).map((es) => ({
+        id: es.id,
+        shape: es.shape,
+        x: es.x,
+        y: es.y,
+        used: false,
+        barrierUntil: 0,
+        hover: false
+      }));
       this.pieces = (stepDef.pieces || []).map((p) => ({
         id: p.id,
         type: p.type,
@@ -1945,13 +2580,50 @@
         shadow: Boolean(p.shadow),
         boosted: Boolean(p.boosted),
         inEquation: p.inEquation || null,
+        inFraction: p.inFraction || null,
+        shape: p.shape || null,
+        borderType: p.borderType || null,
+        coreType: p.coreType || null,
+        upperType: p.upperType || null,
+        lowerType: p.lowerType || null,
+        triBorder: p.triBorder || null,
+        triCore: p.triCore || null,
+        trapBorder: p.trapBorder || null,
+        trapCore: p.trapCore || null,
+        joinedSquares: Boolean(p.joinedSquares),
+        subTriangles: p.subTriangles || 0,
+        rotAngle: 0,
+        targetRotAngle: 0,
+        components: p.components ? p.components.map((c) => ({ ...c })) : null,
+        sourceNodeId: p.sourceNodeId || null,
         x: p.x,
         y: p.y
       }));
 
+      if (this.fractionPlatform) {
+        this.fractionPlatform.topPieces = this.pieces.filter((p) => p.inFraction === 'top');
+        this.fractionPlatform.bottomPieces = this.pieces.filter((p) => p.inFraction === 'bottom');
+        this.layoutFractionPieces();
+        this.updateFractionPlatformState();
+      }
+      if (this.worldKey === 'river' && this.currentLevel === 5) {
+        this.startRiverMelodyGame();
+      }
+
       if (this.pureEquation) this.layoutEquationPieces(this.pureEquation, 'pure');
       if (this.shadowEquation) this.layoutEquationPieces(this.shadowEquation, 'shadow');
       this.resolveFreeCrystalCollisions();
+
+      if (stepNum > 1 && stepDef.stepTutorial && StandardTutorialCards[stepDef.stepTutorial]) {
+        const cards = StandardTutorialCards[stepDef.stepTutorial];
+        if (cards && cards.length) {
+          this.phase = 'tutorial';
+          TutorialModal.open(cards, () => {
+            this.phase = 'gameplay';
+            this.phaseTime = 0;
+          }, true);
+        }
+      }
     },
 
     openIntroIfAny() {
@@ -2030,6 +2702,34 @@
       };
     },
 
+    arePiecesEquivalent(purePiece, shadowPiece) {
+      if (!purePiece || !shadowPiece) return false;
+      if (purePiece.value !== shadowPiece.value) return false;
+      const pShape = purePiece.shape || null;
+      const sShape = shadowPiece.shape || null;
+      if (pShape !== sShape) return false;
+      if (sShape) {
+        const pBorder = purePiece.borderType || purePiece.type || 'white';
+        const sBorder = shadowPiece.borderType || shadowPiece.type || 'white';
+        const pCore = purePiece.coreType || purePiece.type || 'white';
+        const sCore = shadowPiece.coreType || shadowPiece.type || 'white';
+        if (pBorder !== sBorder || pCore !== sCore) return false;
+        if (sShape === 'pentagon') {
+          if (shadowPiece.triBorder && (purePiece.triBorder || purePiece.upperType || pCore) !== shadowPiece.triBorder) return false;
+          if (shadowPiece.triCore && (purePiece.triCore || purePiece.upperType || pCore) !== shadowPiece.triCore) return false;
+          if (shadowPiece.trapBorder && (purePiece.trapBorder || pBorder) !== shadowPiece.trapBorder) return false;
+          if (shadowPiece.trapCore && (purePiece.trapCore || purePiece.lowerType || pBorder) !== shadowPiece.trapCore) return false;
+          if (shadowPiece.upperType && shadowPiece.lowerType) {
+            const pUp = purePiece.upperType || pCore;
+            const pLow = purePiece.lowerType || pBorder;
+            if (pUp !== shadowPiece.upperType || pLow !== shadowPiece.lowerType) return false;
+          }
+        }
+        return true;
+      }
+      return purePiece.type === shadowPiece.type;
+    },
+
     isCompatibleShadowTarget(purePiece, candidate, px = purePiece.x, py = purePiece.y) {
       if (this.phase !== 'gameplay') return false;
       if (!purePiece || purePiece.shadow || purePiece.broken || purePiece.value <= 0) return false;
@@ -2042,7 +2742,7 @@
       ) {
         return false;
       }
-      return candidate.type === purePiece.type && candidate.value === purePiece.value;
+      return this.arePiecesEquivalent(purePiece, candidate);
     },
 
     findTouchingCompatibleShadow(purePiece, px = purePiece.x, py = purePiece.y) {
@@ -2115,7 +2815,7 @@
     },
 
     trySplitCrystalOnTap(piece) {
-      if (!piece || piece.shadow || piece.broken || piece.value < 2 || piece.value % 2 !== 0) return false;
+      if (!piece || piece.shadow || piece.broken || piece.inFraction || piece.value < 2 || piece.value % 2 !== 0) return false;
       if (piece.type !== 'citrine' && piece.type !== 'aqua') return false;
 
       const half = piece.value / 2;
@@ -2160,7 +2860,7 @@
     },
 
     moveDraggedPieceWithCollision(piece, rawX, rawY) {
-      if (!piece || piece.broken || piece.value <= 0) return { annulled: false };
+      if (!piece || piece.broken || piece.value <= 0 || piece.inFraction) return { annulled: false };
 
       const clampedTarget = this.clampCrystalPos(rawX, rawY);
       let curX = clamp(piece.x, this.STAGE_MIN_X, this.STAGE_MAX_X);
@@ -2209,14 +2909,16 @@
               other === piece ||
               other.broken ||
               other.value <= 0 ||
+              other.inFraction ||
               this.isCompatibleShadowTarget(piece, other, nx, ny)
             ) {
               continue;
             }
+            const effMinD = (piece.shape && other.shape && this.getTessellationMatch(other, piece)) ? 10 : minD;
             const dx = nx - other.x;
             const dy = ny - other.y;
             const d = Math.hypot(dx, dy);
-            if (d < minD) {
+            if (d < effMinD) {
               anyOverlap = true;
               const ux = d > 1e-4 ? dx / d : 1;
               const uy = d > 1e-4 ? dy / d : 0;
@@ -2225,14 +2927,14 @@
                 const vn = mvX * ux + mvY * uy;
                 if (vn < 0) {
                   const vtX = mvX - vn * ux, vtY = mvY - vn * uy;
-                  if (Math.hypot(vtX, vtY) <= Math.abs(vn) * 0.25 && Math.hypot(curX - other.x, curY - other.y) <= minD + 0.05) {
+                  if (Math.hypot(vtX, vtY) <= Math.abs(vn) * 0.25 && Math.hypot(curX - other.x, curY - other.y) <= effMinD + 0.05) {
                     blockedDead = true;
                     break;
                   }
                 }
               }
-              nx = other.x + ux * minD;
-              ny = other.y + uy * minD;
+              nx = other.x + ux * effMinD;
+              ny = other.y + uy * effMinD;
             }
           }
           nx = clamp(nx, this.STAGE_MIN_X, this.STAGE_MAX_X);
@@ -2245,10 +2947,11 @@
         let valid = true;
         for (let i = 0; i < this.pieces.length; i++) {
           const other = this.pieces[i];
-          if (other === piece || other.broken || other.value <= 0 || this.isCompatibleShadowTarget(piece, other, nx, ny)) {
+          if (other === piece || other.broken || other.value <= 0 || other.inFraction || this.isCompatibleShadowTarget(piece, other, nx, ny)) {
             continue;
           }
-          if (Math.hypot(nx - other.x, ny - other.y) < minD - 0.04) {
+          const effMinD = (piece.shape && other.shape && this.getTessellationMatch(other, piece)) ? 10 : minD;
+          if (Math.hypot(nx - other.x, ny - other.y) < effMinD - 0.04) {
             valid = false;
             break;
           }
@@ -2262,6 +2965,18 @@
 
         if (this.checkEmeraldAltarBlessing(piece)) {
           if (piece.broken || this.phase !== 'gameplay') return { annulled: true };
+        }
+
+        if (!piece.shape && !piece.inEquation && this.electricShapes && this.electricShapes.length > 0) {
+          for (const es of this.electricShapes) {
+            if (!es.used && es.shape === 'circle' && Math.hypot(curX - es.x, curY - es.y) <= 14) {
+              this.tryEnterElectricShapeNode(es, [piece]);
+              curX = piece.x;
+              curY = piece.y;
+              if (piece.broken || this.phase !== 'gameplay') return { annulled: true };
+              break;
+            }
+          }
         }
 
         const postHit = this.findTouchingCompatibleShadow(piece, curX, curY);
@@ -2375,12 +3090,16 @@
     },
 
     updateOpalProximity(dt) {
-      if (this.phase !== 'gameplay' || !this.draggedPiece) {
+      if (this.phase !== 'gameplay' || !this.draggedPiece || this.disableOpalDrain) {
         this.clearTrembleStates();
         return;
       }
       const dp = this.draggedPiece;
-      if (dp.broken || dp.value <= 0 || dp.shadow) {
+      if (dp.broken || dp.value <= 0 || dp.shadow || dp.shape || dp.inEquation === 'pure') {
+        this.clearTrembleStates();
+        return;
+      }
+      if (this.pureEquation && !this.pureEquation.broken && this.isInsideEquationAura(this.pureEquation, dp.x, dp.y, true)) {
         this.clearTrembleStates();
         return;
       }
@@ -2391,7 +3110,7 @@
 
       if (dp.type === 'opal') {
         for (const p of this.pieces) {
-          if (p !== dp && !p.broken && !p.shadow && p.value > 0 && p.type !== 'opal') {
+          if (p !== dp && !p.broken && !p.shadow && !p.shape && p.inEquation !== 'pure' && p.value > 0 && p.type !== 'opal') {
             const d = Math.hypot(dp.x - p.x, dp.y - p.y);
             if (d <= bestDist) {
               bestDist = d;
@@ -2402,7 +3121,7 @@
         }
       } else {
         for (const p of this.pieces) {
-          if (p !== dp && !p.broken && !p.shadow && p.value > 0 && p.type === 'opal') {
+          if (p !== dp && !p.broken && !p.shadow && !p.shape && p.inEquation !== 'pure' && p.value > 0 && p.type === 'opal') {
             const d = Math.hypot(dp.x - p.x, dp.y - p.y);
             if (d <= bestDist) {
               bestDist = d;
@@ -2460,6 +3179,547 @@
       }
     },
 
+    spawnFloatingBanner(arg1, arg2, arg3) {
+      let text, x, y;
+      if (typeof arg1 === 'number') {
+        x = arg1;
+        y = arg2;
+        text = typeof arg3 === 'string' ? arg3 : 'DIVISÃO!';
+      } else {
+        text = SHAPE_BANNERS[arg1] || String(arg1 || 'FORMA!');
+        x = arg2;
+        y = arg3;
+      }
+      this.floatingBanners.push({
+        text,
+        x: clamp(R(x || 160), 42, W - 42),
+        y: clamp(R((y || 80) - 12), 28, H - 24),
+        t0: this.t
+      });
+      if (this.floatingBanners.length > 8) {
+        this.floatingBanners.shift();
+      }
+      GameHUD.playSfx('shapeMaterialize');
+      GameHUD.playSfx('shapeBanner');
+    },
+
+    snapshotPiece(p) {
+      return {
+        type: p.type,
+        value: p.value,
+        boosted: Boolean(p.boosted),
+        shape: p.shape || null,
+        borderType: p.borderType || null,
+        coreType: p.coreType || null,
+        upperType: p.upperType || null,
+        lowerType: p.lowerType || null,
+        triBorder: p.triBorder || null,
+        triCore: p.triCore || null,
+        trapBorder: p.trapBorder || null,
+        trapCore: p.trapCore || null,
+        joinedSquares: Boolean(p.joinedSquares),
+        subTriangles: p.subTriangles || 0,
+        sourceNodeId: p.sourceNodeId || null,
+        components: p.components ? p.components.map((c) => ({ ...c })) : null
+      };
+    },
+
+    getTessellationMatch(target, dragged) {
+      if (!target || !dragged || target === dragged) return null;
+      if (target.broken || dragged.broken || target.shadow || dragged.shadow) return null;
+      if (!target.shape || !dragged.shape) return null;
+
+      const s1 = target.shape, s2 = dragged.shape;
+
+      // 1. 2 Quadrados idênticos -> Retângulo Cristalino (gira 90° e encaixa lado a lado [■|■])
+      if (
+        s1 === 'square' &&
+        s2 === 'square' &&
+        target.value === dragged.value &&
+        (target.borderType || target.type) === (dragged.borderType || dragged.type) &&
+        (target.coreType || target.type) === (dragged.coreType || dragged.type)
+      ) {
+        return {
+          resultShape: 'rectangle',
+          targetRotAngle: Math.PI / 2,
+          label: 'QUADRADO + QUADRADO = RETÂNGULO'
+        };
+      }
+
+      // 2. 1 Trapézio + 1 Triângulo -> Pentágono (gira suavemente 360° e encaixa o Triângulo no topo do Trapézio)
+      if ((s1 === 'trapezoid' && s2 === 'triangle') || (s1 === 'triangle' && s2 === 'trapezoid')) {
+        return {
+          resultShape: 'pentagon',
+          targetRotAngle: Math.PI * 2,
+          label: 'TRIÂNGULO + TRAPÉZIO = PENTÁGONO'
+        };
+      }
+
+      // 3. Tesselação radial de 6 Triângulos equiláteros -> Hexágono (gira k * 60° para a próxima fatia radial)
+      if (s1 === 'triangle' && s2 === 'triangle' && ((target.subTriangles || 0) > 0 || (dragged.subTriangles || 0) > 0)) {
+        const curSlices = target.subTriangles || 1;
+        const addSlices = dragged.subTriangles || 1;
+        const total = curSlices + addSlices;
+        return {
+          resultShape: total >= 6 ? 'hexagon' : 'triangle',
+          targetRotAngle: (curSlices % 6) * (Math.PI / 3),
+          label: total >= 6 ? '6 TRIÂNGULOS = HEXÁGONO!' : `${total}/6 TRIÂNGULOS -> HEXÁGONO`
+        };
+      }
+
+      // 4. 2 Triângulos congruentes -> Losango (gira 180° de cabeça para baixo ▼ para unir base com base ▲+▼ = ◆)
+      if (
+        s1 === 'triangle' &&
+        s2 === 'triangle' &&
+        target.value === dragged.value &&
+        (target.borderType || target.type) === (dragged.borderType || dragged.type) &&
+        (target.coreType || target.type) === (dragged.coreType || dragged.type)
+      ) {
+        return {
+          resultShape: 'rhombus',
+          targetRotAngle: Math.PI,
+          label: 'TRIÂNGULO + TRIÂNGULO (180°) = LOSANGO'
+        };
+      }
+
+      return null;
+    },
+
+    updateShapeTessellationPreview(dt) {
+      let bestMatch = null;
+      const dp = this.phase === 'gameplay' ? this.draggedPiece : null;
+
+      if (dp && !dp.broken && !dp.shadow && dp.value > 0 && dp.shape) {
+        let bestDist = 42;
+        for (const other of this.pieces) {
+          if (other === dp || other.broken || other.shadow || other.value <= 0 || !other.shape) continue;
+          const d = Math.hypot(dp.x - other.x, dp.y - other.y);
+          if (d <= bestDist) {
+            const match = this.getTessellationMatch(other, dp);
+            if (match) {
+              bestDist = d;
+              bestMatch = {
+                target: other,
+                dragged: dp,
+                dist: d,
+                resultShape: match.resultShape,
+                targetRotAngle: match.targetRotAngle,
+                label: match.label
+              };
+            }
+          }
+        }
+      }
+
+      const prevTargetId = this.tessellationPreview?.target?.id || null;
+      const nextTargetId = bestMatch?.target?.id || null;
+      if (bestMatch && nextTargetId !== prevTargetId) {
+        GameHUD.playSfx('click');
+      }
+      this.tessellationPreview = bestMatch;
+
+      for (const p of this.pieces) {
+        if (!p || p.broken) continue;
+        const desired = (bestMatch && p === bestMatch.dragged) ? bestMatch.targetRotAngle : 0;
+        p.targetRotAngle = desired;
+        const cur = Number(p.rotAngle) || 0;
+        const diff = desired - cur;
+        if (Math.abs(diff) < 0.005) {
+          p.rotAngle = desired;
+        } else {
+          p.rotAngle = cur + diff * Math.min(1, dt * 10);
+        }
+      }
+    },
+
+    rejectAtElectricShape(node, piecesToReject = []) {
+      if (node) {
+        node.barrierUntil = this.t + 0.65;
+        node.hover = false;
+      }
+      GameHUD.playSfx('electricReject');
+      for (const p of piecesToReject) {
+        if (!p) continue;
+        p.rejectUntil = this.t + 0.55;
+        if (!p.inEquation && node) {
+          const dx = p.x - node.x;
+          const dy = p.y - node.y;
+          const d = Math.hypot(dx, dy) || 1;
+          p.x = clamp(R(node.x + (dx / d) * 24), this.STAGE_MIN_X, this.STAGE_MAX_X);
+          p.y = clamp(R(node.y + (dy / d) * 20), this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+        }
+      }
+      if (this.pureEquation && !this.pureEquation.broken && piecesToReject.some((p) => p && p.inEquation === 'pure')) {
+        this.pureEquation.x = clamp(this.pureEquation.x - 16, 62, 180);
+        this.layoutEquationPieces(this.pureEquation, 'pure');
+      }
+      this.resolveFreeCrystalCollisions();
+      return false;
+    },
+
+    tryEnterElectricShapeNode(node, candidatePieces = []) {
+      if (!node || node.used) return false;
+      const validList = candidatePieces.filter((p) => p && !p.broken && !p.shadow && p.value > 0);
+      if (validList.length === 0) return false;
+
+      if (node.shape === 'circle') {
+        // O Círculo aceita apenas 1 elemento cristalino unitário
+        if (validList.length !== 1 || validList[0].shape) {
+          return this.rejectAtElectricShape(node, validList);
+        }
+        const p = validList[0];
+        const snap = this.snapshotPiece(p);
+        p.shape = 'circle';
+        p.borderType = p.type;
+        p.coreType = p.type;
+        p.components = [snap];
+        p.sourceNodeId = node.id;
+        p.inEquation = null;
+        p.x = node.x;
+        p.y = node.y;
+        p.lastValChangeAt = this.t;
+        node.used = true;
+        node.hover = false;
+        if (this.tutorialHighlightId === p.id) this.tutorialHighlightId = null;
+        this.spawnFloatingBanner('circle', node.x, node.y);
+        this.spawnShatter(node.x, node.y, SHARD_SPR[p.type] ? p.type : 'pure', 10);
+        if (this.pureEquation && !this.pureEquation.broken) {
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+        }
+        const hit = this.findTouchingCompatibleShadow(p, p.x, p.y);
+        if (hit) this.triggerImmediateAnnulment(p, hit);
+        return true;
+      }
+
+      // Regra das Barreiras Elétricas (Seção 2.2): todas as demais formas exigem ESTRITAMENTE 2 ELEMENTOS conectados
+      if (validList.length !== 2 || validList[0].shape || validList[1].shape) {
+        return this.rejectAtElectricShape(node, validList);
+      }
+
+      const ordered = validList.slice().sort((a, b) => a.x - b.x);
+      const first = ordered[0], second = ordered[1];
+
+      if (node.shape === 'square' && first.value !== second.value) {
+        return this.rejectAtElectricShape(node, ordered);
+      }
+      if (node.shape === 'rectangle' && first.value === second.value) {
+        return this.rejectAtElectricShape(node, ordered);
+      }
+
+      const snap1 = this.snapshotPiece(first);
+      const snap2 = this.snapshotPiece(second);
+      first.shape = node.shape;
+      first.borderType = first.type; // 1º elemento define a cor da borda externa
+      first.coreType = second.type;  // 2º elemento define a cor do núcleo interno
+      first.value = first.value + second.value;
+      first.components = [snap1, snap2];
+      first.sourceNodeId = node.id;
+      first.inEquation = null;
+      first.x = node.x;
+      first.y = node.y;
+      first.lastValChangeAt = this.t;
+
+      second.broken = true;
+      second.inEquation = null;
+      node.used = true;
+      node.hover = false;
+
+      if (this.pureEquation && !this.pureEquation.broken) {
+        this.layoutEquationPieces(this.pureEquation, 'pure');
+      }
+
+      this.spawnFloatingBanner(node.shape, node.x, node.y);
+      this.spawnShatter(node.x, node.y, SHARD_SPR[first.type] ? first.type : 'pure', 12);
+
+      const hit = this.findTouchingCompatibleShadow(first, first.x, first.y);
+      if (hit) this.triggerImmediateAnnulment(first, hit);
+      return true;
+    },
+
+    tryTessellateShapes(target, dropped) {
+      if (!target || !dropped || target === dropped) return false;
+      if (target.broken || dropped.broken || target.shadow || dropped.shadow) return false;
+      if (!target.shape || !dropped.shape) return false;
+
+      const s1 = target.shape, s2 = dropped.shape;
+      const snapT = this.snapshotPiece(target);
+      const snapD = this.snapshotPiece(dropped);
+
+      // 1. 2 Quadrados idênticos -> Retângulo Cristalino
+      if (
+        s1 === 'square' &&
+        s2 === 'square' &&
+        target.value === dropped.value &&
+        (target.borderType || target.type) === (dropped.borderType || dropped.type) &&
+        (target.coreType || target.type) === (dropped.coreType || dropped.type)
+      ) {
+        target.shape = 'rectangle';
+        target.joinedSquares = true;
+        target.value += dropped.value;
+        target.components = [snapT, snapD];
+        target.sourceNodeId = null;
+        target.rotAngle = 0;
+        target.targetRotAngle = 0;
+        target.lastValChangeAt = this.t;
+        dropped.broken = true;
+        dropped.inEquation = null;
+        this.tessellationPreview = null;
+        this.spawnFloatingBanner('rectangle', target.x, target.y);
+        this.spawnShatter(target.x, target.y, 'pure', 12);
+        const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (hit) this.triggerImmediateAnnulment(target, hit);
+        return true;
+      }
+
+      // 2. 1 Trapézio + 1 Triângulo -> Pentágono (preserva 100% as cores do Triângulo no topo e do Trapézio na base)
+      if ((s1 === 'trapezoid' && s2 === 'triangle') || (s1 === 'triangle' && s2 === 'trapezoid')) {
+        const trap = s1 === 'trapezoid' ? target : dropped;
+        const tri = s1 === 'triangle' ? target : dropped;
+        const trapB = trap.borderType || trap.type;
+        const trapC = trap.coreType || trap.type;
+        const triB = tri.borderType || tri.type;
+        const triC = tri.coreType || tri.type;
+        const sumVal = trap.value + tri.value;
+        target.shape = 'pentagon';
+        target.type = trap.type;
+        target.borderType = trapB;
+        target.coreType = triB;
+        target.upperType = triB;
+        target.lowerType = trapC;
+        target.triBorder = triB;
+        target.triCore = triC;
+        target.trapBorder = trapB;
+        target.trapCore = trapC;
+        target.value = sumVal;
+        target.components = [snapT, snapD];
+        target.sourceNodeId = null;
+        target.rotAngle = 0;
+        target.targetRotAngle = 0;
+        target.lastValChangeAt = this.t;
+        dropped.broken = true;
+        dropped.inEquation = null;
+        this.tessellationPreview = null;
+        this.spawnFloatingBanner('pentagon', target.x, target.y);
+        this.spawnShatter(target.x, target.y, 'citrine', 12);
+        const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (hit) this.triggerImmediateAnnulment(target, hit);
+        return true;
+      }
+
+      // 3. Tesselação radial de 6 Triângulos equiláteros -> Hexágono
+      if (s1 === 'triangle' && s2 === 'triangle' && ((target.subTriangles || 0) > 0 || (dropped.subTriangles || 0) > 0)) {
+        const totalTris = (target.subTriangles || 1) + (dropped.subTriangles || 1);
+        target.value += dropped.value;
+        target.subTriangles = totalTris;
+        target.components = [snapT, snapD];
+        target.rotAngle = 0;
+        target.targetRotAngle = 0;
+        target.lastValChangeAt = this.t;
+        dropped.broken = true;
+        dropped.inEquation = null;
+        this.tessellationPreview = null;
+        if (totalTris >= 6) {
+          target.shape = 'hexagon';
+          this.spawnFloatingBanner('hexagon', target.x, target.y);
+        } else {
+          this.spawnFloatingBanner('triangle', target.x, target.y);
+        }
+        this.spawnShatter(target.x, target.y, 'citrine', 10);
+        const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (hit) this.triggerImmediateAnnulment(target, hit);
+        return true;
+      }
+
+      // 4. 2 Triângulos congruentes -> Losango
+      if (
+        s1 === 'triangle' &&
+        s2 === 'triangle' &&
+        target.value === dropped.value &&
+        (target.borderType || target.type) === (dropped.borderType || dropped.type) &&
+        (target.coreType || target.type) === (dropped.coreType || dropped.type)
+      ) {
+        target.shape = 'rhombus';
+        target.value += dropped.value;
+        target.components = [snapT, snapD];
+        target.sourceNodeId = null;
+        target.rotAngle = 0;
+        target.targetRotAngle = 0;
+        target.lastValChangeAt = this.t;
+        dropped.broken = true;
+        dropped.inEquation = null;
+        this.tessellationPreview = null;
+        this.spawnFloatingBanner('rhombus', target.x, target.y);
+        this.spawnShatter(target.x, target.y, 'pure', 12);
+        const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (hit) this.triggerImmediateAnnulment(target, hit);
+        return true;
+      }
+
+      return false;
+    },
+
+    tryDisassembleShapeOnTap(piece) {
+      if (!piece || piece.shadow || piece.broken || !piece.shape) return false;
+      if (!piece.components || piece.components.length === 0) return false;
+
+      const ox = piece.x, oy = piece.y;
+      const comps = piece.components;
+      if (piece.sourceNodeId) {
+        const srcNode = this.electricShapes.find((es) => es.id === piece.sourceNodeId);
+        if (srcNode) srcNode.used = false;
+      }
+
+      const c0 = comps[0];
+      piece.type = c0.type;
+      piece.value = c0.value;
+      piece.boosted = Boolean(c0.boosted);
+      piece.shape = c0.shape || null;
+      piece.borderType = c0.borderType || null;
+      piece.coreType = c0.coreType || null;
+      piece.upperType = c0.upperType || null;
+      piece.lowerType = c0.lowerType || null;
+      piece.triBorder = c0.triBorder || null;
+      piece.triCore = c0.triCore || null;
+      piece.trapBorder = c0.trapBorder || null;
+      piece.trapCore = c0.trapCore || null;
+      piece.joinedSquares = Boolean(c0.joinedSquares);
+      piece.subTriangles = c0.subTriangles || 0;
+      piece.rotAngle = 0;
+      piece.targetRotAngle = 0;
+      piece.sourceNodeId = c0.sourceNodeId || null;
+      piece.components = c0.components ? c0.components.map((c) => ({ ...c })) : null;
+      piece.inEquation = null;
+      piece.x = clamp(ox - (comps.length > 1 ? 14 : 20), this.STAGE_MIN_X, this.STAGE_MAX_X);
+      piece.y = oy;
+      piece.lastValChangeAt = this.t;
+
+      if (comps.length > 1) {
+        const c1 = comps[1];
+        this.pieces.push({
+          id: `${piece.id}_dis_${Math.floor(this.t * 1000)}_${this.pieces.length}`,
+          type: c1.type,
+          value: c1.value,
+          shadow: false,
+          boosted: Boolean(c1.boosted),
+          inEquation: null,
+          shape: c1.shape || null,
+          borderType: c1.borderType || null,
+          coreType: c1.coreType || null,
+          upperType: c1.upperType || null,
+          lowerType: c1.lowerType || null,
+          triBorder: c1.triBorder || null,
+          triCore: c1.triCore || null,
+          trapBorder: c1.trapBorder || null,
+          trapCore: c1.trapCore || null,
+          joinedSquares: Boolean(c1.joinedSquares),
+          subTriangles: c1.subTriangles || 0,
+          rotAngle: 0,
+          targetRotAngle: 0,
+          sourceNodeId: c1.sourceNodeId || null,
+          components: c1.components ? c1.components.map((c) => ({ ...c })) : null,
+          lastValChangeAt: this.t,
+          x: clamp(ox + 14, this.STAGE_MIN_X, this.STAGE_MAX_X),
+          y: oy
+        });
+      }
+
+      GameHUD.playSfx('equationRemove');
+      this.resolveFreeCrystalCollisions();
+      return true;
+    },
+
+    layoutFractionPieces() {
+      const fp = this.fractionPlatform;
+      if (!fp) return;
+      const spacing = 22;
+      if (fp.topPieces && fp.topPieces.length > 0) {
+        const topCount = fp.topPieces.length;
+        const startX = fp.x - ((topCount - 1) * spacing) * 0.5;
+        for (let i = 0; i < topCount; i++) {
+          const p = fp.topPieces[i];
+          p.x = startX + i * spacing;
+          p.y = fp.topY;
+          p.inFraction = 'top';
+          p.inEquation = null;
+        }
+      }
+      if (fp.bottomPieces && fp.bottomPieces.length > 0) {
+        const botCount = fp.bottomPieces.length;
+        const startX = fp.x - ((botCount - 1) * spacing) * 0.5;
+        for (let i = 0; i < botCount; i++) {
+          const p = fp.bottomPieces[i];
+          p.x = startX + i * spacing;
+          p.y = fp.bottomY;
+          p.inFraction = 'bottom';
+          p.inEquation = null;
+        }
+      }
+    },
+
+    updateFractionPlatformState() {
+      const fp = this.fractionPlatform;
+      if (!fp || fp.broken) return;
+      const sumTop = (fp.topPieces || []).reduce((acc, p) => acc + (p.value || 0), 0);
+      const sumBottom = (fp.bottomPieces || []).reduce((acc, p) => acc + (p.value || 0), 0);
+      fp.topSum = sumTop;
+      fp.bottomSum = sumBottom;
+      const wasGlowing = fp.glowing;
+      fp.glowing = sumTop > 0 && sumTop === sumBottom;
+      if (!wasGlowing && fp.glowing) {
+        if (global.CrystalAudio?.fractionPinkGlow) {
+          global.CrystalAudio.fractionPinkGlow();
+        } else {
+          GameHUD.playSfx('shapeSnap');
+        }
+        this.spawnShatter(fp.x, fp.y, 'rose', 6);
+      }
+    },
+
+    isInsideFractionPlatform(x, y) {
+      const fp = this.fractionPlatform;
+      if (!fp || fp.broken) return false;
+      return Math.abs(x - fp.x) <= (fp.w * 0.5 + 4) && Math.abs(y - fp.y) <= (fp.h * 0.5 + 4);
+    },
+
+    triggerFractionDivide() {
+      const fp = this.fractionPlatform;
+      if (!fp || fp.broken || !fp.glowing) return;
+      fp.broken = true;
+
+      this.spawnShatter(fp.x, fp.y, 'rose', 16);
+      this.spawnShatter(fp.x, fp.y, 'aqua', 16);
+      if (global.CrystalAudio?.fractionDivide) {
+        global.CrystalAudio.fractionDivide();
+      } else {
+        GameHUD.playSfx('equationShatter');
+      }
+
+      const allInternal = [...(fp.topPieces || []), ...(fp.bottomPieces || [])];
+      for (const p of allInternal) {
+        p.broken = true;
+        p.value = 0;
+      }
+      this.pieces = this.pieces.filter((p) => !p.broken && p.value > 0);
+
+      const resultPiece = {
+        id: 'ri_frac_res_' + Math.floor(Math.random() * 100000),
+        type: fp.resultType || 'aqua',
+        value: fp.resultValue || 1,
+        shadow: false,
+        boosted: false,
+        inEquation: null,
+        inFraction: null,
+        x: fp.x,
+        y: fp.y
+      };
+      this.pieces.push(resultPiece);
+
+      this.spawnFloatingBanner('DIVISÃO!', fp.x, fp.y - 12);
+      this.fractionPlatform = null;
+      this.checkEquationSolved();
+      this.triggerDefeatIfImpossible();
+    },
+
     checkPieceDrop(dropped) {
       if (!dropped || dropped.broken || dropped.value <= 0) return;
 
@@ -2470,13 +3730,98 @@
       this.checkEmeraldAltarBlessing(dropped);
       if (dropped.broken || this.phase !== 'gameplay') return;
 
-      // 1. Fusão entre cristais puros da mesma cor (até 6 bolinhas)
-      if (dropped.type !== 'opal') {
+      // -1. Entrada na Plataforma de Fração do Rio (Topo ou Embaixo)
+      if (this.fractionPlatform && !this.fractionPlatform.broken && !dropped.inFraction) {
+        const fp = this.fractionPlatform;
+        const overTop = Math.abs(dropped.x - fp.x) <= fp.w * 0.5 && Math.abs(dropped.y - fp.topY) <= 16;
+        const overBottom = Math.abs(dropped.x - fp.x) <= fp.w * 0.5 && Math.abs(dropped.y - fp.bottomY) <= 16;
+        if (overTop || overBottom) {
+          const wasInPureEq = dropped.inEquation === 'pure';
+          dropped.inFraction = overTop ? 'top' : 'bottom';
+          dropped.inEquation = null;
+          if (wasInPureEq && this.pureEquation && !this.pureEquation.broken) {
+            const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+            if (members.length <= 1) {
+              this.breakPureEquation();
+            } else {
+              this.layoutEquationPieces(this.pureEquation, 'pure');
+            }
+          }
+          const targetList = overTop ? fp.topPieces : fp.bottomPieces;
+          if (!targetList.includes(dropped)) targetList.push(dropped);
+          this.layoutFractionPieces();
+          this.updateFractionPlatformState();
+          GameHUD.playSfx('equationInsert');
+          return;
+        }
+      }
+
+      // 0. Entrada em Forma Geométrica Elétrica da Caatinga
+      if (this.electricShapes && this.electricShapes.length > 0) {
+        for (const es of this.electricShapes) {
+          if (!es.used && Math.hypot(dropped.x - es.x, dropped.y - es.y) <= 22) {
+            if (dropped.inEquation === 'pure' && this.pureEquation && !this.pureEquation.broken) {
+              const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+              this.tryEnterElectricShapeNode(es, members);
+            } else {
+              this.tryEnterElectricShapeNode(es, [dropped]);
+            }
+            return;
+          }
+        }
+      }
+
+      // 1. Encaixe / Tesselação entre duas Formas Geométricas prontas (raio generoso de 34px coincidente com o preview de giro)
+      if (dropped.shape) {
         for (const other of this.pieces) {
           if (
             other !== dropped &&
             !other.broken &&
             !other.shadow &&
+            other.value > 0 &&
+            other.shape &&
+            Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 34
+          ) {
+            if (this.tryTessellateShapes(other, dropped)) {
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Adição ou reordenação na Equação Cristalina (priorizada quando solto dentro da aura receptiva)
+      if (this.pureEquation && !this.pureEquation.broken) {
+        if (this.isInsideEquationAura(this.pureEquation, dropped.x, dropped.y, true)) {
+          if (dropped.inEquation !== 'pure') {
+            dropped.inEquation = 'pure';
+            GameHUD.playSfx('equationInsert');
+          } else {
+            GameHUD.playSfx('click');
+          }
+          // Ordena os membros pela posição X onde foram soltos (permitindo inverter a ordem borda/núcleo!)
+          const members = this.pieces
+            .filter((p) => !p.broken && p.value > 0 && p.inEquation === 'pure')
+            .sort((a, b) => a.x - b.x);
+          const nonMembers = this.pieces.filter((p) => p.broken || p.value <= 0 || p.inEquation !== 'pure');
+          this.pieces = [...nonMembers, ...members];
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+          return;
+        } else if (dropped.inEquation === 'pure') {
+          dropped.inEquation = null;
+          GameHUD.playSfx('equationRemove');
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+        }
+      }
+
+      // 3. Fusão entre cristais puros da mesma cor (até 6 bolinhas, fora de formas geométricas)
+      if (!dropped.shape && dropped.type !== 'opal') {
+        for (const other of this.pieces) {
+          if (
+            other !== dropped &&
+            !other.broken &&
+            !other.shadow &&
+            !other.shape &&
+            other.inEquation !== 'pure' &&
             other.value > 0 &&
             other.type !== 'opal' &&
             Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 22
@@ -2504,22 +3849,6 @@
         }
       }
 
-      // 2. Adição ou retirada na Equação Cristalina
-      if (this.pureEquation && !this.pureEquation.broken) {
-        if (this.isInsideEquationAura(this.pureEquation, dropped.x, dropped.y, true)) {
-          if (dropped.inEquation !== 'pure') {
-            dropped.inEquation = 'pure';
-            GameHUD.playSfx('equationInsert');
-          }
-          this.layoutEquationPieces(this.pureEquation, 'pure');
-          return;
-        } else if (dropped.inEquation === 'pure') {
-          dropped.inEquation = null;
-          GameHUD.playSfx('equationRemove');
-          this.layoutEquationPieces(this.pureEquation, 'pure');
-        }
-      }
-
       this.resolveFreeCrystalCollisions();
 
       if (!dropped.inEquation) {
@@ -2532,7 +3861,13 @@
       const shadows = this.pieces.filter((p) => p.shadow && !p.broken && p.value > 0);
       if (shadows.length === 0) return true;
       const pures = this.pieces.filter((p) => !p.shadow && !p.broken && p.value > 0);
+      if (this.fractionPlatform && !this.fractionPlatform.broken) {
+        return true;
+      }
       if (pures.length === 0) return false;
+      if (this.worldKey === 'caatinga' || (this.electricShapes && this.electricShapes.length > 0)) {
+        return true;
+      }
 
       const hasAltar = Boolean(this.emeraldAltar);
       for (const color of ['white', 'rose', 'citrine', 'aqua']) {
@@ -2588,7 +3923,7 @@
 
       const pool = pureMembers.slice();
       for (const sm of shadowMembers) {
-        const idx = pool.findIndex((pm) => pm.type === sm.type && pm.value === sm.value);
+        const idx = pool.findIndex((pm) => this.arePiecesEquivalent(pm, sm));
         if (idx < 0) return;
         pool.splice(idx, 1);
       }
@@ -2608,6 +3943,670 @@
         midX: R((this.pureEquation.x + this.shadowEquation.x) * 0.5),
         midY: R((this.pureEquation.y + this.shadowEquation.y) * 0.5)
       };
+    },
+
+    // ==========================================================================
+    // MINIGAME DA FASE 5 DA CAATINGA: 'SHELL GAME' (O DESAFIO DAS AREIAS — 6 RODADAS)
+    // ==========================================================================
+    startShellGame() {
+      const assistEl = typeof document !== 'undefined' ? document.getElementById('assistToggle') : null;
+      const calmDefault = Boolean(assistEl?.checked || global.CrystalApp?.state?.settings?.assist);
+      this.shellGame = {
+        roundIndex: 0,
+        calmMode: calmDefault,
+        winningCup: 0,
+        pickedCup: -1,
+        lastSuccess: true,
+        swapTimer: 0,
+        swapDuration: 0.45,
+        swapsRemaining: 0,
+        swapPair: null,
+        swapStyle: 'linear',
+        feintMidpoint: false,
+        cups: [],
+        rounds: [
+          { round: 1, cups: 2, duration: 3.0, swaps: 4,  speedLabel: 'Lenta',  style: 'linear' },
+          { round: 2, cups: 2, duration: 4.0, swaps: 6,  speedLabel: 'Média',  style: 'cross' },
+          { round: 3, cups: 3, duration: 5.0, swaps: 8,  speedLabel: 'Média',  style: 'triangle_feint' },
+          { round: 4, cups: 4, duration: 6.0, swaps: 10, speedLabel: 'Média',  style: 'parallel_cross' },
+          { round: 5, cups: 4, duration: 7.0, swaps: 13, speedLabel: 'Rápida', style: 'zigzag_spin' },
+          { round: 6, cups: 5, duration: 8.0, swaps: 16, speedLabel: 'Rápida', style: 'quantum_feint' }
+        ]
+      };
+      this.pieces = [];
+      this.electricShapes = [];
+      this.pureEquation = null;
+      this.shadowEquation = null;
+      this.setupShellRound(0);
+
+      const cards = StandardTutorialCards.CAATINGA_SHELL_GAME;
+      if (cards && cards.length) {
+        this.phase = 'tutorial';
+        TutorialModal.open(cards, () => {
+          this.phase = 'shell_game_show';
+          this.phaseTime = 0;
+        }, true);
+      } else {
+        this.phase = 'shell_game_show';
+        this.phaseTime = 0;
+      }
+    },
+
+    setupShellRound(roundIdx) {
+      const sg = this.shellGame;
+      if (!sg) return;
+      sg.roundIndex = clamp(roundIdx, 0, sg.rounds.length - 1);
+      sg.round = sg.roundIndex + 1;
+      sg.totalRounds = sg.rounds.length;
+      const rDef = sg.rounds[sg.roundIndex];
+      const count = rDef.cups;
+      const spacing = count <= 2 ? 56 : (count === 3 ? 46 : (count === 4 ? 38 : 32));
+      const startX = R(160 - ((count - 1) * spacing) * 0.5);
+      const baseY = 104;
+
+      sg.winningCup = sg.roundIndex % count;
+      sg.opalCupIdx = sg.winningCup;
+      sg.pickedCup = -1;
+      sg.roundResult = null;
+      sg.swapPair = null;
+      sg.swapsRemaining = rDef.swaps;
+      sg.swapStyle = rDef.style;
+      sg.swapDuration = rDef.duration / Math.max(1, rDef.swaps);
+      sg.cups = Array.from({ length: count }, (_, i) => ({
+        id: i,
+        slot: i,
+        x: startX + i * spacing,
+        y: baseY,
+        startX: startX + i * spacing,
+        startY: baseY,
+        targetX: startX + i * spacing,
+        targetY: baseY,
+        liftY: 18
+      }));
+    },
+
+    beginNextShellSwap() {
+      const sg = this.shellGame;
+      if (!sg) return false;
+      if (sg.swapsRemaining <= 0) {
+        sg.swapPair = null;
+        GameHUD.playSfx('cupStop');
+        this.phase = 'shell_game_pick';
+        this.phaseTime = 0;
+        return false;
+      }
+      sg.swapsRemaining--;
+      sg.swapTimer = 0;
+      const n = sg.cups.length;
+      const a = (sg.swapsRemaining + sg.roundIndex) % n;
+      let b = (a + 1 + (sg.swapsRemaining & 1)) % n;
+      if (b === a) b = (a + 1) % n;
+
+      const cupA = sg.cups[a];
+      const cupB = sg.cups[b];
+      cupA.startX = cupA.x;
+      cupA.startY = cupA.y;
+      cupB.startX = cupB.x;
+      cupB.startY = cupB.y;
+
+      // Fintas nos modos triangle_feint / quantum_feint a cada 4ª troca
+      const isFeint = (sg.swapStyle === 'triangle_feint' || sg.swapStyle === 'quantum_feint') && (sg.swapsRemaining % 4 === 1);
+      sg.feintMidpoint = isFeint;
+      if (!isFeint) {
+        cupA.targetX = cupB.startX;
+        cupA.targetY = cupB.startY;
+        cupB.targetX = cupA.startX;
+        cupB.targetY = cupA.startY;
+        const tmpSlot = cupA.slot;
+        cupA.slot = cupB.slot;
+        cupB.slot = tmpSlot;
+      } else {
+        cupA.targetX = cupA.startX;
+        cupA.targetY = cupA.startY;
+        cupB.targetX = cupB.startX;
+        cupB.targetY = cupB.startY;
+      }
+      sg.swapPair = [cupA, cupB];
+      GameHUD.playSfx('sandSlide');
+      return true;
+    },
+
+    pickShellCup(cupIndex) {
+      const sg = this.shellGame;
+      if (!sg || this.phase !== 'shell_game_pick') return false;
+      if (cupIndex < 0 || cupIndex >= sg.cups.length) return false;
+      sg.pickedCup = cupIndex;
+      sg.lastSuccess = (cupIndex === sg.winningCup);
+      sg.roundResult = sg.lastSuccess ? 'hit' : 'miss';
+      sg.revealTimer = 0;
+      this.phase = 'shell_game_reveal';
+      this.phaseTime = 0;
+      if (sg.lastSuccess) {
+        GameHUD.playSfx('shellHit');
+        this.spawnShatter(sg.cups[cupIndex].x, sg.cups[cupIndex].y - 8, 'opal', 12);
+      } else {
+        GameHUD.playSfx('shellMiss');
+      }
+      return true;
+    },
+
+    updateShellGame(dt) {
+      const sg = this.shellGame;
+      if (!sg) return;
+
+      if (this.phase === 'shell_game_show') {
+        // Desce suavemente as cúpulas de arenito sobre a Opala de Fogo Primordial
+        const p = clamp((this.phaseTime - 0.55) / 0.5, 0, 1);
+        for (const c of sg.cups) {
+          c.liftY = R(18 * (1 - easeInOut(p)));
+        }
+        if (this.phaseTime >= 1.2) {
+          for (const c of sg.cups) c.liftY = 0;
+          GameHUD.playSfx('cupStop');
+          this.phase = 'shell_game_shuffle';
+          this.phaseTime = 0;
+          this.beginNextShellSwap();
+        }
+      } else if (this.phase === 'shell_game_shuffle') {
+        // Modo Calmo reduz a velocidade de embaralhamento em 40% (fator 0.6) sem penalidade
+        const speedMult = sg.calmMode ? 0.6 : 1.0;
+        sg.swapTimer += dt * speedMult;
+        const u = clamp(sg.swapTimer / sg.swapDuration, 0, 1);
+        if (sg.swapPair) {
+          const [cA, cB] = sg.swapPair;
+          const e = easeInOut(u);
+          const arcH = sg.swapStyle === 'linear' ? 6 : (sg.swapStyle === 'zigzag_spin' || sg.swapStyle === 'quantum_feint' ? 14 : 10);
+          const arc = Math.sin(u * Math.PI) * arcH;
+          if (sg.feintMidpoint) {
+            const midX = (cA.startX + cB.startX) * 0.5;
+            const f = Math.sin(u * Math.PI);
+            cA.x = R(cA.startX + (midX - cA.startX) * f * 0.75);
+            cB.x = R(cB.startX + (midX - cB.startX) * f * 0.75);
+          } else {
+            cA.x = R(cA.startX + (cA.targetX - cA.startX) * e);
+            cB.x = R(cB.startX + (cB.targetX - cB.startX) * e);
+          }
+          cA.y = R(cA.startY - arc);
+          cB.y = R(cB.startY + arc * 0.75);
+        }
+        if (u >= 1) {
+          if (sg.swapPair) {
+            const [cA, cB] = sg.swapPair;
+            cA.x = cA.targetX;
+            cA.y = cA.targetY;
+            cB.x = cB.targetX;
+            cB.y = cB.targetY;
+          }
+          this.beginNextShellSwap();
+        }
+      } else if (this.phase === 'shell_game_reveal') {
+        sg.revealTimer = (sg.revealTimer || 0) + dt;
+        const revT = Math.max(this.phaseTime, sg.revealTimer);
+        const p = easeInOut(clamp(revT / 0.35, 0, 1));
+        for (let i = 0; i < sg.cups.length; i++) {
+          if (i === sg.pickedCup || (!sg.lastSuccess && i === sg.winningCup && revT > 0.35)) {
+            sg.cups[i].liftY = R(18 * p);
+          }
+        }
+        if (revT >= 1.15) {
+          if (sg.lastSuccess) {
+            if (sg.roundIndex + 1 < sg.rounds.length) {
+              this.setupShellRound(sg.roundIndex + 1);
+              this.phase = 'shell_game_show';
+              this.phaseTime = 0;
+            } else {
+              // Vitória na 6ª rodada! A Opala de Fogo Primordial levita ao centro e irradia a onda solar!
+              DialogueBox.sockets.caatinga = true;
+              this.waveOrigin = { x: 160, y: 86 };
+              this.waveActive = true;
+              this.waveRadius = 2;
+              this.phase = 'shell_game_victory';
+              this.phaseTime = 0;
+              GameHUD.playSfx('reward');
+              this.spawnShatter(160, 84, 'opal', 20);
+            }
+          } else {
+            // Erro sem penalidade: reinicia suavemente a rodada atual!
+            this.setupShellRound(sg.roundIndex);
+            this.phase = 'shell_game_show';
+            this.phaseTime = 0;
+          }
+        }
+      } else if (this.phase === 'shell_game_victory') {
+        if (this.phaseTime >= 2.2) {
+          this.shellGame = null;
+          this.startMusicalShow();
+        }
+      }
+    },
+
+    drawShellGame(ctx, tq) {
+      const sg = this.shellGame;
+      if (!sg) return;
+      const f12 = Math.floor(tq * SPRITE_FPS);
+      const rDef = sg.rounds[sg.roundIndex] || sg.rounds[0];
+
+      if (this.phase === 'shell_game_victory') {
+        // A Opala de Fogo Primordial levita ao centro irradiando onda solar, mandacarus em flor de rubi e água cristalina brotando!
+        const gy = R(82 + Math.sin(tq * 4) * 3);
+        drawRing(ctx, 160, gy, 16 + (f12 & 1) * 3, '#FBBF24');
+        drawRing(ctx, 160, gy, 24 + (f12 & 1) * 4, '#FEF3C7');
+        const spr = GEM_SPRITES.opal_pure;
+        ctx.drawImage(spr, RH(160 - spr.width * 0.25), RH(gy - spr.height * 0.25), spr.width * 0.5, spr.height * 0.5);
+        drawStar(ctx, 160, gy - 14, 4, '#ffffff', '#FBBF24');
+
+        // Mandacarus florescendo com flores de rubi e filetes de água cristalina brotando do solo rochoso
+        for (const mx of [84, 122, 198, 236]) {
+          ctx.fillStyle = '#3e7338';
+          ctx.fillRect(mx - 2, 118, 5, 22);
+          ctx.fillRect(mx - 6, 124, 4, 8);
+          ctx.fillRect(mx + 3, 122, 4, 8);
+          drawStar(ctx, mx, 116, 3, '#fff2f5', '#e11d48');
+          ctx.fillStyle = '#6cd9e6';
+          ctx.fillRect(mx - 8, 138, 16, 2);
+        }
+        drawParchmentBox(ctx, 48, 26, 224, 20);
+        drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial despertou a Caatinga!', 160, 32, '#8c2d1f', null, 212, 9);
+        return;
+      }
+
+      // Cabeçalho da Rodada + Botão Modo Calmo (Acessibilidade sem penalização)
+      drawParchmentBox(ctx, 110, 23, 148, 15);
+      drawPixelTextCentered(
+        ctx,
+        `Desafio das Areias - Rodada ${rDef.round}/6`,
+        184,
+        27,
+        '#2c221e',
+        null,
+        140,
+        8
+      );
+
+      const cb = this.shellCalmBtnRect;
+      ctx.fillStyle = '#2c221e';
+      ctx.fillRect(cb.x - 1, cb.y - 1, cb.w + 2, cb.h + 2);
+      ctx.fillStyle = sg.calmMode ? '#3e7338' : '#4a3830';
+      ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
+      ctx.fillStyle = '#FBBF24';
+      ctx.fillRect(cb.x, cb.y, cb.w, 1);
+      drawPixelTextCentered(
+        ctx,
+        sg.calmMode ? 'Modo Calmo: ON' : 'Modo Calmo: OFF',
+        cb.x + cb.w / 2,
+        cb.y + 3,
+        '#FEF3C7',
+        '#1f1410',
+        cb.w - 4,
+        8
+      );
+
+      // Tapete de areia dourada do altar
+      ctx.fillStyle = '#D97706';
+      ctx.fillRect(54, 112, 212, 6);
+      ctx.fillStyle = '#FEF3C7';
+      ctx.fillRect(58, 112, 204, 1);
+
+      // Desenha a Opala de Fogo Primordial sob a cúpula vencedora quando o copo está erguido
+      const winCup = sg.cups[sg.winningCup];
+      if (winCup && winCup.liftY > 2) {
+        const spr = GEM_SPRITES.opal_pure;
+        const gw = spr.width * 0.5, gh = spr.height * 0.5;
+        ctx.drawImage(spr, RH(winCup.x - gw / 2), RH(104 - gh / 2), gw, gh);
+        drawStar(ctx, R(winCup.x), 92, 3, '#ffffff', '#FBBF24');
+      }
+
+      // Desenha as cúpulas de arenito e quartzo dourado
+      for (let i = 0; i < sg.cups.length; i++) {
+        const c = sg.cups[i];
+        const cx = R(c.x), cy = R(c.y - (c.liftY || 0));
+
+        // Rastro luminoso sutil na base do copo correto quando o Modo Calmo está ativo (Seção 6.4)
+        if (sg.calmMode && i === sg.winningCup) {
+          ctx.fillStyle = '#FBBF24';
+          ctx.fillRect(cx - 8, R(c.y + 9), 16, 2);
+          P1(ctx, cx, R(c.y + 8), '#ffffff');
+        }
+
+        // Sombra na areia
+        ctx.fillStyle = '#4a2c18';
+        ctx.fillRect(cx - 11, R(c.y + 7), 22, 3);
+
+        // Corpo da cúpula de arenito esculpido
+        ctx.fillStyle = '#7c2d12';
+        ctx.fillRect(cx - 11, cy - 8, 22, 16);
+        ctx.fillStyle = '#C2410C';
+        ctx.fillRect(cx - 10, cy - 7, 20, 14);
+        ctx.fillStyle = '#D97706';
+        ctx.fillRect(cx - 8, cy - 10, 16, 16);
+        ctx.fillStyle = '#FBBF24';
+        ctx.fillRect(cx - 10, cy - 2, 20, 2);
+        ctx.fillRect(cx - 4, cy - 12, 8, 2);
+        ctx.fillStyle = '#FEF3C7';
+        ctx.fillRect(cx - 6, cy - 9, 3, 6);
+
+        // Nuvem inofensiva de poeira caso o jogador tenha aberto um copo vazio
+        if (this.phase === 'shell_game_reveal' && !sg.lastSuccess && i === sg.pickedCup) {
+          ctx.fillStyle = '#FEF3C7';
+          ctx.fillRect(cx - 6, R(c.y - 2), 12, 5);
+          ctx.fillStyle = '#D97706';
+          ctx.fillRect(cx - 4, R(c.y - 4), 8, 3);
+        }
+      }
+
+      if (this.phase === 'shell_game_pick') {
+        drawParchmentBox(ctx, 56, 124, 208, 16);
+        drawPixelTextCentered(ctx, 'Toque na cúpula onde está a Opala de Fogo!', 160, 128, '#2c221e', null, 198, 9);
+      }
+    },
+
+    // ==========================================================================
+    // MINIGAME DA FASE 5 DO RIO: SINFONIA DAS ÁGUAS (SIMON-SAYS EM 5 RODADAS)
+    // ==========================================================================
+    startRiverMelodyGame() {
+      const assistEl = typeof document !== 'undefined' ? document.getElementById('assistToggle') : null;
+      const calmDefault = Boolean(assistEl?.checked || global.CrystalApp?.state?.settings?.assist);
+      this.riverMelody = {
+        roundIndex: 0,
+        calmMode: calmDefault,
+        crystals: [
+          { id: 'ri_bell_0', index: 0, type: 'aqua',    x: 76,  y: 110, baseY: 110, liftY: 0, glowing: false, shakeTimer: 0 },
+          { id: 'ri_bell_1', index: 1, type: 'emerald', x: 118, y: 110, baseY: 110, liftY: 0, glowing: false, shakeTimer: 0 },
+          { id: 'ri_bell_2', index: 2, type: 'citrine', x: 160, y: 110, baseY: 110, liftY: 0, glowing: false, shakeTimer: 0 },
+          { id: 'ri_bell_3', index: 3, type: 'opal',    x: 202, y: 110, baseY: 110, liftY: 0, glowing: false, shakeTimer: 0 },
+          { id: 'ri_bell_4', index: 4, type: 'rose',    x: 244, y: 110, baseY: 110, liftY: 0, glowing: false, shakeTimer: 0 }
+        ],
+        masterSequence: [0, 2, 1, 3, 4],
+        demoIndex: 0,
+        demoTimer: 0.4,
+        playerIndex: 0,
+        phase: 'demo',
+        phaseTimer: 0
+      };
+      this.pieces = this.riverMelody.crystals.map((c) => ({
+        id: c.id,
+        type: c.type,
+        value: 1,
+        shadow: false,
+        x: c.x,
+        y: c.baseY
+      }));
+      this.pureEquation = null;
+      this.shadowEquation = null;
+      this.fractionPlatform = null;
+      this.setupRiverMelodyRound(0);
+
+      const cards = StandardTutorialCards.RIVER_MELODY_SIMON;
+      if (cards && cards.length) {
+        this.phase = 'tutorial';
+        TutorialModal.open(cards, () => {
+          this.phase = 'river_melody_game';
+          if (this.riverMelody) {
+            this.riverMelody.phase = 'demo';
+            this.riverMelody.demoIndex = 0;
+            this.riverMelody.demoTimer = 0.4;
+          }
+        }, true);
+      } else {
+        this.phase = 'river_melody_game';
+        this.riverMelody.phase = 'demo';
+        this.riverMelody.demoIndex = 0;
+        this.riverMelody.demoTimer = 0.4;
+      }
+    },
+
+    setupRiverMelodyRound(roundIdx) {
+      const rm = this.riverMelody;
+      if (!rm) return;
+      rm.roundIndex = clamp(roundIdx, 0, 4);
+      rm.demoIndex = 0;
+      rm.demoTimer = 0.5;
+      rm.playerIndex = 0;
+      rm.phase = 'demo';
+      for (const c of rm.crystals) {
+        c.liftY = 0;
+        c.floating = false;
+        c.orderStep = null;
+        c.glowing = false;
+        c.shakeTimer = 0;
+      }
+    },
+
+    clickRiverMelodyCrystal(gemIdx) {
+      const rm = this.riverMelody;
+      if (!rm || this.phase !== 'river_melody_game' || rm.phase !== 'player_input') return false;
+      const targetSeq = rm.masterSequence.slice(0, rm.roundIndex + 1);
+      const expectedNote = targetSeq[rm.playerIndex];
+      const crystal = rm.crystals[gemIdx];
+      if (!crystal) return false;
+
+      if (gemIdx === expectedNote) {
+        crystal.liftY = 14;
+        crystal.glowing = true;
+        this.spawnShatter(crystal.x, crystal.baseY - 14, crystal.type, 4);
+        if (global.CrystalAudio?.playRiverNote) {
+          global.CrystalAudio.playRiverNote(gemIdx);
+        } else {
+          GameHUD.playSfx('click');
+        }
+
+        rm.playerIndex++;
+        if (rm.playerIndex >= targetSeq.length) {
+          rm.phase = 'success_pause';
+          rm.phaseTimer = 0;
+          this.spawnFloatingBanner('Acorde Perfeito!', 160, 50);
+          if (rm.roundIndex >= 4) {
+            setTimeout(() => {
+              this.finishRiverMelodyVictory();
+            }, 900);
+          } else {
+            setTimeout(() => {
+              if (this.riverMelody && this.phase === 'river_melody_game') {
+                this.setupRiverMelodyRound(rm.roundIndex + 1);
+              }
+            }, 1000);
+          }
+        }
+        return true;
+      } else {
+        crystal.shakeTimer = 0.6;
+        if (global.CrystalAudio?.errorFairy) {
+          global.CrystalAudio.errorFairy();
+        } else {
+          GameHUD.playSfx('error');
+        }
+
+        rm.phase = 'error_pause';
+        rm.phaseTimer = 0;
+
+        DialogueBox.open([
+          {
+            speaker: 'Irecê',
+            portrait: 'portrait_irece',
+            text: 'Que pena... você errou dessa vez... mas não se preocupe, pode tentar de novo!'
+          }
+        ], () => {
+          if (this.riverMelody && this.phase === 'river_melody_game') {
+            this.setupRiverMelodyRound(rm.roundIndex);
+          }
+        });
+        return false;
+      }
+    },
+
+    updateRiverMelodyGame(dt) {
+      const rm = this.riverMelody;
+      if (!rm || this.phase !== 'river_melody_game') return;
+
+      const targetSeq = rm.masterSequence.slice(0, rm.roundIndex + 1);
+      const noteDuration = rm.calmMode ? 0.9 : 0.6;
+
+      for (const c of rm.crystals) {
+        if (c.shakeTimer > 0) c.shakeTimer = Math.max(0, c.shakeTimer - dt);
+        if (rm.phase === 'demo') {
+          // Enquanto os cristais estiverem tocando na demonstração, eles ficam flutuando
+          // criando a ordem que deve ser tocada
+          if (c.floating) {
+            c.liftY = 14;
+          } else {
+            c.liftY = 0;
+          }
+        } else {
+          // Após a demonstração e durante a entrada do jogador, eles descem suavemente
+          if (c.liftY > 0) {
+            c.liftY = Math.max(0, c.liftY - dt * 24);
+            if (c.liftY <= 0) {
+              c.glowing = false;
+              c.orderStep = null;
+            }
+          }
+        }
+      }
+
+      if (rm.phase === 'demo') {
+        rm.demoTimer -= dt;
+        if (rm.demoTimer <= 0) {
+          if (rm.demoIndex < targetSeq.length) {
+            const noteIdx = targetSeq[rm.demoIndex];
+            const crystal = rm.crystals[noteIdx];
+            crystal.floating = true;
+            crystal.liftY = 14;
+            crystal.orderStep = rm.demoIndex + 1;
+            crystal.glowing = true;
+            this.spawnShatter(crystal.x, crystal.baseY - 14, crystal.type, 3);
+            if (global.CrystalAudio?.playRiverNote) {
+              global.CrystalAudio.playRiverNote(noteIdx);
+            } else {
+              GameHUD.playSfx('click');
+            }
+            rm.demoIndex++;
+            rm.demoTimer = noteDuration;
+          } else {
+            // Demonstração concluída: "e após isso eles descem"
+            for (const c of rm.crystals) {
+              c.floating = false;
+            }
+            rm.phase = 'player_input';
+            rm.playerIndex = 0;
+          }
+        }
+      }
+    },
+
+    drawRiverMelodyGame(ctx, tq) {
+      const rm = this.riverMelody;
+      if (!rm) return;
+
+      drawParchmentBox(ctx, 84, 23, 152, 15);
+      drawPixelTextCentered(
+        ctx,
+        `Sinfonia das Águas - Melodia ${rm.roundIndex + 1}/5`,
+        160,
+        27,
+        '#2c221e',
+        null,
+        144,
+        8
+      );
+
+      const cb = this.shellCalmBtnRect;
+      ctx.fillStyle = '#2c221e';
+      ctx.fillRect(cb.x - 1, cb.y - 1, cb.w + 2, cb.h + 2);
+      ctx.fillStyle = rm.calmMode ? '#1e40af' : '#234e52';
+      ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
+      ctx.fillStyle = '#57d1de';
+      ctx.fillRect(cb.x, cb.y, cb.w, 1);
+      drawPixelTextCentered(
+        ctx,
+        rm.calmMode ? 'Modo Calmo: ON' : 'Modo Calmo: OFF',
+        cb.x + cb.w / 2,
+        cb.y + 3,
+        '#d9fffb',
+        '#082f49',
+        cb.w - 4,
+        8
+      );
+
+      const targetSeq = rm.masterSequence.slice(0, rm.roundIndex + 1);
+      const expectedNote = rm.phase === 'player_input' ? targetSeq[rm.playerIndex] : -1;
+
+      for (let i = 0; i < rm.crystals.length; i++) {
+        const c = rm.crystals[i];
+        const shakeX = c.shakeTimer > 0 ? (Math.sin(tq * 40) * 4) : 0;
+        const cx = R(c.x + shakeX), cy = R(c.baseY - (c.liftY || 0));
+
+        const wave = Math.sin(tq * 3 + i) * 1.5;
+        ctx.fillStyle = 'rgba(87, 209, 222, 0.35)';
+        ctx.fillRect(cx - 10, c.baseY + 12 + wave, 20, 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.fillRect(cx - 5, c.baseY + 12 + wave, 10, 1);
+
+        if (rm.calmMode && i === expectedNote) {
+          ctx.fillStyle = '#57d1de';
+          ctx.fillRect(cx - 8, c.baseY + 15, 16, 2);
+          P1(ctx, cx, c.baseY + 14, '#ffffff');
+        }
+
+        if (c.glowing) {
+          drawRing(ctx, cx, cy, 18, '#ffffff');
+          drawRing(ctx, cx, cy, 22, '#57d1de');
+          drawStar(ctx, cx, cy - 14, 3, '#ffffff', '#57d1de');
+        }
+
+        const sprKey = `${c.type}_pure`;
+        const spr = GEM_SPRITES[sprKey] || GEM_SPRITES.aqua_pure;
+        const gw = spr.width * 0.5, gh = spr.height * 0.5;
+        ctx.drawImage(spr, RH(cx - gw / 2), RH(cy - gh / 2), gw, gh);
+
+        drawStar(ctx, cx, cy - 8, 2, '#ffffff', '#d9fffb');
+
+        // Distintivo da ordem enquanto flutuam na melodia: "criando a ordem que deve ser tocado"
+        if (c.orderStep && (c.floating || c.liftY > 4)) {
+          const bx = cx, by = cy - 16;
+          ctx.fillStyle = '#1e1b4b';
+          ctx.fillRect(bx - 5, by - 5, 10, 10);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(bx - 4, by - 4, 8, 8);
+          drawPixelChar(ctx, String(c.orderStep), bx - 2, by - 3, '#1e1b4b');
+        }
+      }
+
+      if (rm.phase === 'demo') {
+        drawParchmentBox(ctx, 72, 128, 176, 16);
+        drawPixelTextCentered(ctx, 'Ouça com atenção a melodia...', 160, 132, '#0f172a', null, 168, 8);
+      } else if (rm.phase === 'player_input') {
+        drawParchmentBox(ctx, 72, 128, 176, 16);
+        drawPixelTextCentered(ctx, `Toque os cristais na ordem! (${rm.playerIndex}/${rm.roundIndex + 1})`, 160, 132, '#0f172a', null, 168, 8);
+      }
+    },
+
+    finishRiverMelodyVictory() {
+      const spec = this.getSpec();
+      this.obstacleDecay = 1;
+      this.giantCrystalBroken = true;
+      this.waveActive = true;
+      this.waveRadius = 300;
+      this.phase = 'post_musical_dlg';
+      this.phaseTime = 0;
+      this.protag.x = 68;
+      this.protag.state = 'idle';
+      this.ordemCompanion.x = 96;
+      this.ordemCompanion.state = 'idle';
+      this.guardianActor.visible = true;
+      this.guardianActor.x = 152;
+      this.guardianActor.y = 142;
+      this.guardianActor.state = 'idle';
+      this.guardianActor.flipX = true;
+
+      DialogueBox.sockets.river = true;
+      const lines = (spec.postDialogues && spec.postDialogues[5]) || [];
+      DialogueBox.open(lines, () => {
+        this.phase = 'world_celebrate_complete';
+        this.phaseTime = 0;
+        this.protag.state = 'celebrate';
+        this.ordemCompanion.state = 'celebrate';
+        this.guardianActor.state = 'celebrate';
+      });
     },
 
     onStepCleared(originX, originY) {
@@ -2842,6 +4841,44 @@
           return;
         }
 
+        if (this.phase && this.phase.startsWith('shell_game_') && this.shellGame) {
+          const cb = this.shellCalmBtnRect;
+          if (cb && x >= cb.x && x <= cb.x + cb.w && y >= cb.y && y <= cb.y + cb.h) {
+            GameHUD.playSfx('click');
+            this.shellGame.calmMode = !this.shellGame.calmMode;
+            return;
+          }
+          if (this.phase === 'shell_game_pick') {
+            for (let i = 0; i < this.shellGame.cups.length; i++) {
+              const cup = this.shellGame.cups[i];
+              if (Math.hypot(x - cup.x, y - cup.y) <= 18) {
+                this.pickShellCup(i);
+                return;
+              }
+            }
+          }
+          return;
+        }
+
+        if (this.phase === 'river_melody_game' && this.riverMelody) {
+          const cb = this.shellCalmBtnRect;
+          if (cb && x >= cb.x && x <= cb.x + cb.w && y >= cb.y && y <= cb.y + cb.h) {
+            GameHUD.playSfx('click');
+            this.riverMelody.calmMode = !this.riverMelody.calmMode;
+            return;
+          }
+          if (this.riverMelody.phase === 'player_input') {
+            for (let i = 0; i < this.riverMelody.crystals.length; i++) {
+              const c = this.riverMelody.crystals[i];
+              if (Math.hypot(x - c.x, y - (c.baseY - (c.liftY || 0))) <= 18) {
+                this.clickRiverMelodyCrystal(i);
+                return;
+              }
+            }
+          }
+          return;
+        }
+
         if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
           const sb = this.skipMusicalBtnRect;
           if (x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
@@ -2866,6 +4903,11 @@
 
         if (this.phase !== 'gameplay') return;
 
+        if (this.fractionPlatform?.glowing && !this.fractionPlatform.broken && this.isInsideFractionPlatform(x, y)) {
+          this.triggerFractionDivide();
+          return;
+        }
+
         const eq = this.pureEquation;
         const clickedInEq = this.isInsideEquationAura(eq, x, y);
 
@@ -2877,6 +4919,7 @@
         for (let i = this.pieces.length - 1; i >= 0; i--) {
           const p = this.pieces[i];
           if (!p.shadow && !p.broken && p.value > 0 && Math.hypot(x - p.x, y - p.y) <= 16) {
+            if (p.inFraction) continue;
             if (p.inEquation && eq && !eq.expanded) continue;
             GameHUD.playSfx(p.type === 'opal' ? 'opalGrab' : (p.type === 'rose' ? 'roseGrab' : 'quartzGrab'));
             this.draggedPiece = p;
@@ -2915,10 +4958,20 @@
           const res = this.moveDraggedPieceWithCollision(this.draggedPiece, x, y);
           if (res && res.annulled) return;
 
+          if (this.draggedPiece && this.fractionPlatform && !this.fractionPlatform.broken) {
+            const fp = this.fractionPlatform;
+            fp.topHover = Math.abs(this.draggedPiece.x - fp.x) <= fp.w * 0.5 && Math.abs(this.draggedPiece.y - fp.topY) <= 16;
+            fp.bottomHover = Math.abs(this.draggedPiece.x - fp.x) <= fp.w * 0.5 && Math.abs(this.draggedPiece.y - fp.bottomY) <= 16;
+          }
           if (this.draggedPiece && this.pureEquation && !this.pureEquation.broken) {
             const overEq = this.isInsideEquationAura(this.pureEquation, this.draggedPiece.x, this.draggedPiece.y, true);
             this.pureEquation.dropHover = overEq && this.draggedPiece.inEquation !== 'pure';
             this.pureEquation.removeHover = !overEq && this.draggedPiece.inEquation === 'pure';
+          }
+          if (this.draggedPiece && this.electricShapes) {
+            for (const es of this.electricShapes) {
+              es.hover = !es.used && Math.hypot(this.draggedPiece.x - es.x, this.draggedPiece.y - es.y) <= 22;
+            }
           }
           return;
         }
@@ -2930,12 +4983,25 @@
             const rawEqX = this.equationPointer.origX + (x - this.equationPointer.startX);
             const rawEqY = this.equationPointer.origY + (y - this.equationPointer.startY);
             this.moveEquationWithCollision(rawEqX, rawEqY);
+            if (this.electricShapes) {
+              for (const es of this.electricShapes) {
+                es.hover = !es.used && Math.hypot(this.pureEquation.x - es.x, this.pureEquation.y - es.y) <= 24;
+              }
+            }
           }
         }
       };
 
       const onUp = () => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
+
+        if (this.fractionPlatform) {
+          this.fractionPlatform.topHover = false;
+          this.fractionPlatform.bottomHover = false;
+        }
+        if (this.electricShapes) {
+          for (const es of this.electricShapes) es.hover = false;
+        }
 
         if (this.equationPointer && this.pureEquation && !this.pureEquation.broken) {
           const wasTap = !this.equationPointer.moved;
@@ -2945,9 +5011,25 @@
             GameHUD.playSfx(this.pureEquation.expanded ? 'equationExpand' : 'equationCollapse');
             this.layoutEquationPieces(this.pureEquation, 'pure');
           } else {
-            GameHUD.playSfx('quartzDrop');
+            let enteredShape = false;
+            if (this.electricShapes) {
+              for (const es of this.electricShapes) {
+                if (!es.used && Math.hypot(this.pureEquation.x - es.x, this.pureEquation.y - es.y) <= 24) {
+                  const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+                  this.tryEnterElectricShapeNode(es, members);
+                  enteredShape = true;
+                  break;
+                }
+              }
+            }
+            if (!enteredShape) {
+              GameHUD.playSfx('quartzDrop');
+            }
           }
-          this.checkEquationSolved();
+          if (this.phase === 'gameplay') {
+            this.checkEquationSolved();
+            this.triggerDefeatIfImpossible();
+          }
           return;
         }
 
@@ -2964,10 +5046,49 @@
           this.clearTrembleStates();
           if (p.broken || p.value <= 0 || this.phase !== 'gameplay') return;
 
-          if (wasQuickTap && this.trySplitCrystalOnTap(p)) {
-            return;
+          if (wasQuickTap) {
+            if (this.tryDisassembleShapeOnTap(p)) {
+              if (this.selectedPiece === p) this.selectedPiece = null;
+              return;
+            }
+            if (this.trySplitCrystalOnTap(p)) {
+              if (this.selectedPiece === p) this.selectedPiece = null;
+              return;
+            }
+            if (this.selectedPiece === p) {
+              this.selectedPiece = null;
+              GameHUD.playSfx('click');
+              return;
+            }
+            if (this.selectedPiece && !this.selectedPiece.broken && !this.selectedPiece.shadow && this.selectedPiece.value > 0) {
+              const prev = this.selectedPiece;
+              this.selectedPiece = null;
+              if (prev.shape && p.shape && this.tryTessellateShapes(prev, p)) {
+                if (this.phase === 'gameplay') {
+                  this.checkEquationSolved();
+                  this.triggerDefeatIfImpossible();
+                }
+                return;
+              }
+              if (this.pureEquation && !this.pureEquation.broken) {
+                prev.inEquation = 'pure';
+                p.inEquation = 'pure';
+                GameHUD.playSfx('equationInsert');
+                this.layoutEquationPieces(this.pureEquation, 'pure');
+                if (this.phase === 'gameplay') {
+                  this.checkEquationSolved();
+                  this.triggerDefeatIfImpossible();
+                }
+                return;
+              }
+            } else {
+              this.selectedPiece = p;
+              GameHUD.playSfx('click');
+              return;
+            }
           }
 
+          this.selectedPiece = null;
           GameHUD.playSfx(p.type === 'opal' ? 'opalDrop' : (p.type === 'rose' ? 'roseDrop' : 'quartzDrop'));
           this.checkPieceDrop(p);
           if (this.phase === 'gameplay') {
@@ -3032,19 +5153,33 @@
       }
 
       this.updateOpalProximity(dt);
+      this.updateShapeTessellationPreview(dt);
 
       if (this.phase === 'cutscene_enter') {
         const p = clamp(this.phaseTime / 1.1, 0, 1);
+        if (this.worldKey === 'caatinga' && this.currentLevel === 1) {
+          this.camPanY = R((1 - easeInOut(p)) * -14);
+        } else {
+          this.camPanY = 0;
+        }
         this.protag.x = R(-12 + p * 42);
         this.ordemCompanion.x = R(-28 + p * 76);
         this.protag.state = p < 1 ? 'walk' : 'idle';
         this.ordemCompanion.state = p < 1 ? 'walk' : 'idle';
         if (this.phaseTime >= 1.2) {
+          this.camPanY = 0;
           this.protag.x = 30;
           this.ordemCompanion.x = 48;
           this.protag.state = 'idle';
           this.ordemCompanion.state = 'idle';
           this.openIntroIfAny();
+        }
+      } else if (this.phase === 'intro_dialogue') {
+        const curLine = DialogueBox.isOpen && DialogueBox.queue ? DialogueBox.queue[DialogueBox.idx] : null;
+        if (curLine && curLine.protagState) {
+          this.protag.state = curLine.protagState === 'shock' ? 'shock' : 'idle';
+        } else if (this.worldKey === 'caatinga' && this.currentLevel === 1) {
+          this.protag.state = 'idle';
         }
       } else if (this.phase === 'equation_magnetic' && this.magneticAnim) {
         const p = easeInOut(clamp(this.phaseTime / 0.75, 0, 1));
@@ -3083,8 +5218,18 @@
           this.spawnShatter(176, 36, 'pure', 16);
         }
         if (this.phaseTime >= 1.05) {
-          this.startMusicalShow();
+          if (this.worldKey === 'caatinga' && this.currentLevel === 5) {
+            this.startShellGame();
+          } else if (this.worldKey === 'river' && this.currentLevel === 5) {
+            this.startRiverMelodyGame();
+          } else {
+            this.startMusicalShow();
+          }
         }
+      } else if (this.phase && this.phase.startsWith('shell_game_')) {
+        this.updateShellGame(dt);
+      } else if (this.phase === 'river_melody_game') {
+        this.updateRiverMelodyGame(dt);
       } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
         if (this.musicAudio && !this.musicAudio.paused && this.musicAudio.currentTime > 0 && this.worldKey !== 'sanctuary') {
           this.musicalTime = this.musicAudio.currentTime;
@@ -3187,7 +5332,8 @@
         this.phase === 'musical_part2_bright' ||
         this.phase === 'post_musical_dlg' ||
         this.phase === 'world_celebrate_complete' ||
-        this.phase === 'walk_to_world_exit'
+        this.phase === 'walk_to_world_exit' ||
+        this.phase === 'shell_game_victory'
       ) {
         u32.set(lit);
         return;
@@ -3357,7 +5503,8 @@
       this.composeBackground(bgSet);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.putImageData(bgSet.image, 0, 0);
-      ctx.setTransform(2, 0, 0, 2, 0, 0);
+      const panOffset = R(this.camPanY || 0);
+      ctx.setTransform(2, 0, 0, 2, 0, panOffset * 2);
 
       const spec = this.getSpec();
 
@@ -3367,7 +5514,7 @@
         drawNextBiomePanorama(ctx, spec.nextBiome, 1.0, tq);
         ActorAnimator.drawStoneNeonAnimal(ctx, 'cyan', this.phase === 'world_celebrate_complete', 20, 142, tq, false);
         ActorAnimator.drawStoneNeonAnimal(ctx, 'magenta', this.phase === 'world_celebrate_complete', 298, 142, tq, true);
-      } else if (this.currentLevel === 4) {
+      } else if (this.isWorldFinale()) {
         drawGiantBiomeCrystal(ctx, this.worldKey, this.obstacleDecay, this.giantCrystalFlash, this.giantCrystalBroken, tq);
         if (!this.giantCrystalBroken) {
           ActorAnimator.drawMusicNotesLoop(ctx, 176, 46, tq, { count: 4, dirX: -24, dirY: 18, period: 2.0 });
@@ -3376,6 +5523,20 @@
         drawBiomeObstacle(ctx, this.worldKey, this.obstacleDecay, tq);
         if (this.phase === 'gameplay' || this.phase === 'intro_dialogue' || this.phase === 'next_step_pause') {
           ActorAnimator.drawMusicNotesLoop(ctx, 308, 92, tq, { count: 4, dirX: -28, dirY: -16, period: 2.2 });
+        }
+      }
+
+      // Efeitos cinemáticos de chegada à Caatinga (Fase 1): faíscas de eletricidade estática amarela (#FBBF24) + suor / apontar
+      if (this.worldKey === 'caatinga' && (this.phase === 'cutscene_enter' || this.phase === 'intro_dialogue')) {
+        const f18 = Math.floor(tq * 18);
+        for (let k = 0; k < 6; k++) {
+          const rx = 92 + k * 34 + ((f18 + k * 5) % 9) - 4;
+          const ry = 128 - (k % 3) * 14 - ((f18 + k * 3) % 7);
+          P1(ctx, rx, ry, '#fbbf24');
+          if (((f18 + k) & 1) === 0) {
+            P1(ctx, rx + 1, ry - 1, '#fef08a');
+            P1(ctx, rx - 1, ry + 1, '#f59e0b');
+          }
         }
       }
 
@@ -3389,6 +5550,23 @@
           flipX: Boolean(this.ordemCompanion.flipX)
         });
       }
+      if (this.worldKey === 'caatinga' && this.phase === 'intro_dialogue' && DialogueBox.isOpen && DialogueBox.queue) {
+        const curLine = DialogueBox.queue[DialogueBox.idx];
+        if (curLine && (curLine.protagState === 'panting' || curLine.protagState === 'shock')) {
+          const f12 = Math.floor(tq * 12);
+          const dropY = this.protag.y - 22 + (f12 % 5);
+          P1(ctx, this.protag.x - 7, dropY, '#7be1f6');
+          P1(ctx, this.protag.x + 8, dropY + 1, '#7be1f6');
+        }
+        if (curLine && curLine.pointRight) {
+          const f16 = Math.floor(tq * 16);
+          for (let px = this.ordemCompanion.x + 8; px <= 136; px += 6) {
+            const py = R(this.ordemCompanion.y - 14 + Math.sin((px + f16 * 3) * 0.1) * 2);
+            P1(ctx, px, py, '#fbbf24');
+            P1(ctx, px + 1, py, '#fef08a');
+          }
+        }
+      }
       if (this.guardianActor.visible) {
         ActorAnimator.drawActor(ctx, spec.guardianKey, this.guardianActor.state, this.guardianActor.x, this.guardianActor.y, tq, {
           flipX: Boolean(this.guardianActor.flipX)
@@ -3401,6 +5579,13 @@
         ActorAnimator.drawActor(ctx, 'jurema', st, 184, 142, tq, { flipX: true });
       }
 
+      if (this.phase && this.phase.startsWith('shell_game_')) {
+        this.drawShellGame(ctx, tq);
+      }
+      if (this.phase === 'river_melody_game') {
+        this.drawRiverMelodyGame(ctx, tq);
+      }
+
       if (
         this.phase === 'tutorial' ||
         this.phase === 'gameplay' ||
@@ -3411,6 +5596,15 @@
         this.phase === 'game_over'
       ) {
         drawEmeraldAltar(ctx, this.emeraldAltar, tq);
+        if (this.fractionPlatform) {
+          drawFractionPlatform(ctx, this.fractionPlatform, tq);
+        }
+
+        if (this.electricShapes && this.electricShapes.length > 0) {
+          for (const es of this.electricShapes) {
+            drawElectricShapeNode(ctx, es, tq);
+          }
+        }
 
         if (this.phase === 'equation_magnetic' && this.pureEquation && this.shadowEquation) {
           const f12 = Math.floor(tq * 12);
@@ -3424,15 +5618,46 @@
         drawEquationAura(ctx, this.pureEquation, tq, pureEqMembers);
         drawEquationAura(ctx, this.shadowEquation, tq, shadowEqMembers);
 
-        for (const p of this.pieces) {
-          drawCrystalPiece(ctx, p, tq);
+        if (this.tessellationPreview && this.tessellationPreview.target && this.tessellationPreview.dragged) {
+          const tp = this.tessellationPreview;
+          const tx = R(tp.target.x), ty = R(tp.target.y);
+          const dx = R(tp.dragged.x), dy = R(tp.dragged.y);
+          const f16 = Math.floor(tq * 16);
+          drawRing(ctx, tx, ty, 14 + (f16 & 1), '#FBBF24');
+          drawRing(ctx, tx, ty, 16 + (f16 & 1), '#FEF3C7');
+          for (let s = 1; s <= 7; s++) {
+            const u = s / 8;
+            const lx = R(tx + (dx - tx) * u);
+            const ly = R(ty + (dy - ty) * u);
+            P1(ctx, lx, ly, ((s + f16) & 1) ? '#FBBF24' : '#ffffff');
+          }
+          if (tp.label) {
+            const mx = clamp(R((tx + dx) * 0.5), 72, W - 72);
+            const my = clamp(Math.min(ty, dy) - 22, 26, H - 24);
+            const tw = typeof measurePixelText === 'function' ? measurePixelText(tp.label, 8) : tp.label.length * 5;
+            const bw = Math.max(76, tw + 10);
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(mx - R(bw / 2) - 1, my - 6, bw + 2, 11);
+            ctx.fillStyle = '#FBBF24';
+            ctx.fillRect(mx - R(bw / 2), my - 6, bw, 1);
+            ctx.fillRect(mx - R(bw / 2), my + 4, bw, 1);
+            drawPixelTextCentered(ctx, tp.label, mx, my - 4, '#FEF3C7', '#1e1b4b', bw - 4, 8);
+          }
         }
+
+        for (const p of this.pieces) {
+          drawCrystalPiece(ctx, p, tq, p === this.selectedPiece, p.id === this.tutorialHighlightId);
+        }
+
+        drawFloatingBanners(ctx, this.floatingBanners, tq);
       }
 
       this.drawShards(ctx);
 
+      ctx.setTransform(2, 0, 0, 2, 0, 0);
       const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
-      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical, spec.customHudTitle || null);
+      const hudCustomTitle = spec.customHudTitle || (this.phase && this.phase.startsWith('shell_game_') ? 'Caatinga - O Desafio das Areias' : (this.phase === 'river_melody_game' ? 'Rio - Melodia das Águas' : null));
+      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical, hudCustomTitle);
 
       if (inMusical) {
         const sb = this.skipMusicalBtnRect;
