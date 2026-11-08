@@ -42,7 +42,7 @@
     loadedCount: 0,
     totalCount: TOTAL_RESOURCES,
     smoothRatio: 0,
-    currentLabel: 'Iniciando ressonância cristalina...',
+    currentLabel: 'Harmonizando cristais...',
     cache: {
       images: {},
       audios: {}
@@ -201,8 +201,8 @@
     },
 
     onAllLoaded() {
-      // Confirmação com ressonância completa
-      this.currentLabel = `Todos os ${this.totalCount} recursos cristalinos harmonizados!`;
+      // Confirmação de harmonia completa
+      this.currentLabel = 'Cristais em harmonia';
       global.CrystalAssetsReady = true;
 
       // Mantém a prontidão visível
@@ -281,132 +281,227 @@
       ctx.fillStyle = '#05030f';
       ctx.fillRect(0, 0, W, H);
 
-      // Brilho ambiente radial pulsante na caverna
+      // Brilho ambiente místico em degradê suave de fundo
       const pulse = 0.5 + 0.5 * Math.sin(t * 2.2);
-      const radGlow = ctx.createRadialGradient(160, 70, 8, 160, 70, 140);
-      radGlow.addColorStop(0, `rgba(74, 185, 224, ${0.18 + pulse * 0.12})`);
-      radGlow.addColorStop(0.5, `rgba(132, 60, 180, ${0.10 + pulse * 0.08})`);
+      const radGlow = ctx.createRadialGradient(160, 64, 4, 160, 64, 120);
+      radGlow.addColorStop(0, `rgba(74, 185, 224, ${0.14 + pulse * 0.08})`);
+      radGlow.addColorStop(0.5, `rgba(132, 60, 180, ${0.08 + pulse * 0.06})`);
       radGlow.addColorStop(1, 'rgba(5, 3, 15, 0)');
       ctx.fillStyle = radGlow;
       ctx.fillRect(0, 0, W, H);
 
-      // Partículas ascendentes de energia mágica
+      // Partículas ascendentes de energia cristalina (1-bit pixels)
       for (const p of this.particles) {
         ctx.fillStyle = p.color;
         ctx.fillRect(R(p.x), R(p.y), p.size, p.size);
       }
 
-      // 1. TÍTULO DO JOGO NO ESTILO OWLBOY
+      // 1. TÍTULO OFICIAL LIMPO: - SINFONIA DOS CRISTAIS -
       this.drawTitle(ctx, t);
 
-      // 2. CRISTAL CENTRAL CARREGANDO POR FACETAS
-      this.drawChargingCrystal(ctx, 160, 72, t, this.smoothRatio);
+      // 2. CRISTAL CENTRAL EM HARMONIA (TRUE PIXEL ART PURO)
+      this.drawChargingCrystal(ctx, 160, 64, t, this.smoothRatio);
 
-      // 3. BARRA DE PROGRESSO ESCULPIDA EM PEDRA
-      this.drawProgressBar(ctx, 50, 126, 220, 12, this.smoothRatio, t);
+      // 3. BARRA DE PROGRESSO ESCULPIDA E PORCENTAGEM
+      this.drawProgressBar(ctx, 60, 122, 200, 8, this.smoothRatio, t);
 
-      // 4. MENSAGEM DE STATUS E CONTAGEM DE RECURSOS
+      // 4. MENSAGEM SUTIL DE HARMONIA / STATUS SIMPLIFICADO
       this.drawStatusInfo(ctx, t);
 
-      // 5. BOTÃO / PROMPT DE ENTRADA QUANDO 100% PRONTO
+      // 5. PROMPT DE ENTRADA RESPONSIVO E SEM OVERFLOW QUANDO PRONTO
       if (this.ready) {
         this.drawReadyPrompt(ctx, t);
       }
     },
 
     drawTitle(ctx, t) {
-      const title = 'CRYSTAL MATH MANIA';
-      const subtitle = '— SINFONIA DOS CRISTAIS —';
-      const bob = Math.round(Math.sin(t * 1.8) * 1.2);
+      const title = '— SINFONIA DOS CRISTAIS —';
+      const bob = Math.round(Math.sin(t * 1.6) * 1.0);
 
-      // Sombra dupla gravada
-      this.drawPixelText(ctx, title, 160, 18 + bob, '#100c1e', true, 9);
-      this.drawPixelText(ctx, title, 160, 17 + bob, '#f7e2b8', true, 9);
-
-      this.drawPixelText(ctx, subtitle, 160, 31 + bob, '#21182c', true, 8);
-      this.drawPixelText(ctx, subtitle, 160, 30 + bob, '#9ef0ff', true, 8);
+      // Sombra profunda gravada em obsidian e texto nítido em ciano luminoso
+      this.drawPixelText(ctx, title, 160, 18 + bob, '#0b0616', true, 9);
+      this.drawPixelText(ctx, title, 160, 17 + bob, '#9ef0ff', true, 9);
     },
 
     drawChargingCrystal(ctx, cx, cy, t, ratio) {
       cx = R(cx);
       cy = R(cy);
-      const bob = Math.round(Math.sin(t * 2.5) * 2);
+      const bob = Math.round(Math.sin(t * 2.2) * 2);
       cy += bob;
 
-      // Aura circundante que se expande com o ratio
-      const auraRad = R(14 + ratio * 20);
-      const auraAlpha = 0.2 + ratio * 0.45 + Math.sin(t * 4) * 0.1;
-      ctx.fillStyle = `rgba(158, 240, 255, ${Math.max(0, auraAlpha)})`;
-      ctx.beginPath();
-      ctx.arc(cx, cy, auraRad, 0, Math.PI * 2);
-      ctx.fill();
+      // 1. AURA DE RESSONÂNCIA EM PIXEL ART ESCALONADA (SEM ctx.arc)
+      const radMax = R(14 + ratio * 18);
+      const auraPulse = Math.sin(t * 3.2) * 2;
+      const rad = Math.max(10, R(radMax + auraPulse));
+      const auraAlpha = 0.08 + ratio * 0.16 + Math.sin(t * 2.8) * 0.03;
 
-      // Silhueta do Cristal Primordial lapidado (28x36 px)
-      // Facetas divididas em 4 quadrantes que acendem com o progresso:
-      // Quadrante 1 (Inferior Quartzo, ratio >= 0.1)
-      const q1Lit = ratio >= 0.2;
-      ctx.fillStyle = q1Lit ? '#6cd4ea' : '#1d273a';
+      for (let r = rad; r >= 8; r -= 5) {
+        const stepAlpha = Math.max(0, (auraAlpha * (1 - (r - 8) / (rad + 1)))).toFixed(3);
+        ctx.fillStyle = `rgba(110, 220, 255, ${stepAlpha})`;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r);
+        ctx.lineTo(cx + R(r * 1.3), cy);
+        ctx.lineTo(cx, cy + r);
+        ctx.lineTo(cx - R(r * 1.3), cy);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Definição das 5 Gemas dos Biomas em Harmonia
+      const GEMS = [
+        { name: 'Quartzo', main: '#4ec5db', hi: '#9ef0ff', dark: '#1a5b78', rgb: '78, 197, 219' },
+        { name: 'Esmeralda', main: '#52d670', hi: '#b2ffc8', dark: '#18602b', rgb: '82, 214, 112' },
+        { name: 'Citrino', main: '#ffc83b', hi: '#fff3a8', dark: '#8f5800', rgb: '255, 200, 59' },
+        { name: 'Ametista', main: '#c77dfa', hi: '#f0cbff', dark: '#6e2b9c', rgb: '199, 125, 250' },
+        { name: 'OpalaDeFogo', main: '#ff6b3b', hi: '#ffa378', dark: '#8f2500', rgb: '255, 107, 59' }
+      ];
+
+      // 2. SATÉLITES ORBITAIS ATRÁS DO CRISTAL (Camada Traseira: Y <= cy)
+      this.drawSatellites(ctx, cx, cy, t, ratio, GEMS, false);
+
+      // 3. FACETAS DO CRISTAL PRIMORDIAL CENTRAL LAPIDADO
+      const pSync = Math.sin(t * 3.5);
+      const isReady = this.ready || ratio >= 0.98;
+
+      // Faceta 1: Quartzo Ciano (Inferior Esquerda - ratio >= 0.15)
+      const qLit = ratio >= 0.15;
+      ctx.fillStyle = qLit ? (isReady && pSync > 0.2 ? '#6ee5ff' : '#4ec5db') : '#182836';
       ctx.beginPath();
-      ctx.moveTo(cx, cy + 18);
-      ctx.lineTo(cx - 10, cy + 2);
-      ctx.lineTo(cx, cy + 4);
+      ctx.moveTo(cx - 14, cy + 2);
+      ctx.lineTo(cx, cy + 22);
+      ctx.lineTo(cx, cy + 9);
+      ctx.lineTo(cx - 5, cy + 3);
       ctx.closePath();
       ctx.fill();
 
-      // Quadrante 2 (Inferior Esmeralda, ratio >= 0.45)
-      const q2Lit = ratio >= 0.45;
-      ctx.fillStyle = q2Lit ? '#75e27a' : '#182b26';
+      // Faceta 2: Esmeralda Verde (Inferior Direita - ratio >= 0.35)
+      const eLit = ratio >= 0.35;
+      ctx.fillStyle = eLit ? (isReady && pSync > 0.2 ? '#6eed85' : '#52d670') : '#16281e';
       ctx.beginPath();
-      ctx.moveTo(cx, cy + 18);
-      ctx.lineTo(cx + 10, cy + 2);
-      ctx.lineTo(cx, cy + 4);
+      ctx.moveTo(cx + 14, cy + 2);
+      ctx.lineTo(cx, cy + 22);
+      ctx.lineTo(cx, cy + 9);
+      ctx.lineTo(cx + 5, cy + 3);
       ctx.closePath();
       ctx.fill();
 
-      // Quadrante 3 (Médio Ametista, ratio >= 0.70)
-      const q3Lit = ratio >= 0.70;
-      ctx.fillStyle = q3Lit ? '#d675e2' : '#2d1838';
+      // Faceta 3: Citrino Dourado (Superior Direita - ratio >= 0.55)
+      const cLit = ratio >= 0.55;
+      ctx.fillStyle = cLit ? (isReady && pSync > 0.2 ? '#ffe066' : '#ffc83b') : '#362812';
       ctx.beginPath();
-      ctx.moveTo(cx - 10, cy + 2);
-      ctx.lineTo(cx - 7, cy - 14);
-      ctx.lineTo(cx, cy - 8);
-      ctx.lineTo(cx, cy + 4);
+      ctx.moveTo(cx + 7, cy - 12);
+      ctx.lineTo(cx + 14, cy + 2);
+      ctx.lineTo(cx + 5, cy + 3);
+      ctx.lineTo(cx, cy - 5);
       ctx.closePath();
       ctx.fill();
 
-      // Quadrante 4 (Médio Topázio / Opala, ratio >= 0.85)
-      const q4Lit = ratio >= 0.85;
-      ctx.fillStyle = q4Lit ? '#ffd05a' : '#3d2b14';
+      // Faceta 4: Ametista Lilás (Superior Esquerda - ratio >= 0.75)
+      const aLit = ratio >= 0.75;
+      ctx.fillStyle = aLit ? (isReady && pSync > 0.2 ? '#dca6ff' : '#c77dfa') : '#2e1838';
       ctx.beginPath();
-      ctx.moveTo(cx + 10, cy + 2);
-      ctx.lineTo(cx + 7, cy - 14);
-      ctx.lineTo(cx, cy - 8);
-      ctx.lineTo(cx, cy + 4);
+      ctx.moveTo(cx - 7, cy - 12);
+      ctx.lineTo(cx - 14, cy + 2);
+      ctx.lineTo(cx - 5, cy + 3);
+      ctx.lineTo(cx, cy - 5);
       ctx.closePath();
       ctx.fill();
 
-      // Ápice da Gema da Fada (ratio >= 0.98)
-      const apexLit = ratio >= 0.95;
-      ctx.fillStyle = apexLit ? '#ffffff' : '#453856';
+      // Faceta 5: Coração Opala de Fogo (Núcleo Central - ratio >= 0.88)
+      const oLit = ratio >= 0.88;
+      ctx.fillStyle = oLit ? (isReady && pSync > 0.2 ? '#ff8554' : '#ff6b3b') : '#3a180f';
       ctx.beginPath();
-      ctx.moveTo(cx - 7, cy - 14);
-      ctx.lineTo(cx, cy - 22);
-      ctx.lineTo(cx + 7, cy - 14);
-      ctx.lineTo(cx, cy - 8);
+      ctx.moveTo(cx, cy - 5);
+      ctx.lineTo(cx - 5, cy + 3);
+      ctx.lineTo(cx, cy + 9);
+      ctx.lineTo(cx + 5, cy + 3);
       ctx.closePath();
       ctx.fill();
 
-      // Contornos esculpidos do cristal
-      ctx.strokeStyle = '#100c1e';
+      // Faceta 6: Ápice Diamantino da Fada (ratio >= 0.95)
+      const dLit = ratio >= 0.95;
+      ctx.fillStyle = dLit ? '#ffffff' : '#453856';
+      ctx.beginPath();
+      ctx.moveTo(cx - 7, cy - 12);
+      ctx.lineTo(cx, cy - 23);
+      ctx.lineTo(cx + 7, cy - 12);
+      ctx.lineTo(cx, cy - 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Contornos esculpidos em True Pixel Art
+      ctx.strokeStyle = '#0a0614';
       ctx.lineWidth = 1;
+      ctx.beginPath();
+      // Silhueta externa
+      ctx.moveTo(cx, cy - 23);
+      ctx.lineTo(cx + 7, cy - 12);
+      ctx.lineTo(cx + 14, cy + 2);
+      ctx.lineTo(cx, cy + 22);
+      ctx.lineTo(cx - 14, cy + 2);
+      ctx.lineTo(cx - 7, cy - 12);
+      ctx.closePath();
+      // Nervuras internas
+      ctx.moveTo(cx, cy - 23); ctx.lineTo(cx, cy - 5);
+      ctx.moveTo(cx, cy - 5); ctx.lineTo(cx - 14, cy + 2);
+      ctx.moveTo(cx, cy - 5); ctx.lineTo(cx + 14, cy + 2);
+      ctx.moveTo(cx - 5, cy + 3); ctx.lineTo(cx, cy + 9);
+      ctx.moveTo(cx + 5, cy + 3); ctx.lineTo(cx, cy + 9);
+      ctx.moveTo(cx, cy + 9); ctx.lineTo(cx, cy + 22);
       ctx.stroke();
 
-      // Brilho estelar no topo do cristal se 100% carregado
-      if (ratio >= 0.98) {
-        const starSize = 2 + (Math.floor(t * 8) % 3);
+      // 4. SATÉLITES ORBITAIS À FRENTE DO CRISTAL (Camada Frontal: Y > cy)
+      this.drawSatellites(ctx, cx, cy, t, ratio, GEMS, true);
+
+      // 5. BRILHO ESTELAR 1-BIT NO ÁPICE QUANDO HARMONIZADO
+      if (ratio >= 0.95 || isReady) {
+        const star = 2 + (Math.floor(t * 8) % 3);
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(cx - starSize, cy - 22, starSize * 2 + 1, 1);
-        ctx.fillRect(cx, cy - 22 - starSize, 1, starSize * 2 + 1);
+        ctx.fillRect(cx - star, cy - 23, star * 2 + 1, 1);
+        ctx.fillRect(cx, cy - 23 - star, 1, star * 2 + 1);
+        ctx.fillStyle = '#9ef0ff';
+        ctx.fillRect(cx - 1, cy - 24, 3, 3);
+      }
+    },
+
+    drawSatellites(ctx, cx, cy, t, ratio, gems, inFront) {
+      const rx = 34;
+      const ry = 14;
+      const baseAngle = t * 1.5;
+
+      for (let i = 0; i < gems.length; i++) {
+        const angle = baseAngle + (i * Math.PI * 2) / gems.length;
+        const sinA = Math.sin(angle);
+        const isFront = sinA > 0;
+        if (isFront !== inFront) continue;
+
+        const sx = R(cx + Math.cos(angle) * rx);
+        const sy = R(cy + sinA * ry);
+        const gem = gems[i];
+        const lit = ratio >= (i + 1) * 0.18;
+
+        // Moldura em pixel art 1-bit
+        ctx.fillStyle = '#0a0614';
+        ctx.fillRect(sx - 2, sy - 1, 5, 3);
+        ctx.fillRect(sx - 1, sy - 2, 3, 5);
+
+        // Núcleo da gema satélite
+        ctx.fillStyle = lit ? gem.main : '#1d1728';
+        ctx.fillRect(sx - 1, sy - 1, 3, 3);
+        ctx.fillStyle = lit ? gem.hi : '#2f243d';
+        ctx.fillRect(sx, sy - 1, 1, 1);
+        ctx.fillRect(sx - 1, sy, 1, 1);
+
+        // Feixe sutil de ressonância harmônica com o cristal central
+        if (lit && ratio >= 0.75) {
+          const beamAlpha = (0.12 + 0.08 * Math.sin(t * 3.5 + i)).toFixed(3);
+          ctx.strokeStyle = `rgba(${gem.rgb}, ${beamAlpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(sx, sy);
+          ctx.stroke();
+        }
       }
     },
 
@@ -416,11 +511,17 @@
       w = R(w);
       h = R(h);
 
+      // Porcentagem limpa e centralizada ACIMA da barra (sem disputar espaço interno)
+      const pct = Math.floor(ratio * 100);
+      const pctText = `${pct}%`;
+      this.drawPixelText(ctx, pctText, x + w / 2, y - 11, '#0b0616', true, 8);
+      this.drawPixelText(ctx, pctText, x + w / 2, y - 12, '#9ef0ff', true, 8);
+
       // Moldura externa esculpida em rocha com bordas chanfradas
-      ctx.fillStyle = '#100b18';
+      ctx.fillStyle = '#0c0714';
       ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
 
-      ctx.fillStyle = '#2d2422';
+      ctx.fillStyle = '#261c30';
       ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
 
       // Detalhes dourados nos 4 cantos da barra
@@ -430,8 +531,8 @@
       ctx.fillRect(x - 2, y + h, 3, 2);
       ctx.fillRect(x + w - 1, y + h, 3, 2);
 
-      // Fundo vazio da barra
-      ctx.fillStyle = '#171221';
+      // Fundo escuro interno da barra
+      ctx.fillStyle = '#120d1c';
       ctx.fillRect(x, y, w, h);
 
       // Preenchimento com gradiente de energia cristalina
@@ -444,43 +545,48 @@
         ctx.fillStyle = barGrad;
         ctx.fillRect(x, y, fillW, h);
 
-        // Brilho interior pulsante
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.fillRect(x, y, fillW, 2);
+        // Brilho interior pulsante na borda superior
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fillRect(x, y, fillW, 1);
 
-        // Linha de energia brilhante correndo pela barra
-        const sweep = (Math.floor(t * 120) % (w + 24)) - 24;
+        // Varredura de pulso de luz cintilante
+        const sweep = (Math.floor(t * 110) % (w + 20)) - 20;
         if (sweep >= 0 && sweep < fillW) {
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(x + sweep, y, 4, h);
+          ctx.fillRect(x + sweep, y, 3, h);
         }
       }
-
-      // Porcentagem em texto nítido centralizada sobre a barra
-      const pct = Math.floor(ratio * 100);
-      const pctText = `${pct}%`;
-      this.drawPixelText(ctx, pctText, x + w / 2, y + 2, '#100c1e', true, 8);
-      this.drawPixelText(ctx, pctText, x + w / 2, y + 1, '#ffffff', true, 8);
     },
 
     drawStatusInfo(ctx, t) {
-      // Nome do recurso atual sendo carregado
-      const status = this.currentLabel;
-      this.drawPixelText(ctx, status, 160, 144, '#100c1e', true, 7);
-      this.drawPixelText(ctx, status, 160, 143, '#d8c7b8', true, 7);
+      // Mensagem harmônica sutil: sem contagens numéricas repetitivas ou poluição
+      if (this.ready) return; // Quando o botão de início aparece, o status dá lugar ao prompt
 
-      // Contador de recursos concluídos
-      const countText = `${this.loadedCount} / ${this.totalCount} recursos verificados`;
-      this.drawPixelText(ctx, countText, 160, 155, '#100c1e', true, 7);
-      this.drawPixelText(ctx, countText, 160, 154, '#7ec456', true, 7);
+      const status = 'Cristais em harmonia...';
+      const bob = Math.round(Math.sin(t * 2.5) * 0.8);
+      this.drawPixelText(ctx, status, 160, 137 + bob, '#0b0616', true, 7);
+      this.drawPixelText(ctx, status, 160, 136 + bob, '#c8dce8', true, 7);
     },
 
     drawReadyPrompt(ctx, t) {
       const pulse = 0.5 + 0.5 * Math.sin(t * 5);
-      const bx = 80, by = 163, bw = 160, bh = 14;
+      const prompt = 'TOQUE OU PRESSIONE [ENTER]';
 
-      // Caixa botão pulsante
-      ctx.fillStyle = pulse > 0.4 ? '#3e7338' : '#284f25';
+      // Cálculo dinâmico da largura da moldura para garantir ZERO overflow
+      let textW = 140;
+      if (global.TruePixelEngine && typeof global.TruePixelEngine.measurePixelText === 'function') {
+        textW = global.TruePixelEngine.measurePixelText(prompt);
+      } else if (ctx && typeof ctx.measureText === 'function') {
+        textW = ctx.measureText(prompt).width;
+      }
+
+      const bw = Math.max(180, Math.round(textW + 24));
+      const bx = Math.round(160 - bw / 2);
+      const by = 138;
+      const bh = 15;
+
+      // Caixa botão pulsante com moldura chanfrada
+      ctx.fillStyle = pulse > 0.4 ? '#254e20' : '#183415';
       ctx.fillRect(bx, by, bw, bh);
 
       ctx.fillStyle = '#f2cc6b';
@@ -489,9 +595,9 @@
       ctx.fillRect(bx, by, 1, bh);
       ctx.fillRect(bx + bw - 1, by, 1, bh);
 
-      const prompt = '▶ TOQUE OU PRESSIONE [ENTER] PARA INICIAR';
-      this.drawPixelText(ctx, prompt, 160, by + 3, '#100c1e', true, 8);
-      this.drawPixelText(ctx, prompt, 160, by + 2, pulse > 0.5 ? '#ffffff' : '#f2cc6b', true, 8);
+      // Texto perfeitamente contido e centralizado
+      this.drawPixelText(ctx, prompt, 160, by + 4, '#0a0614', true, 8);
+      this.drawPixelText(ctx, prompt, 160, by + 3, pulse > 0.45 ? '#ffffff' : '#f2cc6b', true, 8);
     },
 
     drawPixelText(ctx, text, x, y, col, center = false, size = 8) {
