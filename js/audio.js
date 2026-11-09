@@ -1,6 +1,6 @@
 /* Chiptune & Crystalline SFX: rich WebAudio synthesis for crystals, fire opal, equations, and UI. */
 (() => {
- let ctx, bus, noiseBuf, volume = 0.75, enabled = true, lastClink = -1, lastPulse = -1;
+ let ctx, bus, noiseBuf, volume = 0.5, enabled = true, lastClink = -1, lastPulse = -1;
 
  function ensure(silent = false) {
   if (!ctx) {
@@ -409,7 +409,9 @@
    if (bus && ctx) bus.gain.setTargetAtTime(enabled ? volume : 0, ctx.currentTime, 0.02);
   },
   setVolume(v) {
-   volume = Math.max(0, Math.min(1, Number(v) || 0));
+   const num = Number(v);
+   volume = Math.max(0, Math.min(1, Number.isFinite(num) ? num : 0.5));
+   if (volume > 0) enabled = true;
    if (bus && ctx) bus.gain.setTargetAtTime(enabled ? volume : 0, ctx.currentTime, 0.02);
   },
   clink() {
@@ -466,6 +468,12 @@
   },
   get enabled() {
    return enabled;
+  },
+  getVolume() {
+   return volume;
+  },
+  isMuted() {
+   return !enabled || volume <= 0;
   }
  };
 
@@ -485,7 +493,7 @@
   menuTrack.setAttribute?.('playsinline', '');
   menuTrack.playsInline = true;
  }
- let menuVol = 0.65;
+ let menuVol = 0.5;
  if (menuTrack) menuTrack.volume = menuVol;
 
  let unlockActive = false;
@@ -525,6 +533,7 @@
  window.CrystalMenuAudio = {
   get track() { return menuTrack; },
   get playing() { return Boolean(menuTrack && !menuTrack.paused); },
+  getVolume() { return menuVol; },
   play() {
    if (typeof document !== 'undefined' && document.body?.dataset?.screen && document.body.dataset.screen !== 'home') {
     if (menuTrack) try { menuTrack.pause(); } catch (_) {}
@@ -547,8 +556,15 @@
    }
   },
   setVolume(v) {
-   menuVol = Math.max(0, Math.min(1, Number(v) || 0));
-   if (menuTrack) menuTrack.volume = menuVol;
+   const num = Number(v);
+   menuVol = Math.max(0, Math.min(1, Number.isFinite(num) ? num : 0.5));
+   if (menuTrack) {
+    menuTrack.muted = menuVol <= 0;
+    menuTrack.volume = menuVol;
+    if (menuVol > 0 && menuTrack.paused && typeof document !== 'undefined' && (!document.body?.dataset?.screen || document.body.dataset.screen === 'home')) {
+     menuTrack.play().catch(() => {});
+    }
+   }
   },
   autoStart() {
    if (!menuTrack) return;

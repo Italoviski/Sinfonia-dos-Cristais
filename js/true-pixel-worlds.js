@@ -1471,14 +1471,13 @@
           { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Usem o Altar de Esmeralda para despertar a força das sementes!' }
         ],
         4: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Olhe no alto da copa! Outro cristal gigante envolto por raízes!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A fumaça me prendeu aqui dentro! Harmonizem os cristais para libertar a mata!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Vamos juntos! Já sabemos combinar luz, Citrino, Esmeralda e Fogo!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'As raízes petrificadas estão cada vez mais densas por aqui!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Estamos quase no coração da mata! Vamos combinar luz, Citrino, Esmeralda e Fogo para abrir passagem!' }
         ],
         5: [
-          { speaker: 'Araci', portrait: 'portrait_araci', text: 'As cinzas e raízes sombrias invadiram o coração da floresta!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Use o corte cristalino para libertar a energia pura da terra!' },
-          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Corte apenas os cristais puros no ar. Evite os sombrios: 3 erros reiniciam a etapa!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Olhe no alto da copa! Um cristal gigante envolto por raízes prende a Guardiã da Floresta!' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A fumaça me prendeu aqui dentro! Cortem os cristais puros no ar para libertar a mata!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Deslize para fatiar os cristais puros! Cuidado com os sombrios: cada sombra cortada tira 2 segundos do tempo!' }
         ]
       },
       postDialogues: {
@@ -1489,10 +1488,10 @@
           { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Isso! Ao repartir o Citrino Solar, cada raio encontra seu lugar na mata!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O coração da Floresta está logo à frente! Vamos libertar sua Guardiã!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Continuem firmes! Mais uma barreira de raízes e chegaremos ao coração da Floresta!' }
         ],
         4: [
-          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Quase lá! O Altar da Floresta está logo à nossa frente!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O caminho se abriu! Agora vamos resgatar a Guardiã da Floresta na Fase 10!' }
         ],
         5: [
           { speaker: 'Araci', portrait: 'portrait_araci', text: 'Livre! Eu sou Araci, Guardiã da Floresta, e a Esmeralda voltou a pulsar!' },
@@ -1783,23 +1782,25 @@
         3: [
           {
             fractionPlatform: { x: 144, y: 110, resultType: 'aqua', resultValue: 1 },
+            pureEq: { x: 106, y: 66, expanded: false },
             shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
               { id: 'ri3_1_top', type: 'aqua', value: 3, shadow: false, inFraction: 'top' },
-              { id: 'ri3_1_a3', type: 'aqua', value: 3, shadow: false, x: 84, y: 94 },
-              { id: 'ri3_1_q2', type: 'white', value: 2, shadow: false, x: 84, y: 126 },
+              { id: 'ri3_1_a3', type: 'aqua', value: 3, shadow: false, x: 84, y: 98 },
+              { id: 'ri3_1_q2', type: 'white', value: 2, shadow: false, x: 84, y: 124 },
               { id: 'ri3_1_sa', type: 'aqua', value: 1, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
               { id: 'ri3_1_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
           },
           {
             fractionPlatform: { x: 144, y: 110, resultType: 'aqua', resultValue: 1 },
-            emeraldAltar: { x: 92, y: 110 },
+            emeraldAltar: { x: 92, y: 116 },
+            pureEq: { x: 106, y: 66, expanded: false },
             shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
               { id: 'ri3_2_top', type: 'aqua', value: 2, shadow: false, inFraction: 'top' },
-              { id: 'ri3_2_a2', type: 'aqua', value: 2, shadow: false, x: 80, y: 74 },
-              { id: 'ri3_2_q2', type: 'white', value: 2, shadow: false, x: 108, y: 74 },
+              { id: 'ri3_2_a2', type: 'aqua', value: 2, shadow: false, x: 76, y: 92 },
+              { id: 'ri3_2_q2', type: 'white', value: 2, shadow: false, x: 112, y: 92 },
               { id: 'ri3_2_sa', type: 'aqua', value: 2, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
               { id: 'ri3_2_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
@@ -1817,12 +1818,13 @@
           },
           {
             fractionPlatform: { x: 144, y: 112, resultType: 'aqua', resultValue: 1 },
+            pureEq: { x: 106, y: 66, expanded: false },
             shadowEq: { x: 220, y: 78, expanded: false },
             pieces: [
               { id: 'ri4_2_top', type: 'aqua', value: 4, shadow: false, inFraction: 'top' },
-              { id: 'ri4_2_a4', type: 'aqua', value: 4, shadow: false, x: 80, y: 84 },
-              { id: 'ri4_2_q3', type: 'white', value: 3, shadow: false, x: 108, y: 84 },
-              { id: 'ri4_2_o1', type: 'opal', value: 1, shadow: false, x: 94, y: 120 },
+              { id: 'ri4_2_a4', type: 'aqua', value: 4, shadow: false, x: 76, y: 94 },
+              { id: 'ri4_2_q3', type: 'white', value: 3, shadow: false, x: 112, y: 94 },
+              { id: 'ri4_2_o1', type: 'opal', value: 1, shadow: false, x: 94, y: 122 },
               { id: 'ri4_2_sa', type: 'aqua', value: 1, shadow: true, x: 210, y: 78, inEquation: 'shadow' },
               { id: 'ri4_2_sq', type: 'white', value: 2, shadow: true, x: 230, y: 78, inEquation: 'shadow' }
             ]
@@ -1909,7 +1911,8 @@
         1: 'CAATINGA_CIRCLE',
         2: 'CAATINGA_SQUARE',
         3: 'CAATINGA_TESSELLATION',
-        4: 'CAATINGA_NESTED'
+        4: 'CAATINGA_NESTED',
+        5: 'CAATINGA_SHELL_GAME'
       },
       musicalCaptions: [
         [0.5, 8.0, 'Sob o céu do sertão reluzia o calor, cada flor de mandacaru tinha seu valor...'],
@@ -2091,44 +2094,12 @@
             ]
           }
         ],
-        // FASE 5 (Nó 20): O Santuário da Caatinga & O Clímax da Opala de Fogo (+ Minigame Shell Game de 6 Rodadas)
+        // FASE 5 (Nó 20): Sala do Minigame Final da Caatinga — O Desafio das Areias (6 Rodadas das Cúpulas)
         5: [
           {
-            // Etapa 1 (Santuário Superior): Corte fracionário da Água-Marinha + Quadrado Elétrico + Círculo Elétrico
-            pureEq: { x: 102, y: 68, expanded: false },
-            electricShapes: [
-              { id: 'ca5_1_es', shape: 'square', x: 152, y: 78 },
-              { id: 'ca5_1_ec', shape: 'circle', x: 152, y: 116 }
-            ],
             pieces: [
-              { id: 'ca5_1_a', type: 'aqua', value: 4, shadow: false, x: 84, y: 106 },
-              { id: 'ca5_1_r', type: 'rose', value: 2, shadow: false, x: 114, y: 106 },
-              { id: 'ca5_1_ss', type: 'aqua', value: 4, shadow: true, shape: 'square', borderType: 'aqua', coreType: 'rose', x: 216, y: 78 },
-              { id: 'ca5_1_sc', type: 'aqua', value: 2, shadow: true, shape: 'circle', borderType: 'aqua', coreType: 'aqua', x: 216, y: 116 }
-            ]
-          },
-          {
-            // Etapa 2 (Câmara Selada): Polígonos mistos (Pentágono + Losango) para neutralizar defesas intermediárias
-            pieces: [
-              { id: 'ca5_2_trap', type: 'citrine', value: 5, shadow: false, shape: 'trapezoid', borderType: 'citrine', coreType: 'opal', x: 86, y: 76 },
-              { id: 'ca5_2_tri', type: 'white', value: 3, shadow: false, shape: 'triangle', borderType: 'white', coreType: 'white', x: 122, y: 76 },
-              { id: 'ca5_2_t1', type: 'rose', value: 3, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'aqua', x: 86, y: 114 },
-              { id: 'ca5_2_t2', type: 'rose', value: 3, shadow: false, shape: 'triangle', borderType: 'rose', coreType: 'aqua', x: 122, y: 114 },
-              { id: 'ca5_2_sp', type: 'citrine', value: 8, shadow: true, shape: 'pentagon', borderType: 'citrine', coreType: 'white', upperType: 'white', lowerType: 'opal', triBorder: 'white', triCore: 'white', trapBorder: 'citrine', trapCore: 'opal', x: 216, y: 76 },
-              { id: 'ca5_2_sr', type: 'rose', value: 6, shadow: true, shape: 'rhombus', borderType: 'rose', coreType: 'aqua', x: 216, y: 114 }
-            ]
-          },
-          {
-            // Etapa 3 (O Núcleo do Altar): Encaixe monumental de três formas distintas (Quadrado, Pentágono e Hexágono) na Grande Equação
-            pureEq: { x: 112, y: 72, expanded: false },
-            shadowEq: { x: 208, y: 72, expanded: false },
-            pieces: [
-              { id: 'ca5_3_sq', type: 'white', value: 4, shadow: false, shape: 'square', borderType: 'white', coreType: 'rose', x: 78, y: 114 },
-              { id: 'ca5_3_pe', type: 'citrine', value: 7, shadow: false, shape: 'pentagon', borderType: 'citrine', coreType: 'aqua', upperType: 'aqua', lowerType: 'citrine', triBorder: 'aqua', triCore: 'white', trapBorder: 'citrine', trapCore: 'rose', x: 112, y: 114 },
-              { id: 'ca5_3_hx', type: 'opal', value: 12, shadow: false, shape: 'hexagon', borderType: 'opal', coreType: 'citrine', x: 146, y: 114 },
-              { id: 'ca5_3_ssq', type: 'white', value: 4, shadow: true, shape: 'square', borderType: 'white', coreType: 'rose', x: 190, y: 72, inEquation: 'shadow' },
-              { id: 'ca5_3_spe', type: 'citrine', value: 7, shadow: true, shape: 'pentagon', borderType: 'citrine', coreType: 'aqua', upperType: 'aqua', lowerType: 'citrine', triBorder: 'aqua', triCore: 'white', trapBorder: 'citrine', trapCore: 'rose', x: 208, y: 72, inEquation: 'shadow' },
-              { id: 'ca5_3_shx', type: 'opal', value: 12, shadow: true, shape: 'hexagon', borderType: 'opal', coreType: 'citrine', x: 226, y: 72, inEquation: 'shadow' }
+              { id: 'ca5_shell_opal_left', type: 'opal', value: 1, shadow: false, x: 116, y: 104 },
+              { id: 'ca5_shell_opal_right', type: 'opal', value: 1, shadow: false, x: 204, y: 104 }
             ]
           }
         ]
@@ -2288,6 +2259,7 @@
     completeBtnRect: { x: 108, y: 115, w: 104, h: 15 },
     skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
     gameOverBtnRect: { x: 96, y: 118, w: 128, h: 16 },
+    forestSlashBtnRect: { x: 234, y: 156, w: 78, h: 18 },
     _exitIrisStarted: false,
     _bound: false,
     WORLD_SPECS,
@@ -2297,7 +2269,7 @@
     },
 
     isWorldFinale() {
-      return this.worldKey === 'sanctuary' || this.currentLevel === ((this.worldKey === 'caatinga' || this.worldKey === 'river') ? 5 : 4);
+      return this.worldKey === 'sanctuary' || this.currentLevel === 5;
     },
 
     init() {
@@ -2517,14 +2489,25 @@
       this.shards = [];
       this.setupStep(1);
 
-      this.protag.x = -12;
-      this.protag.y = 142;
-      this.protag.state = 'walk';
-      this.ordemCompanion.visible = true;
-      this.ordemCompanion.x = -28;
-      this.ordemCompanion.y = 142;
-      this.ordemCompanion.state = 'walk';
-      this.ordemCompanion.flipX = false;
+      if (this.phase === 'cutscene_enter') {
+        this.protag.x = -12;
+        this.protag.y = 142;
+        this.protag.state = 'walk';
+        this.ordemCompanion.visible = true;
+        this.ordemCompanion.x = -28;
+        this.ordemCompanion.y = 142;
+        this.ordemCompanion.state = 'walk';
+        this.ordemCompanion.flipX = false;
+      } else {
+        this.protag.x = 30;
+        this.protag.y = 142;
+        this.protag.state = 'idle';
+        this.ordemCompanion.visible = true;
+        this.ordemCompanion.x = 48;
+        this.ordemCompanion.y = 142;
+        this.ordemCompanion.state = 'idle';
+        this.ordemCompanion.flipX = false;
+      }
       this.guardianActor.visible = false;
 
       IrisTransition.start('in', 44, 126, 0.65);
@@ -2705,6 +2688,9 @@
       if (this.worldKey === 'forest' && this.currentLevel === 5) {
         this.startForestNinjaGame();
       }
+      if (this.worldKey === 'caatinga' && this.currentLevel === 5) {
+        this.startShellGame();
+      }
 
       if (this.pureEquation) this.layoutEquationPieces(this.pureEquation, 'pure');
       if (this.shadowEquation) this.layoutEquationPieces(this.shadowEquation, 'shadow');
@@ -2728,6 +2714,18 @@
       const tutKey = spec.tutorialsByLevel && spec.tutorialsByLevel[this.currentLevel];
 
       const launchTutorialOrPlay = () => {
+        if (this.worldKey === 'forest' && this.currentLevel === 5) {
+          this.startForestNinjaGame();
+          return;
+        }
+        if (this.worldKey === 'river' && this.currentLevel === 5) {
+          this.startRiverMelodyGame();
+          return;
+        }
+        if (this.worldKey === 'caatinga' && this.currentLevel === 5) {
+          this.startShellGame();
+          return;
+        }
         this.setupStep(1);
         const cards = tutKey && StandardTutorialCards[tutKey];
         if (cards && cards.length) {
@@ -2745,7 +2743,7 @@
       if (lines && lines.length) {
         this.phase = 'intro_dialogue';
         this.phaseTime = 0;
-        this.protag.state = this.currentLevel === 4 ? 'shock' : 'idle';
+        this.protag.state = this.currentLevel === 5 ? 'shock' : 'idle';
         DialogueBox.open(lines, () => {
           this.protag.state = 'idle';
           launchTutorialOrPlay();
@@ -3010,7 +3008,10 @@
             ) {
               continue;
             }
-            const effMinD = (piece.shape && other.shape && this.getTessellationMatch(other, piece)) ? 10 : minD;
+            const canFormEq = !piece.shape && !other.shape && piece.type !== 'opal' && other.type !== 'opal' &&
+              !other.shadow && (piece.type !== other.type || other.inEquation === 'pure') &&
+              (this.pureEquation || this.shadowEquation || (this.electricShapes && this.electricShapes.length > 0));
+            const effMinD = ((piece.shape && other.shape && this.getTessellationMatch(other, piece)) || canFormEq) ? 10 : minD;
             const dx = nx - other.x;
             const dy = ny - other.y;
             const d = Math.hypot(dx, dy);
@@ -3046,7 +3047,10 @@
           if (other === piece || other.broken || other.value <= 0 || other.inFraction || this.isCompatibleShadowTarget(piece, other, nx, ny)) {
             continue;
           }
-          const effMinD = (piece.shape && other.shape && this.getTessellationMatch(other, piece)) ? 10 : minD;
+          const canFormEq = !piece.shape && !other.shape && piece.type !== 'opal' && other.type !== 'opal' &&
+            !other.shadow && (piece.type !== other.type || other.inEquation === 'pure') &&
+            (this.pureEquation || this.shadowEquation || (this.electricShapes && this.electricShapes.length > 0));
+          const effMinD = ((piece.shape && other.shape && this.getTessellationMatch(other, piece)) || canFormEq) ? 10 : minD;
           if (Math.hypot(nx - other.x, ny - other.y) < effMinD - 0.04) {
             valid = false;
             break;
@@ -3183,6 +3187,33 @@
       if (this.phase === 'gameplay') {
         this.resolveFreeCrystalCollisions();
       }
+    },
+
+    ensurePureEquation(x = 110, y = 76) {
+      if (!this.pureEquation || this.pureEquation.broken) {
+        this.pureEquation = {
+          x: clamp(R(x), this.STAGE_MIN_X + 18, this.STAGE_MAX_X - 18),
+          y: clamp(R(y), this.STAGE_MIN_Y + 8, this.STAGE_MAX_Y - 8),
+          expanded: false,
+          broken: false,
+          dropHover: false,
+          removeHover: false
+        };
+      }
+      return this.pureEquation;
+    },
+
+    breakPureEquation() {
+      if (!this.pureEquation || this.pureEquation.broken) return false;
+      const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+      members.forEach((m, idx) => {
+        m.inEquation = null;
+        m.x = clamp(this.pureEquation.x + (idx - (members.length - 1) * 0.5) * 24, this.STAGE_MIN_X, this.STAGE_MAX_X);
+        m.y = clamp(this.pureEquation.y, this.STAGE_MIN_Y, this.STAGE_MAX_Y);
+      });
+      GameHUD.playSfx('equationRemove');
+      this.resolveFreeCrystalCollisions();
+      return true;
     },
 
     updateOpalProximity(dt) {
@@ -3910,6 +3941,7 @@
       }
 
       // 3. Fusão entre cristais puros da mesma cor (até 6 bolinhas, fora de formas geométricas)
+      //    ou formação automática do agrupador/parênteses (pureEquation) ao unir cristais puros de cores diferentes!
       if (!dropped.shape && dropped.type !== 'opal') {
         for (const other of this.pieces) {
           if (
@@ -3917,12 +3949,30 @@
             !other.broken &&
             !other.shadow &&
             !other.shape &&
-            other.inEquation !== 'pure' &&
             other.value > 0 &&
             other.type !== 'opal' &&
-            Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 22
+            Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 24
           ) {
-            if (other.type !== dropped.type || other.value + dropped.value > 6) {
+            if (other.type !== dropped.type || other.inEquation === 'pure') {
+              if (this.pureEquation || this.shadowEquation || (this.electricShapes && this.electricShapes.length > 0)) {
+                const eq = this.ensurePureEquation((dropped.x + other.x) * 0.5, (dropped.y + other.y) * 0.5);
+                other.inEquation = 'pure';
+                dropped.inEquation = 'pure';
+                GameHUD.playSfx('equationInsert');
+                const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+                members.sort((a, b) => a.x - b.x);
+                const nonMembers = this.pieces.filter((p) => p.broken || p.shadow || p.value <= 0 || p.inEquation !== 'pure');
+                this.pieces = [...nonMembers, ...members];
+                this.layoutEquationPieces(eq, 'pure');
+                return;
+              }
+              dropped.rejectUntil = this.t + 0.35;
+              other.rejectUntil = this.t + 0.35;
+              GameHUD.playSfx('error');
+              this.resolveFreeCrystalCollisions();
+              return;
+            }
+            if (other.value + dropped.value > 6) {
               dropped.rejectUntil = this.t + 0.35;
               other.rejectUntil = this.t + 0.35;
               GameHUD.playSfx('error');
@@ -4069,7 +4119,10 @@
           { round: 6, cups: 5, duration: 8.0, swaps: 16, speedLabel: 'Rápida', style: 'quantum_feint' }
         ]
       };
-      this.pieces = [];
+      this.pieces = [
+        { id: 'ca5_shell_opal_left',  type: 'opal', value: 1, shadow: false, x: 42,  y: 104 },
+        { id: 'ca5_shell_opal_right', type: 'opal', value: 1, shadow: false, x: 278, y: 104 }
+      ];
       this.electricShapes = [];
       this.pureEquation = null;
       this.shadowEquation = null;
@@ -4082,7 +4135,7 @@
         TutorialModal.open(cards, () => {
           this.phase = 'shell_game_show';
           this.phaseTime = 0;
-        }, true);
+        }, false);
       } else {
         this.phase = 'shell_game_show';
         this.phaseTime = 0;
@@ -4105,6 +4158,7 @@
       sg.opalCupIdx = sg.winningCup;
       sg.pickedCup = -1;
       sg.roundResult = null;
+      sg.showTimer = 0;
       sg.swapPair = null;
       sg.swapsRemaining = rDef.swaps;
       sg.swapStyle = rDef.style;
@@ -4192,12 +4246,20 @@
       if (!sg) return;
 
       if (this.phase === 'shell_game_show') {
-        // Desce suavemente as cúpulas de arenito sobre a Opala de Fogo Primordial
-        const p = clamp((this.phaseTime - 0.55) / 0.5, 0, 1);
-        for (const c of sg.cups) {
-          c.liftY = R(18 * (1 - easeInOut(p)));
+        sg.showTimer = (sg.showTimer || 0) + dt;
+        const showT = Math.max(this.phaseTime, sg.showTimer);
+        // Pausa de 1 segundo revelando a Opala sob a cúpula antes de descer e iniciar o embaralhamento
+        if (showT < 1.0) {
+          for (const c of sg.cups) {
+            c.liftY = 18;
+          }
+        } else {
+          const p = clamp((showT - 1.0) / 0.45, 0, 1);
+          for (const c of sg.cups) {
+            c.liftY = R(18 * (1 - easeInOut(p)));
+          }
         }
-        if (this.phaseTime >= 1.2) {
+        if (showT >= 1.5) {
           for (const c of sg.cups) c.liftY = 0;
           GameHUD.playSfx('cupStop');
           this.phase = 'shell_game_shuffle';
@@ -4254,6 +4316,8 @@
             } else {
               // Vitória na 6ª rodada! A Opala de Fogo Primordial levita ao centro e irradia a onda solar!
               DialogueBox.sockets.caatinga = true;
+              this.giantCrystalBroken = true;
+              this.obstacleDecay = 1;
               this.waveOrigin = { x: 160, y: 86 };
               this.waveActive = true;
               this.waveRadius = 2;
@@ -4303,7 +4367,7 @@
           ctx.fillRect(mx - 8, 138, 16, 2);
         }
         drawParchmentBox(ctx, 48, 26, 224, 20);
-        drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial despertou a Caatinga!', 160, 32, '#8c2d1f', null, 212, 9);
+        drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial despertou a Caatinga!', 160, 32, '#ffea31', '#000000', 212, 9);
         return;
       }
 
@@ -4314,8 +4378,8 @@
         `Desafio das Areias - Rodada ${rDef.round}/6`,
         184,
         27,
-        '#2c221e',
-        null,
+        '#ffffff',
+        '#000000',
         140,
         8
       );
@@ -4391,9 +4455,12 @@
         }
       }
 
-      if (this.phase === 'shell_game_pick') {
+      if (this.phase === 'shell_game_show') {
         drawParchmentBox(ctx, 56, 124, 208, 16);
-        drawPixelTextCentered(ctx, 'Toque na cúpula onde está a Opala de Fogo!', 160, 128, '#2c221e', null, 198, 9);
+        drawPixelTextCentered(ctx, 'Memorize onde está a Opala de Fogo!', 160, 128, '#ffea31', '#000000', 198, 9);
+      } else if (this.phase === 'shell_game_pick') {
+        drawParchmentBox(ctx, 56, 124, 208, 16);
+        drawPixelTextCentered(ctx, 'Toque na cúpula onde está a Opala de Fogo!', 160, 128, '#ffea31', '#000000', 198, 9);
       }
     },
 
@@ -4415,7 +4482,7 @@
         ],
         masterSequence: [0, 2, 1, 3, 4],
         demoIndex: 0,
-        demoTimer: 0.4,
+        demoTimer: 1.0,
         playerIndex: 0,
         phase: 'demo',
         phaseTimer: 0
@@ -4442,14 +4509,14 @@
           if (this.riverMelody) {
             this.riverMelody.phase = 'demo';
             this.riverMelody.demoIndex = 0;
-            this.riverMelody.demoTimer = 0.4;
+            this.riverMelody.demoTimer = 1.0;
           }
-        }, true);
+        }, false);
       } else {
         this.phase = 'river_melody_game';
         this.riverMelody.phase = 'demo';
         this.riverMelody.demoIndex = 0;
-        this.riverMelody.demoTimer = 0.4;
+        this.riverMelody.demoTimer = 1.0;
       }
     },
 
@@ -4458,14 +4525,16 @@
       if (!rm) return;
       rm.roundIndex = clamp(roundIdx, 0, 4);
       rm.demoIndex = 0;
-      rm.demoTimer = 0.5;
+      rm.demoTimer = 1.0;
       rm.playerIndex = 0;
       rm.phase = 'demo';
-      for (const c of rm.crystals) {
+      for (let i = 0; i < rm.crystals.length; i++) {
+        const c = rm.crystals[i];
         c.liftY = 0;
         c.floating = false;
         c.orderStep = null;
-        c.glowing = false;
+        c.isReference = (i === rm.masterSequence[0]);
+        c.glowing = c.isReference;
         c.shakeTimer = 0;
       }
     },
@@ -4601,8 +4670,8 @@
         `Sinfonia das Águas - Melodia ${rm.roundIndex + 1}/5`,
         160,
         27,
-        '#2c221e',
-        null,
+        '#ffffff',
+        '#000000',
         144,
         8
       );
@@ -4670,16 +4739,23 @@
       }
 
       if (rm.phase === 'demo') {
-        drawParchmentBox(ctx, 72, 128, 176, 16);
-        drawPixelTextCentered(ctx, 'Ouça com atenção a melodia...', 160, 132, '#0f172a', null, 168, 8);
+        drawParchmentBox(ctx, 64, 128, 192, 16);
+        const demoLabel = (rm.demoIndex === 0 && rm.demoTimer > 0)
+          ? 'Observe o cristal de referência...'
+          : 'Ouça com atenção a melodia...';
+        drawPixelTextCentered(ctx, demoLabel, 160, 132, '#ffea31', '#000000', 184, 8);
       } else if (rm.phase === 'player_input') {
-        drawParchmentBox(ctx, 72, 128, 176, 16);
-        drawPixelTextCentered(ctx, `Toque os cristais na ordem! (${rm.playerIndex}/${rm.roundIndex + 1})`, 160, 132, '#0f172a', null, 168, 8);
+        drawParchmentBox(ctx, 64, 128, 192, 16);
+        drawPixelTextCentered(ctx, `Toque os cristais na ordem! (${rm.playerIndex}/${rm.roundIndex + 1})`, 160, 132, '#ffea31', '#000000', 184, 8);
       }
     },
 
     finishRiverMelodyVictory() {
       const spec = this.getSpec();
+      const syncInfo = spec.nodeSyncByLevel[this.currentLevel];
+      if (syncInfo) {
+        global.CrystalApp?.syncProgress?.(syncInfo.ids, syncInfo.next);
+      }
       this.obstacleDecay = 1;
       this.giantCrystalBroken = true;
       this.waveActive = true;
@@ -4954,6 +5030,7 @@
 
         fn.strikes++;
         fn.shakeTimer = 0.35;
+        fn.stageTimeRemaining = Math.max(0, fn.stageTimeRemaining - 2.0);
         this.spawnShatter(crystal.x, crystal.y, 'rock', 14);
         if (global.CrystalAudio?.shadowStrike) {
           global.CrystalAudio.shadowStrike();
@@ -4961,18 +5038,14 @@
           GameHUD.playSfx('error');
         }
 
-        if (fn.strikes < fn.maxStrikes) {
-          fn.floatingBanner = {
-            text: `CRISTAL SOMBRIO! (${fn.strikes}/3)`,
-            color: '#e74c3c',
-            x: 160,
-            y: 65,
-            timer: 1.6
-          };
-        } else {
-          // Atingiu 3 cortes em cristais sombrios: reinicia a etapa!
-          this.restartForestNinjaStage();
-        }
+        // Sem reset total da partida: apenas penaliza subtraindo 2 segundos do tempo restante!
+        fn.floatingBanner = {
+          text: 'CRISTAL SOMBRIO! -2s!',
+          color: '#ff4d4d',
+          x: 160,
+          y: 65,
+          timer: 1.6
+        };
         return false;
       }
 
@@ -5036,6 +5109,7 @@
 
       // Mecânica de combo caso corte 2, 3 ou 4 cristais de uma vez
       if (fn.strokePureCuts >= 2) {
+        fn.score += fn.strokePureCuts * 5;
         fn.maxCombo = Math.max(fn.maxCombo, fn.strokePureCuts);
         const comboTxt = `COMBO X${fn.strokePureCuts}!`;
         const avgX = fn.strokeCrystals.reduce((acc, c) => acc + c.x, 0) / fn.strokeCrystals.length;
@@ -5254,6 +5328,14 @@
       const fn = this.forestNinja;
       if (!fn || this.phase !== 'forest_ninja_game') return false;
 
+      if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch()) {
+        const vb = this.forestSlashBtnRect;
+        if (vb && x >= vb.x && x <= vb.x + vb.w && y >= vb.y && y <= vb.y + vb.h) {
+          this.handleForestNinjaKeyboardSlash();
+          return true;
+        }
+      }
+
       fn.isSlicing = true;
       fn.lastStrokeX = x;
       fn.lastStrokeY = y;
@@ -5280,7 +5362,11 @@
 
       const isPractice = this.phase === 'forest_ninja_vignette' && fn.vignetteCard === 2;
       if (!isPractice && this.phase !== 'forest_ninja_game') return;
-      if (!fn.isSlicing) return;
+      if (!fn.isSlicing) {
+        fn.isSlicing = true;
+        fn.lastStrokeX = x;
+        fn.lastStrokeY = y;
+      }
 
       const curTime = isPractice ? fn.vignettePracticeTime : (typeof performance !== 'undefined' ? performance.now() / 1000 : 0);
       const trail = isPractice ? fn.practiceTrail : fn.bladeTrail;
@@ -5350,6 +5436,10 @@
 
     finishForestNinjaVictory() {
       const spec = this.getSpec();
+      const syncInfo = spec.nodeSyncByLevel[this.currentLevel];
+      if (syncInfo) {
+        global.CrystalApp?.syncProgress?.(syncInfo.ids, syncInfo.next);
+      }
       this.obstacleDecay = 1;
       this.giantCrystalBroken = true;
       this.waveActive = true;
@@ -5465,30 +5555,29 @@
 
       ctx.restore();
 
-      // 4. Barra Superior do Desafio: Etapa / Tempo 30s / Sombras evitadas
-      const barBox = { x: 42, y: 22, w: 236, h: 16 };
+      // 4. Barra Superior do Desafio: Etapa / Tempo 30s / Pontuação visível da criança
+      const barBox = { x: 24, y: 22, w: 272, h: 16 };
       drawParchmentBox(ctx, barBox.x, barBox.y, barBox.w, barBox.h);
 
       // Etapa (1 a 4)
-      drawPixelText(ctx, `Etapa ${fn.currentStage}/4`, barBox.x + 8, barBox.y + 4, '#1f2937', null, 56, 8);
+      drawPixelText(ctx, `Etapa ${fn.currentStage}/4`, barBox.x + 8, barBox.y + 4, '#ffffff', '#000000', 64, 8);
 
       // Tempo de 30 segundos
       const secLeft = Math.max(0, Math.ceil(fn.stageTimeRemaining));
-      const timeCol = secLeft <= 5 ? '#e11d48' : '#166534';
-      drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 160, barBox.y + 4, timeCol, null, 64, 8);
+      const timeCol = secLeft <= 5 ? '#ff4d4d' : '#ffea31';
+      drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 154, barBox.y + 4, timeCol, '#000000', 76, 8);
 
       // Barra fina de progresso dos 30s
       const timeFrac = clamp(fn.stageTimeRemaining / fn.stageDuration, 0, 1);
-      ctx.fillStyle = '#14532d';
-      ctx.fillRect(132, barBox.y + 12, R(56 * timeFrac), 2);
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(126, barBox.y + 13, R(56 * timeFrac), 2);
 
-      // Indicador de Cristais Sombrios (até 3 cortes tolerados)
-      if (fn.currentStage === 1) {
-        drawPixelText(ctx, `Cortes: ${fn.pureCuts}`, barBox.x + barBox.w - 74, barBox.y + 4, '#1e293b', null, 66, 8, 'right');
-      } else {
-        const sTxt = `Sombras: ${fn.strikes}/3`;
-        const sCol = fn.strikes >= 2 ? '#b91c1c' : '#475569';
-        drawPixelText(ctx, sTxt, barBox.x + barBox.w - 74, barBox.y + 4, sCol, null, 66, 8, 'right');
+      // Exibição visível da pontuação da criança
+      drawPixelText(ctx, `Pontos: ${fn.score}`, barBox.x + barBox.w - 86, barBox.y + 4, '#92e8ff', '#000000', 78, 8, 'right');
+
+      // Botão virtual de corte em dispositivos touch/mobile
+      if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch() && typeof E.drawVirtualTouchButton === 'function') {
+        E.drawVirtualTouchButton(ctx, this.forestSlashBtnRect, '⎵ CORTAR', Boolean(fn.isSlicing));
       }
 
       // 5. Banner de COMBO (COMBO X2!, COMBO X3!, COMBO X4!)
@@ -5502,24 +5591,24 @@
         // Caixa temática de combo
         ctx.fillStyle = '#064e3b';
         ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-        ctx.fillStyle = '#ecfdf5';
+        ctx.fillStyle = '#065f46';
         ctx.fillRect(bx, by, bw, bh);
         ctx.fillStyle = '#10b981';
         ctx.fillRect(bx, by, bw, 1);
         ctx.fillRect(bx, by + bh - 1, bw, 1);
 
         // Texto do combo
-        drawPixelTextCentered(ctx, cb.text, bx + bw / 2, by + 4, '#047857', null, bw - 10, 10);
+        drawPixelTextCentered(ctx, cb.text, bx + bw / 2, by + 4, '#ffea31', '#000000', bw - 10, 10);
         drawStar(ctx, bx + 10, by + 9, 3, '#ffffff', '#fbbf24');
         drawStar(ctx, bx + bw - 10, by + 9, 3, '#ffffff', '#fbbf24');
         ctx.restore();
       }
 
-      // 6. Banner flutuante de avisos de etapa / reinício
+      // 6. Banner flutuante de avisos de etapa / penalidade (-2s)
       if (fn.floatingBanner) {
         const fb = fn.floatingBanner;
         drawParchmentBox(ctx, 40, fb.y, 240, 18);
-        drawPixelTextCentered(ctx, fb.text, 160, fb.y + 5, fb.color, null, 230, 9);
+        drawPixelTextCentered(ctx, fb.text, 160, fb.y + 5, fb.color || '#ffea31', '#000000', 230, 9);
       }
     },
 
@@ -5534,8 +5623,8 @@
 
       if (fn.vignetteCard === 1) {
         // CARD 1: VÍDEO EXPLICATIVO DA MECÂNICA
-        drawPixelText(ctx, 'Corte Cristalino', cx + 10, cy + 6, '#e2ffea', '#142918', 120, 9);
-        drawPixelText(ctx, '1/2', cx + 10, cy + 6, '#bbf7d0', '#142918', cw - 20, 9, 'right');
+        drawPixelText(ctx, 'Corte Cristalino', cx + 10, cy + 6, '#ffea31', '#000000', 120, 9);
+        drawPixelText(ctx, '1/2', cx + 10, cy + 6, '#ffffff', '#000000', cw - 20, 9, 'right');
 
         // Moldura do vídeo demonstrativo
         const prevBox = { x: cx + 12, y: cy + 22, w: cw - 24, h: 48 };
@@ -5550,7 +5639,7 @@
         // Tag "▶ VÍDEO DEMO"
         ctx.fillStyle = '#166534';
         ctx.fillRect(prevBox.x + 4, prevBox.y + 4, 62, 9);
-        drawPixelText(ctx, '▶ VÍDEO DEMO', prevBox.x + 6, prevBox.y + 5, '#f0fdf4', null, 60, 7);
+        drawPixelText(ctx, '▶ VÍDEO DEMO', prevBox.x + 6, prevBox.y + 5, '#ffffff', '#000000', 60, 7);
 
         // Animação contínua em loop demonstrando a mecânica de corte e combo
         const tLoop = (fn.vignettePracticeTime % 5.2) / 5.2;
@@ -5585,7 +5674,7 @@
           ctx.drawImage(sprQ, 17, 0, 17, 42, prevBox.x + 142 + sep, midY - 8 + sep * 0.4, 8.5, 21);
 
           drawParchmentBox(ctx, prevBox.x + 80, prevBox.y + 6, 80, 14);
-          drawPixelTextCentered(ctx, 'COMBO X2!', prevBox.x + 120, prevBox.y + 9, '#15803d', null, 70, 8);
+          drawPixelTextCentered(ctx, 'COMBO X2!', prevBox.x + 120, prevBox.y + 9, '#ffea31', '#000000', 70, 8);
         } else {
           // Cristal Sombrio sobe com aviso "NÃO CORTE A SOMBRA!"
           const u = (tLoop - 0.78) / 0.22;
@@ -5593,15 +5682,15 @@
           drawRing(ctx, prevBox.x + 120, arcY, 14, '#7c3aed');
           const sprS = GEM_SPRITES.shadow_bomb || GEM_SPRITES.white_shadow;
           ctx.drawImage(sprS, prevBox.x + 112, arcY - 10, 17, 21);
-          drawPixelTextCentered(ctx, 'NÃO CORTE A SOMBRA!', prevBox.x + 120, prevBox.y + 8, '#b91c1c', null, 140, 8);
+          drawPixelTextCentered(ctx, 'NÃO CORTE A SOMBRA! (-2s)', prevBox.x + 120, prevBox.y + 8, '#ff4d4d', '#000000', 148, 8);
         }
 
         // Pontos explicativos
         let ty = cy + 74;
-        ty += drawPixelText(ctx, '• Arraste na tela para fatiar cristais no ar.', cx + 14, ty, '#1f2937', null, cw - 28, 8) + 4;
-        ty += drawPixelText(ctx, '• Corte 2, 3 ou 4 de vez: COMBO X2, X3, X4!', cx + 14, ty, '#15803d', null, cw - 28, 8) + 4;
-        ty += drawPixelText(ctx, '• CUIDADO: 3 cortes em Sombras reiniciam a etapa.', cx + 14, ty, '#b91c1c', null, cw - 28, 8) + 4;
-        drawPixelText(ctx, '• Supere 4 etapas com mais sombras e ritmo!', cx + 14, ty, '#475569', null, cw - 28, 8);
+        ty += drawPixelText(ctx, '• Arraste o dedo ou mouse para fatiar cristais no ar.', cx + 14, ty, '#ffea31', '#000000', cw - 28, 8) + 4;
+        ty += drawPixelText(ctx, '• Corte 2, 3 ou 4 de vez: COMBO X2, X3, X4!', cx + 14, ty, '#ffea31', '#000000', cw - 28, 8) + 4;
+        ty += drawPixelText(ctx, '• Cortar uma Sombra desconta apenas 2 segundos!', cx + 14, ty, '#ffea31', '#000000', cw - 28, 8) + 4;
+        drawPixelText(ctx, '• Acumule pontos e supere as 4 etapas!', cx + 14, ty, '#ffea31', '#000000', cw - 28, 8);
 
         // Botão "Praticar Corte >"
         const b = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
@@ -5612,13 +5701,13 @@
         ctx.fillStyle = '#86efac';
         ctx.fillRect(b.x, b.y, b.w, 1);
         ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-        drawPixelTextCentered(ctx, 'Praticar Corte >', b.x + b.w / 2, b.y + 3, '#ffffff', '#142918', b.w - 4, 8);
+        drawPixelTextCentered(ctx, 'Praticar Corte >', b.x + b.w / 2, b.y + 3, '#ffffff', '#000000', b.w - 4, 8);
       } else {
         // CARD 2: OPORTUNIDADE DE TESTAR / TREINO LIVRE
-        drawPixelText(ctx, 'Treino Livre', cx + 10, cy + 6, '#e2ffea', '#142918', 120, 9);
-        drawPixelText(ctx, '2/2', cx + 10, cy + 6, '#bbf7d0', '#142918', cw - 20, 9, 'right');
+        drawPixelText(ctx, 'Treino Livre', cx + 10, cy + 6, '#ffea31', '#000000', 120, 9);
+        drawPixelText(ctx, '2/2', cx + 10, cy + 6, '#ffffff', '#000000', cw - 20, 9, 'right');
 
-        drawPixelText(ctx, 'Arraste na área abaixo para testar cortes e combos:', cx + 14, cy + 21, '#1f2937', null, cw - 28, 8);
+        drawPixelText(ctx, 'Arraste na área abaixo para testar cortes e combos:', cx + 14, cy + 21, '#ffea31', '#000000', cw - 28, 8);
 
         // Arena interativa de teste
         const arena = { x: cx + 12, y: cy + 32, w: cw - 24, h: 86 };
@@ -6283,11 +6372,12 @@
                 }
                 return;
               }
-              if (this.pureEquation && !this.pureEquation.broken) {
+              if (this.pureEquation || this.shadowEquation || (this.electricShapes && this.electricShapes.length > 0)) {
+                const eq = this.ensurePureEquation((prev.x + p.x) * 0.5, (prev.y + p.y) * 0.5);
                 prev.inEquation = 'pure';
                 p.inEquation = 'pure';
                 GameHUD.playSfx('equationInsert');
-                this.layoutEquationPieces(this.pureEquation, 'pure');
+                this.layoutEquationPieces(eq, 'pure');
                 if (this.phase === 'gameplay') {
                   this.checkEquationSolved();
                   this.triggerDefeatIfImpossible();
@@ -6330,11 +6420,23 @@
 
       if (this.canvas && typeof this.canvas.addEventListener === 'function') {
         this.canvas.addEventListener('pointerdown', onDown);
+        this.canvas.addEventListener('touchstart', (e) => {
+          if (e.cancelable) e.preventDefault();
+          onDown(e);
+        }, { passive: false });
       }
       if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onUp);
+        window.addEventListener('touchmove', (e) => {
+          if ((this.phase === 'forest_ninja_game' || (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2)) && e.cancelable) {
+            e.preventDefault();
+          }
+          onMove(e);
+        }, { passive: false });
+        window.addEventListener('touchend', onUp);
+        window.addEventListener('touchcancel', onUp);
         window.addEventListener('keydown', onKeyDown);
       }
     },
@@ -6612,12 +6714,12 @@
           const fy = 24 + ((f12 * 3 + k * 19) % 110);
           drawStar(ctx, fx, fy, (k & 1) ? 3 : 2, '#ffffff', (k % 3 === 0) ? '#f2cc6b' : (k % 3 === 1 ? '#7ec456' : '#68b8c4'));
         }
-        drawPixelTextCentered(ctx, spec.worldClearedTitle, bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
-        drawPixelTextCentered(ctx, spec.worldClearedLine1, bx + bw / 2, by + 28, '#2c221e', null, bw - 20, 10);
-        drawPixelTextCentered(ctx, spec.worldClearedLine2, bx + bw / 2, by + 41, '#633b34', null, bw - 20, 10);
+        drawPixelTextCentered(ctx, spec.worldClearedTitle, bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
+        drawPixelTextCentered(ctx, spec.worldClearedLine1, bx + bw / 2, by + 28, '#ffffff', '#000000', bw - 20, 10);
+        drawPixelTextCentered(ctx, spec.worldClearedLine2, bx + bw / 2, by + 41, '#92e8ff', '#000000', bw - 20, 10);
       } else {
-        drawPixelTextCentered(ctx, `${spec.hudLabel} - Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
-        drawPixelTextCentered(ctx, spec.phaseClearedLine, bx + bw / 2, by + 32, '#2c221e', null, bw - 20, 10);
+        drawPixelTextCentered(ctx, `${spec.hudLabel} - Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
+        drawPixelTextCentered(ctx, spec.phaseClearedLine, bx + bw / 2, by + 32, '#ffffff', '#000000', bw - 20, 10);
       }
 
       for (let i = 0; i < 3; i++) {
@@ -6632,7 +6734,7 @@
       ctx.fillStyle = '#d9a85b';
       ctx.fillRect(b.x, b.y, b.w, 1);
       ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, isWorldFinale ? spec.nextWorldButton : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 6, 9);
+      drawPixelTextCentered(ctx, isWorldFinale ? spec.nextWorldButton : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 6, 9);
     },
 
     drawGameOverOverlay(ctx) {
@@ -6640,9 +6742,9 @@
       ctx.fillRect(0, 20, W, H - 20);
       const bx = 34, by = 28, bw = 252, bh = 116;
       drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#59221c' });
-      drawPixelTextCentered(ctx, 'Equilíbrio Perdido!', bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
-      drawPixelTextCentered(ctx, 'Os cristais perderam o equilíbrio e não podem mais formar o valor exigido nesta etapa.', bx + bw / 2, by + 28, '#2c221e', null, bw - 24, 10);
-      drawPixelTextCentered(ctx, 'Recomece a fase para tentar novamente!', bx + bw / 2, by + 64, '#7a2e22', null, bw - 24, 9);
+      drawPixelTextCentered(ctx, 'Equilíbrio Perdido!', bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
+      drawPixelTextCentered(ctx, 'Os cristais perderam o equilíbrio e não podem mais formar o valor exigido nesta etapa.', bx + bw / 2, by + 28, '#ffffff', '#000000', bw - 24, 10);
+      drawPixelTextCentered(ctx, 'Recomece a fase para tentar novamente!', bx + bw / 2, by + 64, '#92e8ff', '#000000', bw - 24, 9);
 
       const b = this.gameOverBtnRect;
       const pulse = (Math.floor(this.t * 6) & 1) === 0;
@@ -6653,7 +6755,7 @@
       ctx.fillStyle = pulse ? '#f2cc6b' : '#d9a85b';
       ctx.fillRect(b.x, b.y, b.w, 1);
       ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, '↻ Reiniciar Fase', b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 8, 9);
+      drawPixelTextCentered(ctx, '↻ Reiniciar Fase', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 8, 9);
     },
 
     renderMusicalElements(ctx, tq) {
@@ -6708,7 +6810,7 @@
       for (const [t0, t1, text] of captions) {
         if (capTime >= t0 && capTime <= t1) {
           drawParchmentBox(ctx, 10, 155, 300, 21);
-          drawPixelTextCentered(ctx, text, 160, 162, '#2c221e', null, 286, 9);
+          drawPixelTextCentered(ctx, text, 160, 162, '#ffea31', '#000000', 286, 9);
           break;
         }
       }
@@ -6806,10 +6908,10 @@
         ActorAnimator.drawActor(ctx, 'jurema', st, 184, 142, tq, { flipX: true });
       }
 
-      if (this.phase && this.phase.startsWith('shell_game_')) {
+      if ((this.phase && this.phase.startsWith('shell_game_')) || (this.phase === 'tutorial' && this.shellGame)) {
         this.drawShellGame(ctx, tq);
       }
-      if (this.phase === 'river_melody_game') {
+      if (this.phase === 'river_melody_game' || (this.phase === 'tutorial' && this.riverMelody)) {
         this.drawRiverMelodyGame(ctx, tq);
       }
       if (this.phase === 'forest_ninja_vignette' || this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_'))) {
@@ -6817,13 +6919,18 @@
       }
 
       if (
-        this.phase === 'tutorial' ||
-        this.phase === 'gameplay' ||
-        this.phase === 'equation_magnetic' ||
-        this.phase === 'next_step_pause' ||
-        this.phase === 'step_resolving' ||
-        this.phase === 'defeat_pause' ||
-        this.phase === 'game_over'
+        !this.shellGame &&
+        !this.riverMelody &&
+        !this.forestNinja &&
+        (
+          this.phase === 'tutorial' ||
+          this.phase === 'gameplay' ||
+          this.phase === 'equation_magnetic' ||
+          this.phase === 'next_step_pause' ||
+          this.phase === 'step_resolving' ||
+          this.phase === 'defeat_pause' ||
+          this.phase === 'game_over'
+        )
       ) {
         drawEmeraldAltar(ctx, this.emeraldAltar, tq);
         if (this.fractionPlatform) {

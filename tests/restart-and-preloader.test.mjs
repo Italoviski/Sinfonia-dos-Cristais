@@ -88,6 +88,8 @@ function setupNodeDOM() {
       remove: () => {},
       addEventListener: () => {},
       removeEventListener: () => {},
+      querySelector: () => null,
+      querySelectorAll: () => [],
       getContext: () => mockContext(),
       toDataURL: () => 'data:image/png;base64,AA==',
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 640, height: 360 })
@@ -962,28 +964,29 @@ test('Fase Especial da Floresta (Nó 10): Mecânica Fruit Ninja em 4 Etapas, Vin
   assert.equal(fn.strikes, 0);
 
   // ============================================================================
-  // 5. Etapa 2: Introduz cristais sombrios (não podem ser cortados até 3 vezes)
+  // 5. Etapa 2: Introduz cristais sombrios (penalidade de -2s ao cortar, sem reset)
   // ============================================================================
   Worlds.spawnForestNinjaWave(false);
   assert.ok(fn.flyingCrystals.some(c => c.shadow), 'Etapa 2 DEVE conter cristais sombrios');
 
-  // Simula cortes em cristais sombrios
+  // Simula cortes em cristais sombrios: apenas penaliza subtraindo 2 segundos, sem resetar a etapa
   const shadow1 = { x: 120, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
   Worlds.sliceForestCrystal(shadow1, false);
-  assert.equal(fn.strikes, 1, '1º corte em sombra resulta em 1 strike');
-  assert.equal(fn.currentStage, 2, 'Etapa 2 não reinicia com 1 strike');
+  assert.equal(fn.strikes, 1, '1º corte em sombra contabiliza 1 strike');
+  assert.equal(fn.stageTimeRemaining, 28.0, '1º corte em sombra desconta 2s do tempo restante');
+  assert.equal(fn.currentStage, 2, 'Etapa 2 não reinicia');
+  assert.ok(fn.floatingBanner?.text.includes('-2s'), 'Deve exibir aviso de penalidade de -2s');
 
   const shadow2 = { x: 150, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
   Worlds.sliceForestCrystal(shadow2, false);
-  assert.equal(fn.strikes, 2, '2º corte em sombra resulta em 2 strikes');
+  assert.equal(fn.strikes, 2, '2º corte em sombra contabiliza 2 strikes');
+  assert.equal(fn.stageTimeRemaining, 26.0, '2º corte em sombra desconta mais 2s do tempo restante');
 
-  // 3º corte em cristal sombrio REINICIA A ETAPA 2!
   const shadow3 = { x: 180, y: 90, vx: 0, vy: -40, rot: 0, vrot: 0, type: 'shadow_bomb', shadow: true, radius: 13, value: 1, sliced: false };
   Worlds.sliceForestCrystal(shadow3, false);
-  assert.equal(fn.strikes, 0, 'Após o 3º corte, strikes são zerados no reinício da etapa');
-  assert.equal(fn.stageTimeRemaining, 30.0, 'Tempo da Etapa 2 é restaurado para 30 segundos');
-  assert.equal(fn.currentStage, 2, 'Continua na Etapa 2 reiniciada');
-  assert.ok(fn.floatingBanner?.text.includes('3 Sombras cortadas'), 'Deve exibir aviso de reinício da etapa');
+  assert.equal(fn.strikes, 3, '3º corte em sombra contabiliza 3 strikes sem reiniciar a partida');
+  assert.equal(fn.stageTimeRemaining, 24.0, '3º corte em sombra desconta mais 2s (24s restantes) sem resetar para 30s');
+  assert.equal(fn.currentStage, 2, 'Continua na Etapa 2 sem reset');
 
   // Avança Etapa 2 com sucesso após os 30s
   fn.stageTimeRemaining = 0.1;
@@ -1116,6 +1119,95 @@ test('Correções de bugs: Conclusão da Caverna (botão e teclado), isolamento 
   assert.ok(css.includes('.journey-node:before'), 'Nós do mapa devem exibir número da fase');
   assert.ok(css.includes('.journey-node.done:after'), 'Fases concluídas devem exibir marcador de check');
 });
+
+test('Revisão Geral: Mobile/Touch, Volume 50%, Fases 9/10, Círculo Fases 13/14, Fase 15 (1s ref) e Caatinga (Nó 19 vs 20 + 1s Opala)', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/audio.js');
+  await import('../js/journey-map.js');
+  await import('../js/true-pixel-worlds.js');
+
+  const E = globalThis.TruePixelEngine;
+  const Worlds = globalThis.TruePixelWorlds;
+  const CrystalAudio = globalThis.CrystalAudio;
+  const CrystalMenuAudio = globalThis.CrystalMenuAudio;
+
+  // 1. Volume padrão 50% (0.5) e correção do bug de mudo ao mover slider na tela inicial
+  assert.equal(CrystalAudio.getVolume(), 0.5, 'Volume inicial do CrystalAudio deve ser 50% (0.5)');
+  assert.equal(E.GameHUD.musicVol, 50, 'Volume inicial de música do HUD deve ser 50%');
+  globalThis.document.body.dataset.screen = 'home';
+  CrystalMenuAudio.setVolume(0);
+  CrystalMenuAudio.setVolume(0.5);
+  assert.equal(CrystalAudio.isMuted(), false, 'Ajustar o volume acima de 0 deve retirar o estado de mudo');
+
+  // 2. Floresta: Fase 9 (level 4) é puzzle padrão; Fase 10 (level 5) tem o clímax da fada e minigame de corte
+  Worlds.startByCampaignNode(9);
+  Worlds.running = false;
+  assert.equal(Worlds.worldKey, 'forest');
+  assert.equal(Worlds.currentLevel, 4);
+  assert.equal(Worlds.isWorldFinale(), false, 'Fase 9 (Floresta 4) deve ser uma fase normal sem resgate da fada');
+
+  Worlds.startByCampaignNode(10);
+  Worlds.running = false;
+  assert.equal(Worlds.worldKey, 'forest');
+  assert.equal(Worlds.currentLevel, 5);
+  assert.equal(Worlds.isWorldFinale(), true, 'Fase 10 (Floresta 5) deve concentrar o resgate da fada e minigame de corte');
+  assert.ok(Worlds.forestNinja, 'Fase 10 deve inicializar o minigame de corte');
+
+  // 3. Rio Fases 13 (etapa 2) e 14 (etapa 2): criação do círculo/parênteses (pureEquation)
+  for (const [nodeId, levelNum] of [[13, 3], [14, 4]]) {
+    Worlds.startByCampaignNode(nodeId);
+    Worlds.running = false;
+    E.DialogueBox.close();
+    E.TutorialModal.close();
+    Worlds.phase = 'gameplay';
+    Worlds.setupStep(2);
+    assert.equal(Worlds.currentLevel, levelNum);
+    assert.ok(Worlds.pureEquation, `Fase ${nodeId} (etapa 2) deve disponibilizar pureEquation`);
+
+    // Mesmo se pureEquation for recriado ao arrastar dois cristais puros de cores distintas, deve agrupar
+    Worlds.pureEquation = null;
+    const pWhite = Worlds.pieces.find((p) => !p.shadow && p.type === 'white');
+    const pAqua = Worlds.pieces.find((p) => !p.shadow && p.type === 'aqua' && !p.inFraction);
+    assert.ok(pWhite && pAqua, `Fase ${nodeId} (etapa 2) deve ter cristais white e aqua puros`);
+    pWhite.x = pAqua.x + 8;
+    pWhite.y = pAqua.y;
+    Worlds.checkPieceDrop(pWhite);
+    assert.ok(Worlds.pureEquation && !Worlds.pureEquation.broken, `Fase ${nodeId} (etapa 2) deve formar o agrupador pureEquation`);
+    assert.equal(pWhite.inEquation, 'pure');
+    assert.equal(pAqua.inEquation, 'pure');
+  }
+
+  // 4. Fase 15 (Minigame do Rio): Tutorial antes da interação + pausa de 1 segundo no cristal de referência
+  Worlds.startByCampaignNode(15);
+  Worlds.running = false;
+  assert.equal(E.TutorialModal.isOpen, true, 'Fase 15 deve exibir janela de tutorial antes da interação');
+  while (E.TutorialModal.isOpen) E.TutorialModal.nextStep();
+  assert.equal(Worlds.phase, 'river_melody_game');
+  assert.equal(Worlds.riverMelody.demoTimer, 1.0, 'Fase 15 deve ter pausa inicial de 1 segundo antes das ações');
+  assert.equal(Worlds.riverMelody.crystals[0].isReference, true, 'Cristal de referência deve estar destacado na pausa inicial');
+
+  // 5. Caatinga: Nó 19 (quebra de parede) separado do Nó 20 (sala do minigame final) + 1s revelando Opala
+  Worlds.startByCampaignNode(19);
+  Worlds.running = false;
+  assert.equal(Worlds.worldKey, 'caatinga');
+  assert.equal(Worlds.currentLevel, 4);
+  assert.equal(Worlds.isWorldFinale(), false, 'Nó 19 deve ser fase normal de quebra de parede');
+
+  Worlds.startByCampaignNode(20);
+  Worlds.running = false;
+  assert.equal(Worlds.worldKey, 'caatinga');
+  assert.equal(Worlds.currentLevel, 5);
+  assert.equal(Worlds.isWorldFinale(), true, 'Nó 20 deve ser a sala exclusiva do minigame final da Caatinga');
+  assert.equal(E.TutorialModal.isOpen, true, 'Minigame das Cúpulas deve abrir tutorial claro antes da rodada');
+  while (E.TutorialModal.isOpen) E.TutorialModal.nextStep();
+  assert.equal(Worlds.phase, 'shell_game_show');
+  Worlds.updateShellGame(0.9);
+  assert.equal(Worlds.shellGame.cups[0].liftY, 18, 'Durante o 1º segundo (0.9s), a cúpula deve permanecer erguida revelando a Opala');
+  Worlds.updateShellGame(0.65);
+  assert.equal(Worlds.phase, 'shell_game_shuffle', 'Após 1.5s, as cúpulas abaixam e iniciam o embaralhamento');
+});
+
 
 
 

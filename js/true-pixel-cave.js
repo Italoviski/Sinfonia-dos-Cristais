@@ -2109,9 +2109,15 @@
       // Prompt on hold
       if (activeIndex >= 0 && words[activeIndex].isHold) {
         const curW = words[activeIndex];
-        const promptText = curW.holding ? '♥ Segurando!' : (curW.holdFailed ? 'Soltou cedo!' : 'Segure ESPAÇO!');
+        const isTouch = typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch();
+        const promptText = curW.holding ? '♥ Segurando!' : (curW.holdFailed ? 'Soltou cedo!' : (isTouch ? 'Segure o Botão!' : 'Segure ESPAÇO!'));
         const promptCol = curW.holding ? '#fff275' : (curW.holdFailed ? '#ff9c42' : '#ffe033');
-        drawPixelTextCentered(ctx, promptText, ballX, box.y - 12, promptCol, '#1f1410', 90, 8);
+        drawPixelTextCentered(ctx, promptText, ballX, box.y - 12, promptCol, '#000000', 96, 8);
+      }
+
+      // Botão virtual visível para dispositivos touch/mobile substituir a tecla física Espaço
+      if (!isPractice && typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch() && typeof E.drawVirtualTouchButton === 'function') {
+        E.drawVirtualTouchButton(ctx, { x: 222, y: 129, w: 88, h: 20 }, '⎵ ESPAÇO / SEGURAR', Boolean(CaveChapter1.isHoldingSpace));
       }
 
       // Particles
@@ -3187,8 +3193,8 @@
       drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 18, headerBg: '#3d2b24' });
 
       if (this.vignetteCard === 1) {
-        drawPixelText(ctx, 'A Canção da Caverna', cx + 10, cy + 6, '#f7e2b8', '#1f1410', 160, 9);
-        drawPixelText(ctx, 'Página 1/2', cx + 10, cy + 6, '#d9c398', '#1f1410', cw - 20, 9, 'right');
+        drawPixelText(ctx, 'A Canção da Caverna', cx + 10, cy + 6, '#ffea31', '#000000', 160, 9);
+        drawPixelText(ctx, 'Página 1/2', cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
 
         const prevBox = { x: cx + 12, y: cy + 24, w: cw - 24, h: 36 };
         ctx.fillStyle = '#261c18';
@@ -3197,10 +3203,10 @@
         ctx.fillRect(prevBox.x, prevBox.y, prevBox.w, 1);
         ctx.fillRect(prevBox.x, prevBox.y + prevBox.h - 1, prevBox.w, 1);
 
-        drawPixelText(ctx, 'Era', prevBox.x + 18, prevBox.y + 14, '#ffe033', '#1f1410');
-        drawPixelText(ctx, 'uma', prevBox.x + 62, prevBox.y + 14, '#ffe033', '#1f1410');
-        drawPixelText(ctx, 'vez...', prevBox.x + 112, prevBox.y + 14, '#ffe033', '#1f1410');
-        drawPixelText(ctx, 'harmonia!', prevBox.x + 168, prevBox.y + 14, '#6c5b52', null);
+        drawPixelText(ctx, 'Era', prevBox.x + 18, prevBox.y + 14, '#ffe033', '#000000');
+        drawPixelText(ctx, 'uma', prevBox.x + 62, prevBox.y + 14, '#ffe033', '#000000');
+        drawPixelText(ctx, 'vez...', prevBox.x + 112, prevBox.y + 14, '#ffe033', '#000000');
+        drawPixelText(ctx, 'harmonia!', prevBox.x + 168, prevBox.y + 14, '#92e8ff', '#000000');
 
         const demT = (tq % 3.0) / 3.0;
         const demX = Math.round(prevBox.x + 118 + 58 * demT);
@@ -3210,59 +3216,63 @@
         drawRing(ctx, prevBox.x + 196, prevBox.y + 10, ringR, '#7aeaff');
 
         let ty = cy + 68;
-        ty += drawPixelText(ctx, 'A Fada das Gemas canta o renascimento da Caverna!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 4;
-        ty += drawPixelText(ctx, '• A bolinha salta de palavra em palavra no compasso.', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
-        ty += drawPixelText(ctx, '• No fechamento do círculo, aperte ESPAÇO no tempo!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
-        ty += drawPixelText(ctx, '• Em notas longas, SEGURE ESPAÇO para sustentar!', cx + 12, ty, '#2c221e', null, cw - 24, 9) + 3;
+        ty += drawPixelText(ctx, 'A Fada das Gemas canta o renascimento da Caverna!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 4;
+        ty += drawPixelText(ctx, '• A bolinha salta de palavra em palavra no compasso.', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
+        ty += drawPixelText(ctx, '• No fechamento do círculo, aperte ESPAÇO ou TOQUE!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
+        ty += drawPixelText(ctx, '• Em notas longas, SEGURE para sustentar!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
 
         const b = { x: cx + cw - 92, y: cy + ch - 20, w: 82, h: 15 };
-        ctx.fillStyle = '#2c221e';
+        ctx.fillStyle = '#14111c';
         ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-        ctx.fillStyle = '#3e7338';
+        ctx.fillStyle = '#2b689c';
         ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.fillStyle = '#d9a85b';
+        ctx.fillStyle = '#92e8ff';
         ctx.fillRect(b.x, b.y, b.w, 1);
         ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-        drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 3, '#ffffff', '#1f1410', b.w - 4, 8);
+        drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 3, '#ffffff', '#000000', b.w - 4, 8);
       } else {
-        drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#f7e2b8', '#1f1410', 160, 9);
-        drawPixelText(ctx, 'Página 2/2 • Sem penalidade', cx + 10, cy + 6, '#d9c398', '#1f1410', cw - 20, 9, 'right');
+        drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#ffea31', '#000000', 160, 9);
+        drawPixelText(ctx, 'Página 2/2 • Sem penalidade', cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
 
-        drawPixelText(ctx, 'Experimente o salto! Aperte ESPAÇO na hora certa:', cx + 12, cy + 24, '#2c221e', null, cw - 24, 9);
+        drawPixelText(ctx, 'Experimente o salto! Aperte ESPAÇO ou o Botão:', cx + 12, cy + 24, '#ffea31', '#000000', cw - 24, 9);
 
         const practiceBox = { x: cx + 12, y: cy + 40, w: cw - 24, h: 32 };
         CaveRhythmKaraoke.render(ctx, this.vignettePracticeTime, true, practiceBox);
 
         drawPixelTextCentered(
           ctx,
-          'Aperte ESPAÇO ao fechar o círculo e SEGURE em "harmonia!"',
+          'Aperte ESPAÇO / Botão ao fechar o círculo e SEGURE em "harmonia!"',
           cx + cw / 2,
-          cy + 80,
-          '#633b34',
-          null,
+          cy + 78,
+          '#ffea31',
+          '#000000',
           cw - 20,
           9
         );
 
+        if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch() && typeof E.drawVirtualTouchButton === 'function') {
+          E.drawVirtualTouchButton(ctx, { x: cx + R((cw - 108) / 2), y: cy + 94, w: 108, h: 18 }, '⎵ ESPAÇO / SEGURAR', Boolean(this.isHoldingSpace));
+        }
+
         const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
-        ctx.fillStyle = '#2c221e';
+        ctx.fillStyle = '#14111c';
         ctx.fillRect(bReset.x - 1, bReset.y - 1, bReset.w + 2, bReset.h + 2);
-        ctx.fillStyle = '#5c483f';
+        ctx.fillStyle = '#324b81';
         ctx.fillRect(bReset.x, bReset.y, bReset.w, bReset.h);
-        ctx.fillStyle = '#d9a85b';
+        ctx.fillStyle = '#92e8ff';
         ctx.fillRect(bReset.x, bReset.y, bReset.w, 1);
         ctx.fillRect(bReset.x, bReset.y + bReset.h - 1, bReset.w, 1);
-        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#1f1410', bReset.w - 4, 8);
+        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#000000', bReset.w - 4, 8);
 
         const bStart = { x: cx + cw - 124, y: cy + ch - 20, w: 114, h: 15 };
-        ctx.fillStyle = '#2c221e';
+        ctx.fillStyle = '#14111c';
         ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
-        ctx.fillStyle = '#2e6b30';
+        ctx.fillStyle = '#2b689c';
         ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
-        ctx.fillStyle = '#ffea31';
+        ctx.fillStyle = '#92e8ff';
         ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
         ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
-        drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#1f1410', bStart.w - 4, 8);
+        drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#000000', bStart.w - 4, 8);
       }
     },
 
@@ -4503,7 +4513,7 @@
     drawCompletionOverlay(ctx, isWorldFinale = false) {
       // Card de conclusão em Pergaminho Estilo Owlboy, perfeitamente centralizado e enquadrado
       const bx = 42, by = 28, bw = 236, bh = 108;
-      drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#3d2b24' });
+      drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#163b6c' });
 
       if (isWorldFinale) {
         const f12 = Math.floor(this.t * SPRITE_FPS);
@@ -4512,12 +4522,12 @@
           const fy = 24 + ((f12 * 3 + k * 19) % 110);
           drawStar(ctx, fx, fy, (k & 1) ? 3 : 2, '#ffffff', (k % 3 === 0) ? '#f2cc6b' : (k % 3 === 1 ? '#68b8c4' : '#e396b1'));
         }
-        drawPixelTextCentered(ctx, 'Mundo 1 Restaurado!', bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
-        drawPixelTextCentered(ctx, 'A Ordem despertou a Caverna!', bx + bw / 2, by + 28, '#2c221e', null, bw - 20, 10);
-        drawPixelTextCentered(ctx, 'Rumo ao Mundo da Floresta!', bx + bw / 2, by + 41, '#633b34', null, bw - 20, 10);
+        drawPixelTextCentered(ctx, 'Mundo 1 Restaurado!', bx + bw / 2, by + 8, '#ffffff', '#000000', bw - 16, 9);
+        drawPixelTextCentered(ctx, 'A Ordem despertou a Caverna!', bx + bw / 2, by + 28, '#ffea31', '#000000', bw - 20, 10);
+        drawPixelTextCentered(ctx, 'Rumo ao Mundo da Floresta!', bx + bw / 2, by + 41, '#92e8ff', '#000000', bw - 20, 10);
       } else {
-        drawPixelTextCentered(ctx, `Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
-        drawPixelTextCentered(ctx, 'O caminho da Caverna se abriu!', bx + bw / 2, by + 32, '#2c221e', null, bw - 20, 10);
+        drawPixelTextCentered(ctx, `Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#ffffff', '#000000', bw - 16, 9);
+        drawPixelTextCentered(ctx, 'O caminho da Caverna se abriu!', bx + bw / 2, by + 32, '#ffea31', '#000000', bw - 20, 10);
       }
 
       const starY = by + 62;
@@ -4526,14 +4536,14 @@
       }
 
       const b = this.completeBtnRect;
-      ctx.fillStyle = '#2c221e';
+      ctx.fillStyle = '#14111c';
       ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = '#3e7338';
+      ctx.fillStyle = '#2b689c';
       ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#d9a85b';
+      ctx.fillStyle = '#92e8ff';
       ctx.fillRect(b.x, b.y, b.w, 1);
       ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, isWorldFinale ? 'Ir à Floresta >' : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 6, 9);
+      drawPixelTextCentered(ctx, isWorldFinale ? 'Ir à Floresta >' : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 6, 9);
     },
 
     drawGameOverOverlay(ctx) {
@@ -4542,15 +4552,15 @@
 
       const bx = 34, by = 28, bw = 252, bh = 116;
       drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#59221c' });
-      drawPixelTextCentered(ctx, 'Equilíbrio Perdido!', bx + bw / 2, by + 8, '#f7e2b8', '#1f1410', bw - 16, 9);
+      drawPixelTextCentered(ctx, 'Equilíbrio Perdido!', bx + bw / 2, by + 8, '#ffffff', '#000000', bw - 16, 9);
 
       drawPixelTextCentered(
         ctx,
         'Os cristais perderam o equilíbrio e não podem mais formar o valor exigido nesta etapa.',
         bx + bw / 2,
         by + 28,
-        '#2c221e',
-        null,
+        '#ffea31',
+        '#000000',
         bw - 24,
         10
       );
@@ -4559,8 +4569,8 @@
         'Recomece a fase para tentar novamente!',
         bx + bw / 2,
         by + 64,
-        '#7a2e22',
-        null,
+        '#92e8ff',
+        '#000000',
         bw - 24,
         9
       );
@@ -4568,14 +4578,14 @@
       // Botão destacado "Reiniciar Fase"
       const b = this.gameOverBtnRect;
       const pulse = (Math.floor(this.t * 6) & 1) === 0;
-      ctx.fillStyle = '#2c221e';
+      ctx.fillStyle = '#14111c';
       ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = pulse ? '#9e3328' : '#7a251c';
+      ctx.fillStyle = pulse ? '#2b8bc2' : '#1b3a69';
       ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = pulse ? '#f2cc6b' : '#d9a85b';
+      ctx.fillStyle = '#92e8ff';
       ctx.fillRect(b.x, b.y, b.w, 1);
       ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, '↻ Reiniciar Fase', b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 8, 9);
+      drawPixelTextCentered(ctx, '↻ Reiniciar Fase', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 8, 9);
     },
 
     renderMusicalElements(ctx, tq) {

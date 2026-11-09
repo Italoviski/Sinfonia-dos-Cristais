@@ -18,10 +18,11 @@
    [83.0,52.1], // 16: Caatinga (pedra na descida sul)
    [70.8,62.5], // 17: Caatinga (anel roxo / rosa)
    [69.9,73.5], // 18: Caatinga (pedra cinza na curva)
-   [59.2,78.2], // 19: Caatinga (pedra dourada em frente ao Citrino)
-   [32.3,60.4]  // 20: Porta Ancestral (pedestal azul ciano)
+   [59.2,78.2], // 19: Caatinga (pedra dourada em frente ao Citrino - Fase 19)
+   [47.8,78.2], // 20: Caatinga (sala do minigame final - Fase 20: O Desafio das Areias)
+   [32.3,60.4]  // 21: Porta Ancestral (pedestal azul ciano)
  ];
- const finalPedestal=coordinates[19];
+ const finalPedestal=coordinates[20];
  const route=[
    coordinates[0],
    coordinates[1],
@@ -46,13 +47,13 @@
    coordinates[16],
    coordinates[17],
    coordinates[18],
-   [47.8,78.2],
+   coordinates[19],
    [35.9,78.2],
    [23.9,78.2],
    [20.3,72.3],
    [20.3,63.8],
    [25.1,60.4],
-   coordinates[19]
+   coordinates[20]
  ];
  const screen=document.getElementById('map'),root=document.createElement('div');root.className='journey-map';screen.append(root);
  const fairy=document.createElement('div');fairy.className='journey-fairy';fairy.setAttribute('aria-hidden','true');root.append(fairy);
@@ -72,6 +73,6 @@
  }
  function frame(now){const dt=Math.min(.04,(now-(last||now))/1000);last=now;if(!screen.hidden&&!document.hidden){if(travel){const a=travel.points[travel.index],b=travel.points[travel.index+1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);travel.progress+=dt*22/Math.max(.1,length);const f=Math.min(1,travel.progress);setPosition([a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]);if(f===1){travel.index++;travel.progress=0;if(travel.index===travel.points.length-1){travel=null;state.notify('A Fada chegou. Clique novamente na fase para abrir.');}}}fairy.style.backgroundPosition=`${Math.floor(now/170)%4/3*100}% ${travel?100:0}%`;}requestAnimationFrame(frame);}requestAnimationFrame(frame);
  window.CrystalJourney={render(options){state=options;travel=null;selected=null;root.querySelectorAll('button').forEach(b=>b.remove());const activeId=Math.min(21,Math.max(1,options.current||options.unlocked||1));const startPoint=activeId===21?finalPedestal:coordinates[activeId-1];at=Math.max(0,route.findIndex(p=>p===startPoint));setPosition(startPoint);
-  for(const level of CrystalCampaign.levels){const point=level.id===21?finalPedestal:coordinates[level.id-1];const button=document.createElement('button');button.className='journey-node';button.dataset.level=level.id;button.style.left=point[0]+'%';button.style.top=point[1]+'%';const locked=false;button.classList.toggle('locked',locked);button.classList.toggle('done',options.completed.includes(level.id));button.classList.toggle('current',level.id===activeId);button.setAttribute('aria-label',`${level.id===21?'Fase final':`Fase ${level.id}`}: ${level.name}. ${options.completed.includes(level.id)?'Concluída':'Disponível'}`);button.setAttribute('aria-disabled','false');button.onclick=()=>select(level);root.append(button);}
+  for(const level of (window.CrystalCampaign?.levels||[])){const point=level.id===21?finalPedestal:coordinates[level.id-1];const button=document.createElement('button');button.className='journey-node';if(!button.dataset)button.dataset={};button.dataset.level=level.id;button.style.left=point[0]+'%';button.style.top=point[1]+'%';const locked=false;button.classList.toggle('locked',locked);button.classList.toggle('done',options.completed.includes(level.id));button.classList.toggle('current',level.id===activeId);button.setAttribute('aria-label',`${level.id===21?'Fase final':`Fase ${level.id}`}: ${level.name}. ${options.completed.includes(level.id)?'Concluída':'Disponível'}`);button.setAttribute('aria-disabled','false');button.onclick=()=>select(level);root.append(button);}
  },get moving(){return !!travel;},close(){travel=null;if(dialog.open)dialog.close();}};
 })();

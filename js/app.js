@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const KEY = 'crystal-campaign-v4';
-  const defaults = { music: 0.65, fx: 0.65, voice: false, contrast: false, motion: false, assist: false };
+  const defaults = { music: 0.5, fx: 0.5, voice: false, contrast: false, motion: false, assist: false };
   let settings = { ...defaults };
   let completed = [];
   let records = {};
@@ -31,7 +31,13 @@
   function cleanSettings(s) {
     const out = {};
     for (const k of ['music', 'fx']) {
-      if (Number.isFinite(s?.[k])) out[k] = Math.max(0, Math.min(1, s[k]));
+      if (Number.isFinite(s?.[k])) {
+        let v = Number(s[k]);
+        if (v > 1) v = v / 100;
+        // Recover from legacy /100 bug where 0.5 or 0.65 became 0.005 / 0.0065
+        if (v > 0 && v <= 0.02) v = 0.5;
+        out[k] = Math.max(0, Math.min(1, v));
+      }
     }
     for (const k of ['voice', 'contrast', 'motion', 'assist']) {
       if (typeof s?.[k] === 'boolean') out[k] = s[k];
@@ -99,15 +105,23 @@
   function applySettings() {
     document.body.classList.toggle('high-contrast', settings.contrast);
     document.body.classList.toggle('reduce-motion', settings.motion);
-    window.CrystalAudio?.setVolume?.(settings.fx);
-    window.CrystalMenuAudio?.setVolume?.(settings.music);
 
     const hud = window.TruePixelEngine?.GameHUD;
     if (hud) {
-      hud.musicVol = settings.music;
-      hud.sfxVol = settings.fx;
+      if (settings.music > 0 || settings.fx > 0) {
+        hud.muted = false;
+      }
+      hud.musicVol = Math.round(settings.music * 100);
+      hud.sfxVol = Math.round(settings.fx * 100);
       hud.reducedMotion = settings.motion;
       hud.syncAudio?.();
+    }
+
+    window.CrystalAudio?.setVolume?.(settings.fx);
+    window.CrystalAudio?.setEnabled?.(settings.fx > 0);
+    window.CrystalMenuAudio?.setVolume?.(settings.music);
+    if (screen === 'home' && settings.music > 0) {
+      window.CrystalMenuAudio?.play?.();
     }
 
     for (const [id, k] of [
@@ -122,7 +136,7 @@
     for (const k of ['music', 'fx']) {
       const slider = $(k + 'Volume');
       const out = $(k + 'Value');
-      if (slider) slider.value = Math.round(settings[k] * 100);
+      if (slider) slider.value = String(Math.round(settings[k] * 100));
       if (out) out.textContent = Math.round(settings[k] * 100) + '%';
     }
   }
@@ -228,6 +242,10 @@
   function startNewGame() {
     if (window.CrystalAssetsReady === false) return;
     unlockAudio();
+    requestMobileFullscreenAndLandscape();
+    settings.music = 0.5;
+    settings.fx = 0.5;
+    applySettings();
     completed = [];
     records = {};
     current = 1;
@@ -389,8 +407,60 @@
     $('playButton').onclick = continueGame;
   }
 
+  function isMobileDevice() {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+    const hasCoarsePointer = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    return Boolean(isMobileUA || (hasTouch && (hasCoarsePointer || window.innerWidth <= 1024)));
+  }
+
+  function requestMobileFullscreenAndLandscape() {
+    if (!isMobileDevice()) return;
+    try {
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+        if (typeof req === 'function') {
+          const p = req.call(docEl);
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        }
+      }
+    } catch {}
+    try {
+      if (screen.orientation && typeof screen.orientation.lock === 'function') {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch {}
+  }
+
+  function syncMobileOrientationUI() {
+    const mobile = isMobileDevice();
+    document.body.classList.toggle('is-touch-device', mobile);
+    const overlay = $('orientationOverlay');
+    if (!overlay) return;
+    const isPortrait = window.innerHeight > window.innerWidth * 1.05;
+    overlay.hidden = !(mobile && isPortrait);
+  }
+
+  if ($('enterLandscapeFullscreenBtn')) {
+    $('enterLandscapeFullscreenBtn').onclick = () => {
+      requestMobileFullscreenAndLandscape();
+      syncMobileOrientationUI();
+    };
+  }
+
+  window.addEventListener('resize', syncMobileOrientationUI);
+  window.addEventListener('orientationchange', syncMobileOrientationUI);
+  syncMobileOrientationUI();
+
   document.addEventListener('pointerdown', () => {
     if (!$('settingsDialog')?.open) unlockAudio();
+    if (isMobileDevice()) {
+      requestMobileFullscreenAndLandscape();
+      syncMobileOrientationUI();
+    }
   }, { once: true });
 
   document.addEventListener('visibilitychange', () => {

@@ -377,38 +377,84 @@
     return lines;
   }
 
-  function drawPixelText(ctx, text, x, y, col = '#2c221e', shadowCol = null, maxWidth = 999, lineHeight = 10, align = 'left') {
+  function normalizeReadableTextColor(col) {
+    if (!col) return '#ffea31';
+    const c = String(col).toLowerCase();
+    if (c === '#2c221e' || c === '#1f1410' || c === '#120d0b' || c === '#633b34' || c === '#8c2d1f') {
+      return '#ffea31';
+    }
+    return col;
+  }
+
+  function renderHDCanvasLine(ctx, line, drawX, topY, col, shadowCol, maxW, lineHeight, align = 'left') {
+    if (!ctx || typeof ctx.fillText !== 'function') return false;
+    if (!line) return true;
+    const fontPx = Math.max(5.6, Math.min(8.2, (lineHeight || 9) - 2.2));
+    const fillCol = normalizeReadableTextColor(col);
+    const strokeCol = (shadowCol && shadowCol !== fillCol) ? shadowCol : '#000000';
+    if (typeof ctx.save === 'function') ctx.save();
+    ctx.font = `700 ${fontPx.toFixed(1)}px "Fredoka", "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align === 'center' ? 'center' : (align === 'right' ? 'right' : 'left');
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    ctx.lineWidth = 1.65;
+    ctx.strokeStyle = strokeCol;
+    const baseY = topY + fontPx * 0.88;
+    const limitW = (Number.isFinite(maxW) && maxW > 0 && maxW < 900) ? maxW : undefined;
+    if (typeof ctx.strokeText === 'function') {
+      if (limitW !== undefined) ctx.strokeText(line, drawX, baseY, limitW);
+      else ctx.strokeText(line, drawX, baseY);
+    }
+    ctx.fillStyle = fillCol;
+    if (limitW !== undefined) ctx.fillText(line, drawX, baseY, limitW);
+    else ctx.fillText(line, drawX, baseY);
+    if (typeof ctx.restore === 'function') ctx.restore();
+    return true;
+  }
+
+  function drawPixelText(ctx, text, x, y, col = '#ffea31', shadowCol = '#000000', maxWidth = 999, lineHeight = 10, align = 'left') {
     x = R(x); y = R(y);
     const lines = wrapPixelLines(text, maxWidth);
     let cy = y;
     for (const line of lines) {
-      const lw = measurePixelText(line);
-      let cx = x;
+      let drawX = x;
       if (align === 'center') {
-        cx = R(x + (maxWidth - lw) / 2);
+        drawX = x + maxWidth / 2;
       } else if (align === 'right') {
-        cx = R(x + maxWidth - lw);
+        drawX = x + maxWidth;
       }
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === ' ') cx += 3;
-        else cx += drawPixelChar(ctx, ch, cx, cy, col, shadowCol);
+      if (!renderHDCanvasLine(ctx, line, drawX, cy, col, shadowCol, maxWidth, lineHeight, align)) {
+        const lw = measurePixelText(line);
+        let cx = x;
+        if (align === 'center') {
+          cx = R(x + (maxWidth - lw) / 2);
+        } else if (align === 'right') {
+          cx = R(x + maxWidth - lw);
+        }
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === ' ') cx += 3;
+          else cx += drawPixelChar(ctx, ch, cx, cy, col, shadowCol);
+        }
       }
       cy += lineHeight;
     }
     return lines.length * lineHeight;
   }
 
-  function drawPixelTextCentered(ctx, text, centerX, y, col = '#2c221e', shadowCol = null, maxWidth = 280, lineHeight = 10) {
+  function drawPixelTextCentered(ctx, text, centerX, y, col = '#ffea31', shadowCol = '#000000', maxWidth = 280, lineHeight = 10) {
     const lines = wrapPixelLines(text, maxWidth);
     let cy = R(y);
     for (const line of lines) {
-      const lw = measurePixelText(line);
-      let cx = R(centerX - lw / 2);
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === ' ') cx += 3;
-        else cx += drawPixelChar(ctx, ch, cx, cy, col, shadowCol);
+      if (!renderHDCanvasLine(ctx, line, centerX, cy, col, shadowCol, maxWidth, lineHeight, 'center')) {
+        const lw = measurePixelText(line);
+        let cx = R(centerX - lw / 2);
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === ' ') cx += 3;
+          else cx += drawPixelChar(ctx, ch, cx, cy, col, shadowCol);
+        }
       }
       cy += lineHeight;
     }
@@ -416,35 +462,35 @@
   }
 
   // ============================================================================
-  // MOLDURA DE PERGAMINHO ESTILO OWLBOY (drawParchmentBox)
-  // Fundo pergaminho (#f4eedf), sombreamento nas bordas (#e6decb), borda dupla
-  // fina marrom-escuro (#2c221e e #8c7d70) e rabicho de fala apontando ao ator.
+  // MOLDURA DE PERGAMINHO / CAIXA DE ALTO CONTRASTE ESTILO OWLBOY (drawParchmentBox)
+  // Fundo escuro profundo (#1e2236 / #282c44) para máximo contraste do texto
+  // amarelo com borda preta (diálogos/tutoriais) e branco/azul (menus/HUD).
   // ============================================================================
   function drawParchmentBox(ctx, bx, by, bw, bh, opts = {}) {
     bx = R(bx); by = R(by); bw = R(bw); bh = R(bh);
     // Sombra projetada suave sob a caixa
-    ctx.fillStyle = 'rgba(12, 8, 6, 0.45)';
+    ctx.fillStyle = 'rgba(8, 6, 14, 0.6)';
     ctx.fillRect(bx + 2, by + 3, bw, bh);
 
-    // Borda externa marrom-escuro (#2c221e) com cantos chanfrados estilo Owlboy
-    ctx.fillStyle = '#2c221e';
+    // Borda externa escura (#14111c) com cantos chanfrados
+    ctx.fillStyle = '#14111c';
     ctx.fillRect(bx + 1, by, bw - 2, bh);
     ctx.fillRect(bx, by + 1, bw, bh - 2);
 
-    // Fundo de pergaminho quente (#f4eedf) + sombreamento interno (#e8dfc9)
-    ctx.fillStyle = '#e8dfc9';
+    // Fundo de alto contraste (#262338) + miolo escuro (#1c1a2b)
+    ctx.fillStyle = '#262338';
     ctx.fillRect(bx + 1, by + 1, bw - 2, bh - 2);
-    ctx.fillStyle = '#f4eedf';
+    ctx.fillStyle = '#1c1a2b';
     ctx.fillRect(bx + 3, by + 3, bw - 6, bh - 6);
 
-    // Borda interna fina (#8c7d70) + cantoneiras (#5c4938)
+    // Borda interna dourada/bronze (#bfa36f) + cantoneiras (#d9bf86)
     ctx.fillStyle = '#8c7d70';
     ctx.fillRect(bx + 2, by + 2, bw - 4, 1);
     ctx.fillRect(bx + 2, by + bh - 3, bw - 4, 1);
     ctx.fillRect(bx + 2, by + 2, 1, bh - 4);
     ctx.fillRect(bx + bw - 3, by + 2, 1, bh - 4);
 
-    ctx.fillStyle = '#5c4938';
+    ctx.fillStyle = '#bfa36f';
     ctx.fillRect(bx + 2, by + 2, 3, 2);
     ctx.fillRect(bx + bw - 5, by + 2, 3, 2);
     ctx.fillRect(bx + 2, by + bh - 4, 3, 2);
@@ -2075,14 +2121,14 @@
       const nameW = Math.min(112, maxNameW, measurePixelText(speaker, 9) + 18);
       this.drawNamePlate(ctx, nx + shakeX, by - 6 + shakeY, nameW, speaker);
 
-      // Texto com tipografia Owlboy (maiúsculas, minúsculas e acentos)
-      drawPixelText(ctx, fullText.slice(0, visibleCount), textX + shakeX, by + 9 + shakeY, cur.shake ? '#8c2d1f' : '#2c221e', null, textW, 10);
+      // Texto em amarelo com bordas pretas (alta definição)
+      drawPixelText(ctx, fullText.slice(0, visibleCount), textX + shakeX, by + 9 + shakeY, cur.shake ? '#fff66b' : '#ffea31', '#000000', textW, 10);
 
       // Setinha indicadora no canto inferior direito quando o texto terminou
       if (!isTalking) {
         const bob = (f12 & 1) ? 1 : 0;
         const ax = arrowX, ay = by + bh - 10 + bob;
-        ctx.fillStyle = '#8c2d1f';
+        ctx.fillStyle = '#ffea31';
         ctx.fillRect(ax, ay, 1, 7);
         ctx.fillRect(ax + 1, ay + 1, 1, 5);
         ctx.fillRect(ax + 2, ay + 2, 1, 3);
@@ -2122,7 +2168,7 @@
       ctx.fillRect(x, y + h - 3, w, 2);
       ctx.fillStyle = '#d9bf86';
       ctx.fillRect(x, y + 1, w, 1);
-      drawPixelTextCentered(ctx, name, x + w / 2, y + 2, '#fbf3df', '#2c221e', w - 4, 9);
+      drawPixelTextCentered(ctx, name, x + w / 2, y + 2, '#ffea31', '#000000', w - 4, 9);
     },
 
     drawDiamondPortrait(ctx, portraitKey, isTalking, cx, cy, D, t, flipX, resolvedFrame = null) {
@@ -2523,30 +2569,30 @@
 
       drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#3d2b24' });
 
-      // Cabeçalho + paginação bem enquadrados
+      // Cabeçalho + paginação bem enquadrados (amarelo com bordas pretas)
       const stepLabel = `Página ${this.currentIndex + 1}/${this.cards.length}`;
-      drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 7, '#f7e2b8', '#1f1410', 168, 9);
-      drawPixelText(ctx, stepLabel, cx + 10, cy + 7, '#d9c398', '#1f1410', cw - 20, 9, 'right');
+      drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 7, '#ffea31', '#000000', 168, 9);
+      drawPixelText(ctx, stepLabel, cx + 10, cy + 7, '#fff66b', '#000000', cw - 20, 9, 'right');
 
       // Vinheta animada demonstrativa
       this.drawVignette(ctx, card.vignette || 'drag_and_shadow', cx + 10, cy + 23, cw - 20, 36, t);
 
-      // Texto explicativo perfeitamente centralizado e enquadrado no pergaminho
-      drawPixelText(ctx, card.body || '', cx + 12, cy + 65, '#2c221e', null, cw - 24, 10);
+      // Texto explicativo em amarelo com borda preta
+      drawPixelText(ctx, card.body || '', cx + 12, cy + 65, '#ffea31', '#000000', cw - 24, 10);
 
-      // Botão para avançar/concluir no canto inferior direito do pergaminho
+      // Botão para avançar/concluir no canto inferior direito
       const b = this.btnRect;
       const isLast = this.currentIndex >= this.cards.length - 1;
-      ctx.fillStyle = '#2c221e';
+      ctx.fillStyle = '#14111c';
       ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = isLast ? '#3e7338' : '#633b34';
+      ctx.fillStyle = isLast ? '#2b689c' : '#324b81';
       ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#d9a85b';
+      ctx.fillStyle = '#92e8ff';
       ctx.fillRect(b.x, b.y, b.w, 1);
       ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
 
       const btnText = isLast ? 'Começar!' : 'Avançar >';
-      drawPixelTextCentered(ctx, btnText, b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 4, 9);
+      drawPixelTextCentered(ctx, btnText, b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 9);
     }
   };
 
@@ -2571,13 +2617,38 @@
     Y: '#f2cc6b'
   });
 
+  function isMobileOrTouch() {
+    if (typeof window === 'undefined') return false;
+    if (typeof document !== 'undefined' && document.body?.classList?.contains('is-touch-device')) return true;
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua)) return true;
+    const hasTouch = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+    const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    return Boolean(hasTouch && (coarse || window.innerWidth <= 1024));
+  }
+
+  function drawVirtualTouchButton(ctx, rect, label = '⎵ ESPAÇO', active = false) {
+    if (!rect || !ctx) return;
+    const { x, y, w, h } = rect;
+    ctx.fillStyle = 'rgba(8, 12, 28, 0.85)';
+    ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+    ctx.fillStyle = active ? '#2b8bc2' : '#1b3a69';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = active ? '#ffffff' : '#92e8ff';
+    ctx.fillRect(x, y, w, 1);
+    ctx.fillRect(x, y + h - 1, w, 1);
+    ctx.fillRect(x, y, 1, h);
+    ctx.fillRect(x + w - 1, y, 1, h);
+    drawPixelTextCentered(ctx, label, x + w / 2, y + Math.max(2, Math.floor((h - 8) / 2)), active ? '#ffea31' : '#ffffff', '#000000', w - 6, 9);
+  }
+
   const GameHUD = {
     worldLabel: 'Caverna',
     paused: false,
     settingsOpen: false,
     muted: false,
-    musicVol: 70,
-    sfxVol: 80,
+    musicVol: 50,
+    sfxVol: 50,
     reducedMotion: false,
     restartFlashUntil: 0,
 
@@ -2621,6 +2692,8 @@
     },
 
     syncAudio() {
+      if (this.musicVol > 0 && this.musicVol <= 1) this.musicVol = Math.round(this.musicVol * 100);
+      if (this.sfxVol > 0 && this.sfxVol <= 1) this.sfxVol = Math.round(this.sfxVol * 100);
       const isMuted = !!this.muted;
       const effMus = isMuted ? 0 : clamp(this.musicVol / 100, 0, 1);
       const effSfx = isMuted ? 0 : clamp(this.sfxVol / 100, 0, 1);
@@ -2643,6 +2716,9 @@
           if (tr) {
             tr.muted = isMuted || effMus <= 0;
             tr.volume = effMus;
+            if (!tr.muted && effMus > 0 && tr.paused && typeof document !== 'undefined' && (!document.body?.dataset?.screen || document.body.dataset.screen === 'home')) {
+              tr.play().catch(() => {});
+            }
           }
         }
         if (typeof document !== 'undefined') {
@@ -2652,13 +2728,15 @@
           });
           const musInput = document.getElementById('musicVolume');
           const musOut = document.getElementById('musicValue');
-          if (musInput) musInput.value = String(isMuted ? 0 : this.musicVol);
-          if (musOut) musOut.textContent = `${isMuted ? 0 : this.musicVol}%`;
+          const musPct = Math.round(isMuted ? 0 : this.musicVol);
+          if (musInput) musInput.value = String(musPct);
+          if (musOut) musOut.textContent = `${musPct}%`;
 
           const fxInput = document.getElementById('fxVolume');
           const fxOut = document.getElementById('fxValue');
-          if (fxInput) fxInput.value = String(isMuted ? 0 : this.sfxVol);
-          if (fxOut) fxOut.textContent = `${isMuted ? 0 : this.sfxVol}%`;
+          const fxPct = Math.round(isMuted ? 0 : this.sfxVol);
+          if (fxInput) fxInput.value = String(fxPct);
+          if (fxOut) fxOut.textContent = `${fxPct}%`;
         }
       } catch (_) {}
 
@@ -2862,44 +2940,83 @@
       }
     },
 
+    renderSingleLineHudText(ctx, text, x, y, maxW, col = '#ffffff', strokeCol = '#000000', baseFontPx = 6.6) {
+      const s = String(text || '');
+      if (!s) return;
+      if (ctx && typeof ctx.fillText === 'function') {
+        const estW = Math.max(1, measurePixelText(s));
+        const scale = estW > maxW ? Math.max(0.68, maxW / estW) : 1;
+        const fontPx = Math.max(4.8, baseFontPx * scale);
+        if (typeof ctx.save === 'function') ctx.save();
+        ctx.font = `700 ${fontPx.toFixed(1)}px "Fredoka", "Segoe UI", system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = strokeCol;
+        const baseY = y + baseFontPx * 0.88;
+        if (typeof ctx.strokeText === 'function') ctx.strokeText(s, x, baseY, maxW);
+        ctx.fillStyle = col;
+        ctx.fillText(s, x, baseY, maxW);
+        if (typeof ctx.restore === 'function') ctx.restore();
+      } else {
+        drawPixelText(ctx, s, x, y, col, strokeCol, 999, 8);
+      }
+    },
+
     renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false, customTitle = null) {
-      // Barra Superior Esculpida Estilo Owlboy (0..20)
-      ctx.fillStyle = '#241c19';
+      // Barra Superior Esculpida (0..20) com alto contraste para texto branco/azul
+      ctx.fillStyle = '#141930';
       ctx.fillRect(0, 0, W, 20);
-      ctx.fillStyle = '#8c7d70';
+      ctx.fillStyle = '#5577b2';
       ctx.fillRect(0, 19, W, 1);
-      ctx.fillStyle = '#d9a85b';
+      ctx.fillStyle = '#92e8ff';
       ctx.fillRect(0, 19, 8, 1);
       ctx.fillRect(W - 8, 19, 8, 1);
 
-      // Título da Fase à esquerda (com acentuação e minúsculas legíveis)
       const labelPrefix = this.worldLabel || 'Caverna';
       const titleStr = customTitle || `${labelPrefix} - Fase ${levelNum}`;
-      drawPixelText(ctx, titleStr, 6, 6, '#f7e2b8', '#120d0b', 90, 9);
+      const rightLimit = hideSteps ? 96 : (this.buttons.map.x - 4);
 
-      // Indicador visual de Etapas no centro-esquerda (oculto durante apresentações musicais com botão Pular)
       if (!hideSteps) {
-        drawPixelText(ctx, `Etapa ${currentStep}/${totalSteps}`, 94, 6, '#a8d8e6', '#120d0b', 46, 8);
-        for (let s = 1; s <= totalSteps; s++) {
-          const dx = 136 + (s - 1) * 6, dy = 9;
-          const done = s < currentStep;
-          const cur = s === currentStep;
-          ctx.fillStyle = done ? '#539e43' : cur ? '#68b8c4' : '#3b3332';
-          ctx.fillRect(dx - 2, dy - 2, 4, 4);
-          ctx.fillStyle = done || cur ? '#ffffff' : '#8c7d70';
-          ctx.fillRect(dx - 1, dy - 1, 2, 2);
+        const safeSteps = Math.max(1, Number(totalSteps) || 1);
+        const safeCur = clamp(Number(currentStep) || 1, 1, safeSteps);
+        const stepStr = `Etapa ${safeCur}/${safeSteps}`;
+        const dotStep = safeSteps > 5 ? 3 : 5;
+        const dotsTotalW = Math.min(28, Math.max(4, (safeSteps - 1) * dotStep + 4));
+        const dotsStartX = rightLimit - dotsTotalW;
+        const stepTextW = Math.min(44, Math.max(32, measurePixelText(stepStr)));
+        const stepX = Math.max(76, dotsStartX - stepTextW - 3);
+        const titleMaxW = Math.max(66, stepX - 8);
+
+        this.renderSingleLineHudText(ctx, titleStr, 5, 6, titleMaxW, '#ffffff', '#000000', 6.5);
+        this.renderSingleLineHudText(ctx, stepStr, stepX, 6, stepTextW + 2, '#92e8ff', '#000000', 6.0);
+
+        for (let s = 1; s <= safeSteps; s++) {
+          const dx = R(dotsStartX + (s - 1) * (( dotsTotalW - 4) / Math.max(1, safeSteps - 1))), dy = 10;
+          const done = s < safeCur;
+          const cur = s === safeCur;
+          ctx.fillStyle = done ? '#52e697' : cur ? '#92e8ff' : '#2a3556';
+          ctx.fillRect(dx - 1, dy - 2, 3, 4);
+          if (done || cur) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(dx, dy - 1, 1, 2);
+          }
         }
+      } else {
+        this.renderSingleLineHudText(ctx, titleStr, 5, 6, rightLimit - 6, '#ffffff', '#000000', 6.6);
       }
 
       // 0. Botão MAPA (Acesso rápido a todas as fases para o dev/jogador)
       const bmap = this.buttons.map;
       this.drawButtonBox(ctx, bmap, false);
-      drawPixelTextCentered(ctx, 'Mapa', bmap.x + bmap.w / 2, bmap.y + 4, '#f7e2b8', '#120d0b', bmap.w - 4, 8);
+      drawPixelTextCentered(ctx, 'Mapa', bmap.x + bmap.w / 2, bmap.y + 4, '#92e8ff', '#000000', bmap.w - 4, 8);
 
       // 1. Botão PAUSE (❚❚)
       const bp = this.buttons.pause;
       this.drawButtonBox(ctx, bp, this.paused);
-      ctx.fillStyle = '#f4eedf';
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(bp.x + 6, bp.y + 4, 3, 8);
       ctx.fillRect(bp.x + 11, bp.y + 4, 3, 8);
 
@@ -2907,15 +3024,15 @@
       const br = this.buttons.restart;
       const nowMs = typeof performance !== 'undefined' ? performance.now() : 0;
       const flashing = nowMs < this.restartFlashUntil;
-      ctx.fillStyle = flashing ? '#3e7338' : '#2e4c59';
+      ctx.fillStyle = flashing ? '#2b8bc2' : '#1e3a5f';
       ctx.fillRect(br.x, br.y, br.w, br.h);
-      ctx.fillStyle = flashing ? '#f2cc6b' : '#84bdd1';
+      ctx.fillStyle = flashing ? '#ffffff' : '#92e8ff';
       ctx.fillRect(br.x, br.y, br.w, 1);
       ctx.fillRect(br.x, br.y + br.h - 1, br.w, 1);
       ctx.fillRect(br.x, br.y, 1, br.h);
       ctx.fillRect(br.x + br.w - 1, br.y, 1, br.h);
       ctx.drawImage(RESTART_ICON_SPR, br.x + 3, br.y + 3);
-      drawPixelTextCentered(ctx, 'Reiniciar', br.x + 13 + (br.w - 14) / 2, br.y + 5, flashing ? '#f2cc6b' : '#ffffff', '#120d0b', br.w - 14, 8);
+      drawPixelTextCentered(ctx, 'Reiniciar', br.x + 13 + (br.w - 14) / 2, br.y + 5, flashing ? '#92e8ff' : '#ffffff', '#000000', br.w - 14, 8);
 
       // 3. Botão DEIXAR NO MUDO (🔊 / 🔇)
       const bm = this.buttons.mute;
@@ -2944,13 +3061,13 @@
       const bs = this.buttons.settings;
       this.drawButtonBox(ctx, bs, this.settingsOpen);
       const gx = bs.x + 10, gy = bs.y + 8;
-      ctx.fillStyle = '#f2cc6b';
+      ctx.fillStyle = '#92e8ff';
       ctx.fillRect(gx - 3, gy - 3, 7, 7);
       P1(ctx, gx, gy - 4, '#ffffff');
       P1(ctx, gx, gy + 4, '#ffffff');
       P1(ctx, gx - 4, gy, '#ffffff');
       P1(ctx, gx + 4, gy, '#ffffff');
-      ctx.fillStyle = '#3d2b24';
+      ctx.fillStyle = '#141930';
       ctx.fillRect(gx - 1, gy - 1, 3, 3);
     },
 
@@ -2962,48 +3079,48 @@
 
       if (this.settingsOpen) {
         const cx = 32, cy = 26, cw = 256, ch = 132;
-        drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#3d2b24' });
-        drawPixelTextCentered(ctx, 'Configurações de Som e Jogo', cx + cw / 2, cy + 7, '#f7e2b8', '#1f1410', cw - 16, 9);
+        drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#163b6c' });
+        drawPixelTextCentered(ctx, 'Configurações de Som e Jogo', cx + cw / 2, cy + 7, '#ffffff', '#000000', cw - 16, 9);
 
         const sb = this.settingsBtns;
-        drawPixelText(ctx, 'Música:', cx + 14, 54, '#2c221e', null, 80, 9);
+        drawPixelText(ctx, 'Música:', cx + 14, 54, '#92e8ff', '#000000', 80, 9);
         this.drawButtonBox(ctx, sb.musMinus, false);
-        drawPixelTextCentered(ctx, '-', sb.musMinus.x + sb.musMinus.w / 2, sb.musMinus.y + 4, '#ffffff', null, 14, 9);
+        drawPixelTextCentered(ctx, '-', sb.musMinus.x + sb.musMinus.w / 2, sb.musMinus.y + 4, '#ffffff', '#000000', 14, 9);
         this.drawVolumeBar(ctx, sb.musBar, this.musicVol, this.muted);
         this.drawButtonBox(ctx, sb.musPlus, false);
-        drawPixelTextCentered(ctx, '+', sb.musPlus.x + sb.musPlus.w / 2, sb.musPlus.y + 4, '#ffffff', null, 14, 9);
-        drawPixelText(ctx, `${this.muted ? 0 : this.musicVol}%`, sb.musPlus.x + 22, 54, '#633b34', null, 40, 9);
+        drawPixelTextCentered(ctx, '+', sb.musPlus.x + sb.musPlus.w / 2, sb.musPlus.y + 4, '#ffffff', '#000000', 14, 9);
+        drawPixelText(ctx, `${this.muted ? 0 : Math.round(this.musicVol)}%`, sb.musPlus.x + 22, 54, '#ffffff', '#000000', 40, 9);
 
-        drawPixelText(ctx, 'Efeitos:', cx + 14, 74, '#2c221e', null, 80, 9);
+        drawPixelText(ctx, 'Efeitos:', cx + 14, 74, '#92e8ff', '#000000', 80, 9);
         this.drawButtonBox(ctx, sb.sfxMinus, false);
-        drawPixelTextCentered(ctx, '-', sb.sfxMinus.x + sb.sfxMinus.w / 2, sb.sfxMinus.y + 4, '#ffffff', null, 14, 9);
+        drawPixelTextCentered(ctx, '-', sb.sfxMinus.x + sb.sfxMinus.w / 2, sb.sfxMinus.y + 4, '#ffffff', '#000000', 14, 9);
         this.drawVolumeBar(ctx, sb.sfxBar, this.sfxVol, this.muted);
         this.drawButtonBox(ctx, sb.sfxPlus, false);
-        drawPixelTextCentered(ctx, '+', sb.sfxPlus.x + sb.sfxPlus.w / 2, sb.sfxPlus.y + 4, '#ffffff', null, 14, 9);
-        drawPixelText(ctx, `${this.muted ? 0 : this.sfxVol}%`, sb.sfxPlus.x + 22, 74, '#633b34', null, 40, 9);
+        drawPixelTextCentered(ctx, '+', sb.sfxPlus.x + sb.sfxPlus.w / 2, sb.sfxPlus.y + 4, '#ffffff', '#000000', 14, 9);
+        drawPixelText(ctx, `${this.muted ? 0 : Math.round(this.sfxVol)}%`, sb.sfxPlus.x + 22, 74, '#ffffff', '#000000', 40, 9);
 
-        drawPixelText(ctx, 'Áudio Geral:', cx + 14, 94, '#2c221e', null, 88, 9);
+        drawPixelText(ctx, 'Áudio Geral:', cx + 14, 94, '#92e8ff', '#000000', 88, 9);
         this.drawButtonBox(ctx, sb.muteBtn, this.muted);
-        drawPixelTextCentered(ctx, this.muted ? 'Mudo: Ativado' : 'Som: Ativado', sb.muteBtn.x + sb.muteBtn.w / 2, sb.muteBtn.y + 4, this.muted ? '#f2cc6b' : '#a5e06c', '#1f1410', sb.muteBtn.w - 4, 9);
+        drawPixelTextCentered(ctx, this.muted ? 'Mudo: Ativado' : 'Som: Ativado', sb.muteBtn.x + sb.muteBtn.w / 2, sb.muteBtn.y + 4, '#ffffff', '#000000', sb.muteBtn.w - 4, 9);
 
-        drawPixelText(ctx, 'Movimento:', cx + 14, 114, '#2c221e', null, 88, 9);
+        drawPixelText(ctx, 'Movimento:', cx + 14, 114, '#92e8ff', '#000000', 88, 9);
         this.drawButtonBox(ctx, sb.motionBtn, this.reducedMotion);
-        drawPixelTextCentered(ctx, this.reducedMotion ? 'Reduzido' : 'Normal', sb.motionBtn.x + sb.motionBtn.w / 2, sb.motionBtn.y + 4, '#f4eedf', '#1f1410', sb.motionBtn.w - 4, 9);
+        drawPixelTextCentered(ctx, this.reducedMotion ? 'Reduzido' : 'Normal', sb.motionBtn.x + sb.motionBtn.w / 2, sb.motionBtn.y + 4, '#92e8ff', '#000000', sb.motionBtn.w - 4, 9);
 
         this.drawButtonBox(ctx, sb.closeBtn, true);
-        drawPixelTextCentered(ctx, 'Voltar ao Jogo', sb.closeBtn.x + sb.closeBtn.w / 2, sb.closeBtn.y + 4, '#ffffff', '#1f1410', sb.closeBtn.w - 4, 9);
+        drawPixelTextCentered(ctx, 'Voltar ao Jogo', sb.closeBtn.x + sb.closeBtn.w / 2, sb.closeBtn.y + 4, '#ffffff', '#000000', sb.closeBtn.w - 4, 9);
         return;
       }
 
       if (this.paused) {
         const cx = 68, cy = 26, cw = 184, ch = 132;
-        drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#3d2b24' });
-        drawPixelTextCentered(ctx, 'Jogo Pausado', cx + cw / 2, cy + 7, '#f7e2b8', '#1f1410', cw - 16, 9);
+        drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#163b6c' });
+        drawPixelTextCentered(ctx, 'Jogo Pausado', cx + cw / 2, cy + 7, '#ffffff', '#000000', cw - 16, 9);
 
         for (const b of this.pauseMenuBtns) {
           this.drawButtonBox(ctx, b, b.id === 'resume');
           const label = b.id === 'mute' ? (this.muted ? 'Som: Mudo' : 'Som: Ligado') : b.label;
-          drawPixelTextCentered(ctx, label, b.x + b.w / 2, b.y + 4, '#ffffff', '#1f1410', b.w - 6, 9);
+          drawPixelTextCentered(ctx, label, b.x + b.w / 2, b.y + 4, b.id === 'resume' ? '#92e8ff' : '#ffffff', '#000000', b.w - 6, 9);
         }
       }
     }
@@ -3070,7 +3187,7 @@
         id: 'tut_forest_ninja',
         title: 'Corte Cristalino da Floresta',
         vignette: 'forest_ninja_slice',
-        body: 'Deslize o dedo ou mouse para cortar os cristais no ar! Faça combos cortando múltiplos de uma vez e NUNCA corte as sombras!'
+        body: 'Deslize o dedo ou mouse para cortar os cristais puros no ar! Faça combos cortando múltiplos de uma vez. Cortar sombras desconta 2s do tempo!'
       }
     ],
     RIVER_AQUA: [
@@ -3098,9 +3215,9 @@
     RIVER_MELODY_SIMON: [
       {
         id: 'tut_river_melody',
-        title: 'O Canto dos 5 Cristais',
+        title: 'Sinfonia das Águas',
         vignette: 'river_melody',
-        body: 'Observe os 5 cristais: cada um flutua e toca sua própria nota na sequência. Toque-os na ordem exata para harmonizar o rio!'
+        body: 'Observe o cristal de referência por 1 segundo e acompanhe os 5 cristais flutuando na melodia. Depois, toque-os na ordem exata para harmonizar o rio!'
       }
     ],
     CAATINGA_CIRCLE: [
@@ -3162,7 +3279,7 @@
         id: 'tut_caatinga_shell_game',
         title: 'O Desafio das Areias',
         vignette: 'caatinga_shell_game',
-        body: 'A Opala de Fogo Primordial se escondeu sob uma cúpula de arenito! Acompanhe os movimentos em 6 rodadas e toque no copo certo!'
+        body: 'Observe a Opala de Fogo revelada por 1 segundo sob a cúpula antes do embaralhamento! Acompanhe as trocas e toque na cúpula correta nas 6 rodadas!'
       }
     ]
   };
@@ -3189,6 +3306,8 @@
     drawPixelText,
     drawPixelTextCentered,
     drawParchmentBox,
+    isMobileOrTouch,
+    drawVirtualTouchButton,
     SpriteBank,
     ActorAnimator,
     IrisTransition,

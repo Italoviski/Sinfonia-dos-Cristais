@@ -16,6 +16,14 @@
 <link rel="stylesheet" href="css/responsive.css?v=2">
 </head><body data-screen="home">
 <div id="preloaderScreen" class="preloader-screen" aria-label="Carregando recursos do jogo" role="status"><canvas id="preloaderCanvas" width="640" height="360" aria-hidden="true"></canvas></div>
+<div id="orientationOverlay" class="orientation-overlay" role="dialog" aria-label="Gire o dispositivo para o modo paisagem" hidden>
+  <div class="orientation-card">
+    <div class="orientation-icon" aria-hidden="true">📱↻</div>
+    <h2>Modo Paisagem Recomendado</h2>
+    <p>Para jogar <strong>Sinfonia dos Cristais</strong> com a melhor visualização, gire seu aparelho para a horizontal (paisagem).</p>
+    <button type="button" id="enterLandscapeFullscreenBtn" class="pixel-button">Tela Cheia e Modo Paisagem</button>
+  </div>
+</div>
 <a class="skip-link" href="#newGameButton">Ir ao menu</a>
 <main>
 <section id="home" class="screen home-screen" aria-labelledby="gameTitle">
@@ -44,8 +52,8 @@
 <div class="panel-title"><h2 id="settingsTitle">Configurações</h2><button class="square-button close" aria-label="Fechar configurações">×</button></div>
 <div class="settings-tabs" role="tablist" aria-label="Categoria"><button type="button" id="soundTab" role="tab" aria-selected="true" aria-controls="soundPanel">♪ Som</button><button type="button" id="accessTab" role="tab" aria-selected="false" aria-controls="accessPanel" tabindex="-1">◉ Acessibilidade</button></div>
 <div id="soundPanel" role="tabpanel" aria-labelledby="soundTab">
-<label class="setting-row"><span>Música<small>Notas, composição e vocal</small></span><input id="musicVolume" type="range" min="0" max="100" value="65"><output id="musicValue">65%</output></label>
-<label class="setting-row"><span>Efeitos<small>Colisões, fusões e fragmentos</small></span><input id="fxVolume" type="range" min="0" max="100" value="65"><output id="fxValue">65%</output></label>
+<label class="setting-row"><span>Música<small>Notas, composição e vocal</small></span><input id="musicVolume" type="range" min="0" max="100" value="50"><output id="musicValue">50%</output></label>
+<label class="setting-row"><span>Efeitos<small>Colisões, fusões e fragmentos</small></span><input id="fxVolume" type="range" min="0" max="100" value="50"><output id="fxValue">50%</output></label>
 <button type="button" id="testSound" class="pixel-button">Ouvir um cristal</button></div>
 <div id="accessPanel" role="tabpanel" aria-labelledby="accessTab" hidden>
 <label class="setting-row"><input id="voiceToggle" type="checkbox"><span>Narrador<small>Instruções e mensagens de navegação</small></span></label>
