@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\heito\\Documents\\GitHub\\Sinfonia-dos-Cristais\\node_modules\\@playwright\\mcp\\cli.js",
+        "--browser",
+        "msedge"
+      ]
+    }
+  }
+}

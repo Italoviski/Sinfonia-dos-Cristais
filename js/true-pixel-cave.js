@@ -1411,10 +1411,10 @@
       t0: 14.4,
       t1: 18.35,
       words: [
-        { text: 'um', t: 14.70, dur: 0.22 },
+        { text: 'um', t: 14.60, dur: 0.28 },
         { text: 'reino', t: 14.95, dur: 0.45 },
-        { text: 'envolto', t: 15.45, dur: 0.60 },
-        { text: 'em', t: 16.15, dur: 0.25 },
+        { text: 'envolto', t: 15.45, dur: 0.55 },
+        { text: 'em', t: 16.05, dur: 0.30 },
         { text: 'pura', t: 16.45, dur: 0.50 },
         { text: 'alegria,', t: 17.05, dur: 1.15, isHold: true, holdDur: 1.15 }
       ]
@@ -1436,9 +1436,9 @@
       t1: 25.95,
       words: [
         { text: 'Cada', t: 22.45, dur: 0.50 },
-        { text: 'cristal', t: 23.05, dur: 0.75 },
-        { text: 'tinha', t: 23.95, dur: 0.45 },
-        { text: 'sua', t: 24.45, dur: 0.35 },
+        { text: 'cristal', t: 23.05, dur: 0.70 },
+        { text: 'tinha', t: 23.85, dur: 0.45 },
+        { text: 'sua', t: 24.35, dur: 0.40 },
         { text: 'rainha,', t: 24.85, dur: 1.00, isHold: true, holdDur: 1.00 }
       ]
     },
@@ -1446,12 +1446,12 @@
       t0: 26.0,
       t1: 29.95,
       words: [
-        { text: 'e', t: 26.05, dur: 0.30 },
-        { text: 'entre', t: 26.50, dur: 0.45 },
-        { text: 'elas,', t: 27.00, dur: 0.45 },
-        { text: 'a', t: 27.55, dur: 0.18 },
-        { text: 'Ordem', t: 27.75, dur: 0.65 },
-        { text: 'era', t: 28.55, dur: 0.30 },
+        { text: 'e', t: 26.05, dur: 0.32 },
+        { text: 'entre', t: 26.45, dur: 0.42 },
+        { text: 'elas,', t: 26.95, dur: 0.40 },
+        { text: 'a', t: 27.40, dur: 0.28 },
+        { text: 'Ordem', t: 27.75, dur: 0.60 },
+        { text: 'era', t: 28.45, dur: 0.35 },
         { text: 'minha!', t: 28.90, dur: 0.95, isHold: true, holdDur: 0.95 }
       ]
     },
@@ -1459,40 +1459,40 @@
       t0: 30.0,
       t1: 33.85,
       words: [
-        { text: 'Mas', t: 30.05, dur: 0.35 },
-        { text: 'com', t: 30.45, dur: 0.22 },
-        { text: 'o', t: 30.70, dur: 0.18 },
-        { text: 'tempo,', t: 30.90, dur: 0.55 },
-        { text: 'a', t: 31.55, dur: 0.18 },
-        { text: 'fumaça', t: 31.75, dur: 0.55 },
-        { text: 'e', t: 32.40, dur: 0.18 },
-        { text: 'a', t: 32.60, dur: 0.20 },
-        { text: 'ambição', t: 32.85, dur: 0.90, isHold: true, holdDur: 0.90 }
+        { text: 'Mas', t: 30.05, dur: 0.30 },
+        { text: 'com', t: 30.38, dur: 0.28 },
+        { text: 'o', t: 30.70, dur: 0.28 },
+        { text: 'tempo,', t: 31.02, dur: 0.40 },
+        { text: 'a', t: 31.46, dur: 0.28 },
+        { text: 'fumaça', t: 31.78, dur: 0.42 },
+        { text: 'e', t: 32.24, dur: 0.28 },
+        { text: 'a', t: 32.56, dur: 0.28 },
+        { text: 'ambição', t: 32.88, dur: 0.88, isHold: true, holdDur: 0.88 }
       ]
     },
     {
       t0: 33.9,
       t1: 37.65,
       words: [
-        { text: 'vieram', t: 33.95, dur: 0.48 },
-        { text: 'manchar', t: 34.50, dur: 0.52 },
-        { text: 'o', t: 35.10, dur: 0.18 },
-        { text: 'ar', t: 35.30, dur: 0.45 },
-        { text: 'e', t: 35.85, dur: 0.18 },
-        { text: 'envenenar', t: 36.05, dur: 0.62 },
-        { text: 'o', t: 36.75, dur: 0.18 },
-        { text: 'chão...', t: 36.95, dur: 0.62, isHold: true, holdDur: 0.62 }
+        { text: 'vieram', t: 33.95, dur: 0.45 },
+        { text: 'manchar', t: 34.45, dur: 0.45 },
+        { text: 'o', t: 34.95, dur: 0.28 },
+        { text: 'ar', t: 35.28, dur: 0.38 },
+        { text: 'e', t: 35.70, dur: 0.28 },
+        { text: 'envenenar', t: 36.02, dur: 0.50 },
+        { text: 'o', t: 36.56, dur: 0.28 },
+        { text: 'chão...', t: 36.90, dur: 0.65, isHold: true, holdDur: 0.65 }
       ]
     },
     {
       t0: 37.7,
       t1: 41.35,
       words: [
-        { text: 'Mesmo', t: 37.75, dur: 0.48 },
-        { text: 'com', t: 38.30, dur: 0.22 },
-        { text: 'o', t: 38.55, dur: 0.18 },
-        { text: 'grito', t: 38.75, dur: 0.50 },
-        { text: 'de', t: 39.35, dur: 0.25 },
+        { text: 'Mesmo', t: 37.75, dur: 0.42 },
+        { text: 'com', t: 38.22, dur: 0.28 },
+        { text: 'o', t: 38.55, dur: 0.28 },
+        { text: 'grito', t: 38.88, dur: 0.40 },
+        { text: 'de', t: 39.32, dur: 0.28 },
         { text: 'alerta', t: 39.65, dur: 0.55 },
         { text: 'iminente,', t: 40.30, dur: 0.95, isHold: true, holdDur: 0.95 }
       ]
@@ -1501,11 +1501,11 @@
       t0: 41.4,
       t1: 44.95,
       words: [
-        { text: 'chamaram', t: 41.45, dur: 0.60 },
-        { text: 'de', t: 42.15, dur: 0.25 },
-        { text: 'farsa', t: 42.45, dur: 0.60 },
-        { text: 'o', t: 43.15, dur: 0.20 },
-        { text: 'perigo', t: 43.40, dur: 0.52 },
+        { text: 'chamaram', t: 41.45, dur: 0.55 },
+        { text: 'de', t: 42.05, dur: 0.30 },
+        { text: 'farsa', t: 42.40, dur: 0.55 },
+        { text: 'o', t: 43.00, dur: 0.30 },
+        { text: 'perigo', t: 43.35, dur: 0.55 },
         { text: 'presente!', t: 44.00, dur: 0.85, isHold: true, holdDur: 0.85 }
       ]
     },
@@ -1513,38 +1513,38 @@
       t0: 45.0,
       t1: 48.65,
       words: [
-        { text: 'Na', t: 45.05, dur: 0.25 },
-        { text: 'sombra', t: 45.35, dur: 0.52 },
-        { text: 'gerada', t: 45.95, dur: 0.60 },
-        { text: 'por', t: 46.65, dur: 0.30 },
-        { text: 'mãos', t: 47.00, dur: 0.42 },
-        { text: 'tão', t: 47.50, dur: 0.25 },
-        { text: 'cruéis,', t: 47.80, dur: 0.75, isHold: true, holdDur: 0.75 }
+        { text: 'Na', t: 45.05, dur: 0.28 },
+        { text: 'sombra', t: 45.38, dur: 0.48 },
+        { text: 'gerada', t: 45.92, dur: 0.55 },
+        { text: 'por', t: 46.52, dur: 0.32 },
+        { text: 'mãos', t: 46.90, dur: 0.42 },
+        { text: 'tão', t: 47.38, dur: 0.32 },
+        { text: 'cruéis,', t: 47.75, dur: 0.80, isHold: true, holdDur: 0.80 }
       ]
     },
     {
       t0: 48.7,
       t1: 52.25,
       words: [
-        { text: 'viramos', t: 48.75, dur: 0.65 },
-        { text: 'cristais', t: 49.50, dur: 0.65 },
-        { text: 'voláteis,', t: 50.25, dur: 0.55 },
-        { text: 'sem', t: 50.85, dur: 0.25 },
-        { text: 'paz', t: 51.15, dur: 0.30 },
-        { text: 'nos', t: 51.50, dur: 0.22 },
-        { text: 'céus,', t: 51.75, dur: 0.45, isHold: true, holdDur: 0.45 }
+        { text: 'viramos', t: 48.75, dur: 0.55 },
+        { text: 'cristais', t: 49.35, dur: 0.55 },
+        { text: 'voláteis,', t: 49.95, dur: 0.45 },
+        { text: 'sem', t: 50.45, dur: 0.30 },
+        { text: 'paz', t: 50.80, dur: 0.32 },
+        { text: 'nos', t: 51.18, dur: 0.30 },
+        { text: 'céus,', t: 51.55, dur: 0.60, isHold: true, holdDur: 0.60 }
       ]
     },
     {
       t0: 52.3,
       t1: 55.85,
       words: [
-        { text: 'intensificando', t: 52.35, dur: 1.05 },
-        { text: 'o', t: 53.50, dur: 0.18 },
-        { text: 'caos', t: 53.70, dur: 0.42 },
-        { text: 'e', t: 54.20, dur: 0.18 },
-        { text: 'a', t: 54.40, dur: 0.20 },
-        { text: 'desordem,', t: 54.65, dur: 1.05, isHold: true, holdDur: 1.05 }
+        { text: 'intensificando', t: 52.35, dur: 0.85 },
+        { text: 'o', t: 53.25, dur: 0.30 },
+        { text: 'caos', t: 53.60, dur: 0.38 },
+        { text: 'e', t: 54.02, dur: 0.28 },
+        { text: 'a', t: 54.35, dur: 0.28 },
+        { text: 'desordem,', t: 54.68, dur: 1.05, isHold: true, holdDur: 1.05 }
       ]
     },
     {
@@ -1569,9 +1569,9 @@
       t1: 86.85,
       words: [
         { text: 'Mas...', t: 80.70, dur: 1.20, isHold: true, holdDur: 1.20 },
-        { text: 'Era', t: 84.65, dur: 0.35 },
-        { text: 'uma', t: 85.05, dur: 0.35 },
-        { text: 'vez...', t: 85.45, dur: 1.15, isHold: true, holdDur: 1.15 }
+        { text: 'Era', t: 84.55, dur: 0.35 },
+        { text: 'uma', t: 84.95, dur: 0.35 },
+        { text: 'vez...', t: 85.40, dur: 1.20, isHold: true, holdDur: 1.20 }
       ]
     },
     {
@@ -1588,11 +1588,11 @@
       t1: 95.35,
       words: [
         { text: 'vagando', t: 90.10, dur: 0.85 },
-        { text: 'cá', t: 91.15, dur: 0.38 },
-        { text: 'e', t: 91.60, dur: 0.25 },
-        { text: 'acolá,', t: 91.95, dur: 0.70 },
-        { text: 'tão', t: 92.75, dur: 0.35 },
-        { text: 'de', t: 93.15, dur: 0.25 },
+        { text: 'cá', t: 91.10, dur: 0.38 },
+        { text: 'e', t: 91.55, dur: 0.30 },
+        { text: 'acolá,', t: 91.95, dur: 0.65 },
+        { text: 'tão', t: 92.68, dur: 0.32 },
+        { text: 'de', t: 93.05, dur: 0.30 },
         { text: 'repente!', t: 93.45, dur: 1.45, isHold: true, holdDur: 1.45 }
       ]
     },
@@ -1600,68 +1600,68 @@
       t0: 95.4,
       t1: 98.35,
       words: [
-        { text: 'Em', t: 95.50, dur: 0.20 },
-        { text: 'uma', t: 95.75, dur: 0.25 },
-        { text: 'aventura,', t: 96.05, dur: 0.75 },
-        { text: 'escuridão', t: 96.90, dur: 0.65 },
-        { text: 'da', t: 97.60, dur: 0.20 },
-        { text: 'caverna,', t: 97.85, dur: 0.45 }
+        { text: 'Em', t: 95.45, dur: 0.28 },
+        { text: 'uma', t: 95.78, dur: 0.30 },
+        { text: 'aventura,', t: 96.15, dur: 0.65 },
+        { text: 'escuridão', t: 96.88, dur: 0.55 },
+        { text: 'da', t: 97.48, dur: 0.28 },
+        { text: 'caverna,', t: 97.82, dur: 0.45 }
       ]
     },
     {
       t0: 98.4,
-      t1: 101.15,
+      t1: 101.18,
       words: [
-        { text: 'topou', t: 98.45, dur: 0.35 },
-        { text: 'com', t: 98.85, dur: 0.18 },
-        { text: 'a', t: 99.05, dur: 0.15 },
-        { text: 'verdade', t: 99.25, dur: 0.55 },
-        { text: 'mais', t: 99.85, dur: 0.28 },
-        { text: 'dura', t: 100.15, dur: 0.32 },
-        { text: 'e', t: 100.50, dur: 0.15 },
-        { text: 'eterna:', t: 100.68, dur: 0.42 }
+        { text: 'topou', t: 98.45, dur: 0.30 },
+        { text: 'com', t: 98.78, dur: 0.28 },
+        { text: 'a', t: 99.10, dur: 0.28 },
+        { text: 'verdade', t: 99.42, dur: 0.35 },
+        { text: 'mais', t: 99.80, dur: 0.28 },
+        { text: 'dura', t: 100.12, dur: 0.30 },
+        { text: 'e', t: 100.45, dur: 0.28 },
+        { text: 'eterna:', t: 100.78, dur: 0.35 }
       ]
     },
     {
       t0: 101.2,
       t1: 105.75,
       words: [
-        { text: 'O', t: 101.30, dur: 0.30 },
-        { text: 'chão', t: 101.65, dur: 0.55 },
-        { text: 'se', t: 102.30, dur: 0.28 },
-        { text: 'abriu,', t: 102.65, dur: 0.65 },
-        { text: 'e', t: 103.40, dur: 0.20 },
-        { text: 'no', t: 103.62, dur: 0.22 },
-        { text: 'calabouço', t: 103.90, dur: 0.70 },
-        { text: 'ela', t: 104.65, dur: 0.30 },
-        { text: 'caiu!', t: 105.00, dur: 0.70, isHold: true, holdDur: 0.70 }
+        { text: 'O', t: 101.28, dur: 0.30 },
+        { text: 'chão', t: 101.65, dur: 0.50 },
+        { text: 'se', t: 102.25, dur: 0.30 },
+        { text: 'abriu,', t: 102.62, dur: 0.55 },
+        { text: 'e', t: 103.22, dur: 0.28 },
+        { text: 'no', t: 103.55, dur: 0.30 },
+        { text: 'calabouço', t: 103.90, dur: 0.60 },
+        { text: 'ela', t: 104.55, dur: 0.35 },
+        { text: 'caiu!', t: 104.95, dur: 0.72, isHold: true, holdDur: 0.72 }
       ]
     },
     {
       t0: 105.8,
-      t1: 109.1,
+      t1: 109.11,
       words: [
-        { text: 'Contudo,', t: 105.85, dur: 0.70 },
-        { text: 'respira', t: 106.75, dur: 0.48 },
-        { text: 'fundo,', t: 107.28, dur: 0.45 },
-        { text: 'isso', t: 107.80, dur: 0.28 },
-        { text: 'não', t: 108.10, dur: 0.25 },
-        { text: 'foi', t: 108.38, dur: 0.22 },
-        { text: 'o', t: 108.62, dur: 0.15 },
+        { text: 'Contudo,', t: 105.85, dur: 0.65 },
+        { text: 'respira', t: 106.58, dur: 0.40 },
+        { text: 'fundo,', t: 107.02, dur: 0.38 },
+        { text: 'isso', t: 107.48, dur: 0.30 },
+        { text: 'não', t: 107.82, dur: 0.28 },
+        { text: 'foi', t: 108.15, dur: 0.28 },
+        { text: 'o', t: 108.48, dur: 0.28 },
         { text: 'fim!', t: 108.80, dur: 0.28 }
       ]
     },
     {
-      t0: 109.15,
+      t0: 109.12,
       t1: 112.5,
       words: [
-        { text: 'Na', t: 109.20, dur: 0.18 },
-        { text: 'verdade,', t: 109.40, dur: 0.42 },
-        { text: 'foi', t: 109.88, dur: 0.28 },
-        { text: 'a', t: 110.20, dur: 0.18 },
-        { text: 'deixa', t: 110.42, dur: 0.48 },
-        { text: 'perfeita', t: 110.95, dur: 0.55 },
-        { text: 'pra', t: 111.55, dur: 0.25 },
+        { text: 'Na', t: 109.22, dur: 0.28 },
+        { text: 'verdade,', t: 109.55, dur: 0.32 },
+        { text: 'foi', t: 109.90, dur: 0.28 },
+        { text: 'a', t: 110.22, dur: 0.28 },
+        { text: 'deixa', t: 110.55, dur: 0.40 },
+        { text: 'perfeita', t: 111.00, dur: 0.45 },
+        { text: 'pra', t: 111.50, dur: 0.30 },
         { text: 'mim!', t: 111.85, dur: 0.60, isHold: true, holdDur: 0.60 }
       ]
     },
@@ -1670,10 +1670,10 @@
       t1: 115.65,
       words: [
         { text: 'Um,', t: 112.80, dur: 0.45 },
-        { text: 'dois,', t: 113.65, dur: 0.45 },
-        { text: 'três', t: 114.20, dur: 0.35 },
-        { text: 'e...', t: 114.60, dur: 0.30 },
-        { text: 'vamos', t: 114.95, dur: 0.32 },
+        { text: 'dois,', t: 113.60, dur: 0.45 },
+        { text: 'três', t: 114.15, dur: 0.35 },
+        { text: 'e...', t: 114.55, dur: 0.32 },
+        { text: 'vamos', t: 114.92, dur: 0.32 },
         { text: 'lá!', t: 115.30, dur: 0.32 }
       ]
     },
@@ -1681,12 +1681,12 @@
       t0: 115.7,
       t1: 118.45,
       words: [
-        { text: 'Olha', t: 115.80, dur: 0.38 },
-        { text: 'só', t: 116.22, dur: 0.28 },
-        { text: 'que', t: 116.55, dur: 0.25 },
-        { text: 'novidade,', t: 116.85, dur: 0.68 },
-        { text: 'eu', t: 117.60, dur: 0.22 },
-        { text: 'tô', t: 117.85, dur: 0.22 },
+        { text: 'Olha', t: 115.78, dur: 0.35 },
+        { text: 'só', t: 116.18, dur: 0.30 },
+        { text: 'que', t: 116.52, dur: 0.30 },
+        { text: 'novidade,', t: 116.88, dur: 0.50 },
+        { text: 'eu', t: 117.42, dur: 0.28 },
+        { text: 'tô', t: 117.75, dur: 0.28 },
         { text: 'livre!', t: 118.10, dur: 0.32 }
       ]
     },
@@ -1694,14 +1694,14 @@
       t0: 118.5,
       t1: 122.45,
       words: [
-        { text: 'Move', t: 118.55, dur: 0.35 },
-        { text: 'o', t: 118.92, dur: 0.15 },
-        { text: 'cristal', t: 119.10, dur: 0.48 },
-        { text: 'aqui,', t: 119.62, dur: 0.38 },
-        { text: 'tudo', t: 120.05, dur: 0.35 },
-        { text: 'isso', t: 120.42, dur: 0.30 },
-        { text: 'é', t: 120.75, dur: 0.18 },
-        { text: 'bem', t: 120.95, dur: 0.35 },
+        { text: 'Move', t: 118.55, dur: 0.28 },
+        { text: 'o', t: 118.88, dur: 0.28 },
+        { text: 'cristal', t: 119.20, dur: 0.38 },
+        { text: 'aqui,', t: 119.62, dur: 0.35 },
+        { text: 'tudo', t: 120.00, dur: 0.32 },
+        { text: 'isso', t: 120.35, dur: 0.30 },
+        { text: 'é', t: 120.68, dur: 0.28 },
+        { text: 'bem', t: 121.00, dur: 0.32 },
         { text: 'facinho!', t: 121.35, dur: 1.00, isHold: true, holdDur: 1.00 }
       ]
     },
@@ -1709,13 +1709,13 @@
       t0: 122.5,
       t1: 126.25,
       words: [
-        { text: 'Essa', t: 122.75, dur: 0.38 },
-        { text: 'luz', t: 123.18, dur: 0.38 },
-        { text: 'faz', t: 123.60, dur: 0.30 },
-        { text: 'a', t: 123.92, dur: 0.18 },
-        { text: 'magia,', t: 124.15, dur: 0.55 },
-        { text: 'abriu-se', t: 124.75, dur: 0.52 },
-        { text: 'o', t: 125.30, dur: 0.18 },
+        { text: 'Essa', t: 122.65, dur: 0.35 },
+        { text: 'luz', t: 123.05, dur: 0.35 },
+        { text: 'faz', t: 123.45, dur: 0.30 },
+        { text: 'a', t: 123.80, dur: 0.30 },
+        { text: 'magia,', t: 124.15, dur: 0.50 },
+        { text: 'abriu-se', t: 124.70, dur: 0.42 },
+        { text: 'o', t: 125.18, dur: 0.28 },
         { text: 'caminho!', t: 125.50, dur: 0.70, isHold: true, holdDur: 0.70 }
       ]
     },
@@ -1723,64 +1723,64 @@
       t0: 126.3,
       t1: 129.75,
       words: [
-        { text: 'Abre', t: 126.40, dur: 0.35 },
-        { text: 'o', t: 126.78, dur: 0.18 },
-        { text: 'sapatinho!', t: 127.00, dur: 0.85 },
-        { text: 'Vai', t: 128.10, dur: 0.32 },
-        { text: 'no', t: 128.45, dur: 0.25 },
-        { text: 'sapatinho!', t: 128.75, dur: 0.90, isHold: true, holdDur: 0.90 }
+        { text: 'Abre', t: 126.38, dur: 0.32 },
+        { text: 'o', t: 126.75, dur: 0.30 },
+        { text: 'sapatinho!', t: 127.10, dur: 0.75 },
+        { text: 'Vai', t: 128.05, dur: 0.32 },
+        { text: 'no', t: 128.42, dur: 0.30 },
+        { text: 'sapatinho!', t: 128.78, dur: 0.90, isHold: true, holdDur: 0.90 }
       ]
     },
     {
       t0: 129.8,
       t1: 132.6,
       words: [
-        { text: 'Pequenos', t: 129.85, dur: 0.45 },
-        { text: 'passos', t: 130.35, dur: 0.40 },
-        { text: 'fazendo', t: 130.80, dur: 0.42 },
-        { text: 'a', t: 131.25, dur: 0.15 },
+        { text: 'Pequenos', t: 129.85, dur: 0.38 },
+        { text: 'passos', t: 130.28, dur: 0.35 },
+        { text: 'fazendo', t: 130.68, dur: 0.35 },
+        { text: 'a', t: 131.08, dur: 0.28 },
         { text: 'terra', t: 131.42, dur: 0.35 },
-        { text: 'inteira', t: 131.80, dur: 0.38 },
-        { text: 'florescer!', t: 132.20, dur: 0.38 }
+        { text: 'inteira', t: 131.82, dur: 0.35 },
+        { text: 'florescer!', t: 132.22, dur: 0.35 }
       ]
     },
     {
       t0: 132.65,
-      t1: 135.4,
+      t1: 135.42,
       words: [
-        { text: 'Eu', t: 132.70, dur: 0.22 },
-        { text: 'sou', t: 132.95, dur: 0.25 },
-        { text: 'a', t: 133.22, dur: 0.15 },
-        { text: 'Ordem,', t: 133.40, dur: 0.38 },
-        { text: 'está', t: 133.82, dur: 0.30 },
-        { text: 'aqui!', t: 134.15, dur: 0.35 },
-        { text: 'Pode', t: 134.55, dur: 0.30 },
-        { text: 'aplaudir!', t: 134.90, dur: 0.45 }
+        { text: 'Eu', t: 132.70, dur: 0.28 },
+        { text: 'sou', t: 133.02, dur: 0.28 },
+        { text: 'a', t: 133.35, dur: 0.28 },
+        { text: 'Ordem,', t: 133.68, dur: 0.30 },
+        { text: 'está', t: 134.02, dur: 0.28 },
+        { text: 'aqui!', t: 134.35, dur: 0.30 },
+        { text: 'Pode', t: 134.70, dur: 0.28 },
+        { text: 'aplaudir!', t: 135.02, dur: 0.35 }
       ]
     },
     {
       t0: 135.45,
       t1: 138.35,
       words: [
-        { text: 'Siga', t: 135.50, dur: 0.35 },
-        { text: 'as', t: 135.90, dur: 0.20 },
-        { text: 'minhas', t: 136.15, dur: 0.40 },
-        { text: 'regras', t: 136.60, dur: 0.50 },
-        { text: 'que', t: 137.15, dur: 0.20 },
-        { text: 'tudo', t: 137.40, dur: 0.32 },
-        { text: 'vai', t: 137.75, dur: 0.22 },
-        { text: 'fluir!', t: 138.00, dur: 0.32 }
+        { text: 'Siga', t: 135.50, dur: 0.32 },
+        { text: 'as', t: 135.85, dur: 0.28 },
+        { text: 'minhas', t: 136.18, dur: 0.38 },
+        { text: 'regras', t: 136.60, dur: 0.42 },
+        { text: 'que', t: 137.05, dur: 0.28 },
+        { text: 'tudo', t: 137.38, dur: 0.30 },
+        { text: 'vai', t: 137.72, dur: 0.28 },
+        { text: 'fluir!', t: 138.05, dur: 0.28 }
       ]
     },
     {
       t0: 138.4,
-      t1: 141.1,
+      t1: 141.12,
       words: [
-        { text: 'Chegamos,', t: 138.45, dur: 0.65 },
-        { text: 'chegamos', t: 139.20, dur: 0.60 },
-        { text: 'ao', t: 139.85, dur: 0.25 },
-        { text: 'topo', t: 140.15, dur: 0.38 },
-        { text: 'de', t: 140.55, dur: 0.20 },
+        { text: 'Chegamos,', t: 138.45, dur: 0.60 },
+        { text: 'chegamos', t: 139.15, dur: 0.55 },
+        { text: 'ao', t: 139.75, dur: 0.30 },
+        { text: 'topo', t: 140.10, dur: 0.32 },
+        { text: 'de', t: 140.45, dur: 0.28 },
         { text: 'novo,', t: 140.78, dur: 0.30 }
       ]
     },
@@ -1788,9 +1788,9 @@
       t0: 141.15,
       t1: 144.3,
       words: [
-        { text: 'o', t: 141.20, dur: 0.20 },
-        { text: 'reino', t: 141.45, dur: 0.45 },
-        { text: 'inteiro', t: 141.95, dur: 0.55 },
+        { text: 'o', t: 141.20, dur: 0.28 },
+        { text: 'reino', t: 141.52, dur: 0.40 },
+        { text: 'inteiro', t: 141.98, dur: 0.50 },
         { text: 'vai...', t: 142.55, dur: 0.55 },
         { text: 'renascer!', t: 143.15, dur: 1.05, isHold: true, holdDur: 1.05 }
       ]
@@ -1799,24 +1799,24 @@
       t0: 144.35,
       t1: 146.95,
       words: [
-        { text: 'Move', t: 144.50, dur: 0.38 },
-        { text: 'pra', t: 144.92, dur: 0.28 },
+        { text: 'Move', t: 144.50, dur: 0.35 },
+        { text: 'pra', t: 144.90, dur: 0.30 },
         { text: 'cá!', t: 145.25, dur: 0.45 },
-        { text: 'Move', t: 145.80, dur: 0.35 },
-        { text: 'pra', t: 146.20, dur: 0.25 },
-        { text: 'lá!', t: 146.50, dur: 0.40 }
+        { text: 'Move', t: 145.78, dur: 0.35 },
+        { text: 'pra', t: 146.18, dur: 0.30 },
+        { text: 'lá!', t: 146.52, dur: 0.40 }
       ]
     },
     {
       t0: 147.0,
       t1: 150.15,
       words: [
-        { text: 'Viu', t: 147.05, dur: 0.32 },
-        { text: 'como', t: 147.42, dur: 0.35 },
-        { text: 'a', t: 147.80, dur: 0.18 },
-        { text: 'Ordem', t: 148.02, dur: 0.45 },
+        { text: 'Viu', t: 147.05, dur: 0.30 },
+        { text: 'como', t: 147.40, dur: 0.32 },
+        { text: 'a', t: 147.75, dur: 0.28 },
+        { text: 'Ordem', t: 148.08, dur: 0.40 },
         { text: 'faz', t: 148.52, dur: 0.30 },
-        { text: 'tudo', t: 148.88, dur: 0.38 },
+        { text: 'tudo', t: 148.88, dur: 0.35 },
         { text: 'brilhar?', t: 149.30, dur: 0.80, isHold: true, holdDur: 0.80 }
       ]
     },

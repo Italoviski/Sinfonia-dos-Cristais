@@ -14,5 +14,8 @@
   },
   "dependencies": {
     "lamejs": "^1.2.1"
+  },
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.85"
   }
 }

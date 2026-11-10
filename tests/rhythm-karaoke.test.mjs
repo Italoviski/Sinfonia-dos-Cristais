@@ -121,7 +121,7 @@ test('CaveRhythmKaraoke inicializa com 23 frases, prática e layout de texto den
   assert.equal(typeof Karaoke.evaluateHit, 'function', 'evaluateHit deve ser função');
 
   const phrases = Karaoke.phrases;
-  assert.equal(phrases.length, 24, 'Devem existir exatamente 24 frases sincronizadas com a música');
+  assert.equal(phrases.length, 38, 'Devem existir exatamente 38 frases sincronizadas com a música completa cantada');
 
   // Verifica que cada frase cabe com margem folgada dentro dos 300px do pergaminho (max <= 230px)
   let maxW = 0;
@@ -344,4 +344,54 @@ test('CaveRhythmKaraoke: física do pulo sustentado (hold) e tolerância do cír
   // A bolinha sustentada no ar deve estar mais alta (menor valor de y) que a bolinha caída
   assert.ok(holdingY < droppedY, `Bolinha sustentada (${holdingY}) deve flutuar mais alto que a caída (${droppedY})`);
 });
+
+test('CaveRhythmKaraoke: todos os arcos de um trecho novo já ficam traçados desde t0 e letra cantada completa está presente', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+
+  const Karaoke = globalThis.CaveRhythmKaraoke;
+  Karaoke.initLayouts();
+
+  const fullText = Karaoke.phrases
+    .filter(p => p.words && p.words.length > 0)
+    .map(p => p.words.map(w => w.text).join(' '))
+    .join(' | ');
+
+  for (const snippet of [
+    'reino envolto em pura alegria',
+    'chamaram de farsa o perigo presente!',
+    'Na sombra gerada por mãos tão cruéis,',
+    'intensificando o caos e a desordem,',
+    'vagando cá e acolá, tão de repente!',
+    'topou com a verdade mais dura e eterna:',
+    'O chão se abriu, e no calabouço ela caiu!',
+    'Contudo, respira fundo, isso não foi o fim!',
+    'Um, dois, três e... vamos lá!',
+    'Abre o sapatinho! Vai no sapatinho!',
+    'Pequenos passos fazendo a terra inteira florescer!',
+    'Siga as minhas regras que tudo vai fluir!',
+    'Viu como a Ordem faz tudo brilhar?'
+  ]) {
+    assert.ok(fullText.includes(snippet), `Letra cantada deve conter "${snippet}"`);
+  }
+
+  // Verifica que no exato instante t0 em que cada trecho aparece, todos os arcos entre suas palavras já estão traçados
+  for (let pi = 0; pi < Karaoke.phrases.length; pi++) {
+    const p = Karaoke.phrases[pi];
+    if (!p.words || p.words.length < 2) continue;
+    const arcsAtStart = Karaoke.getPhraseArcs(p, { x: 10, y: 153, w: 300, h: 25 }, p.t0);
+    assert.equal(
+      arcsAtStart.length,
+      p.words.length - 1,
+      `Frase ${pi} deve ter todos os ${p.words.length - 1} arcos traçados já em t0=${p.t0}`
+    );
+    for (const seg of arcsAtStart) {
+      assert.ok(seg.x1 > seg.x0, `Arco de P${pi} (${seg.fromIndex}->${seg.toIndex}) deve avançar na horizontal`);
+      assert.ok(seg.height >= 6 && seg.height <= 25, `Arco de P${pi} deve ter altura válida`);
+      assert.equal(seg.u, 0, `Em t0=${p.t0}, o arco (${seg.fromIndex}->${seg.toIndex}) deve estar 100% pré-traçado (u=0)`);
+    }
+  }
+});
+
 

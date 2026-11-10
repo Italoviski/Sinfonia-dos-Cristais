@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-08T07:22:09.943Z",
+  "timestamp": "2026-11-10T06:31:42.746Z",
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "screensTested": [
     "home",
@@ -142,7 +142,7 @@
     {
       "id": 20,
       "name": "Caatinga - Fase 5",
-      "initialPieces": 4,
+      "initialPieces": 2,
       "solved": true,
       "finished": true
     },
@@ -158,8 +158,8 @@
     "highContrastClass": true,
     "reduceMotionClass": true,
     "settings": {
-      "music": 0.65,
-      "fx": 0.65,
+      "music": 0.5,
+      "fx": 0.5,
       "voice": false,
       "contrast": true,
       "motion": true,

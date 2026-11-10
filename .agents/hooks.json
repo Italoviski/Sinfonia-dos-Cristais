@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\heito\\AppData\\Local\\Programs\\nodejs\\node.exe C:\\Users\\heito\\OneDrive\\Documentos\\GitHub\\Sinfonia-dos-Cristais\\.agents\\scripts\\post-tool-hook.mjs"
+            "command": "\"C:\\Program Files\\nodejs\\node.exe\" \"C:\\Users\\heito\\Documents\\GitHub\\Sinfonia-dos-Cristais\\.agents\\scripts\\post-tool-hook.mjs\""
           }
         ]
       }
