@@ -14,4 +14,10 @@
     user-select: none !important;
     touch-action: manipulation;
   }
+  #truePixelScreen,
+  .game-screen,
+  body[data-screen="game"] {
+    touch-action: none !important;
+    overscroll-behavior: none !important;
+  }
 }

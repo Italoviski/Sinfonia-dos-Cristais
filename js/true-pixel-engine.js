@@ -1912,7 +1912,13 @@
 
       // Quantizado a 24 FPS para fidelidade True Pixel Art
       p = Math.floor(p * 24) / 24;
-      const maxR = 200;
+      const maxCornerDist = Math.max(
+        Math.hypot(this.cx, this.cy),
+        Math.hypot(W - this.cx, this.cy),
+        Math.hypot(this.cx, H - this.cy),
+        Math.hypot(W - this.cx, H - this.cy)
+      );
+      const maxR = Math.max(200, Math.ceil(maxCornerDist) + 6);
       const radius = mode === 'out'
         ? maxR * (1 - easeInOut(p))
         : maxR * easeInOut(p);
@@ -1924,19 +1930,35 @@
       }
       if (radius >= maxR - 1) return;
 
-      ctx.fillStyle = '#05030f';
       for (let y = 0; y < H; y++) {
         const dy = y - this.cy;
+        const dy2 = dy * dy;
+        let currentColor = null;
+        let runStart = 0;
+
         for (let x = 0; x < W; x++) {
           const dx = x - this.cx;
-          const d = Math.hypot(dx, dy) + (bay(x, y) - 7.5) * 0.35;
+          const d = Math.sqrt(dx * dx + dy2) + (bay(x, y) - 7.5) * 0.35;
+          let col = null;
           if (d > radius) {
-            ctx.fillRect(x, y, 1, 1);
+            col = '#05030f';
           } else if (d > radius - 2 && ((x + y) & 1) === 0) {
-            ctx.fillStyle = '#3fc6f0';
-            ctx.fillRect(x, y, 1, 1);
-            ctx.fillStyle = '#05030f';
+            col = '#3fc6f0';
           }
+
+          if (col !== currentColor) {
+            if (currentColor !== null) {
+              ctx.fillStyle = currentColor;
+              ctx.fillRect(runStart, y, x - runStart, 1);
+            }
+            currentColor = col;
+            runStart = x;
+          }
+        }
+
+        if (currentColor !== null) {
+          ctx.fillStyle = currentColor;
+          ctx.fillRect(runStart, y, W - runStart, 1);
         }
       }
     }

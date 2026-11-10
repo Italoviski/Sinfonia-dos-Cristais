@@ -158,7 +158,11 @@
 
   function goto(name) {
     if (name !== 'home') window.CrystalMenuAudio?.pause?.();
-    if (name !== 'map') window.CrystalJourney?.close?.();
+    if (name !== 'map') {
+      window.CrystalJourney?.close?.();
+      const mapEl = $('map');
+      if (mapEl) mapEl.classList.remove('iris-entering');
+    }
     if (name !== 'game') {
       window.CaveChapter1?.deactivateCanvas?.();
       window.TruePixelWorlds?.deactivateCanvas?.();

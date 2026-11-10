@@ -137,6 +137,9 @@
     emerald_core: buildHiBitWorldGem('quartz', {
       W: '#ecffea', H: '#b2f09e', L: '#7ec456', M: '#4b943b', D: '#2c6324', K: '#183b14'
     }),
+    emerald_pure: buildHiBitWorldGem('quartz', {
+      W: '#ecffea', H: '#b2f09e', L: '#7ec456', M: '#4b943b', D: '#2c6324', K: '#183b14'
+    }),
     shadow_bomb: buildHiBitWorldGem('quartz', {
       W: '#6d2e82', H: '#451859', L: '#2c0c3b', M: '#1e0529', D: '#12021c', K: '#0a0010'
     })
@@ -2199,6 +2202,8 @@
     canvas: null,
     ctx: null,
     running: false,
+    _inLoop: false,
+    _rafId: null,
     t: 0,
     lastNow: 0,
     phase: 'idle',
@@ -2259,7 +2264,7 @@
     completeBtnRect: { x: 108, y: 115, w: 104, h: 15 },
     skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
     gameOverBtnRect: { x: 96, y: 118, w: 128, h: 16 },
-    forestSlashBtnRect: { x: 234, y: 156, w: 78, h: 18 },
+    forestSlashBtnRect: null,
     _exitIrisStarted: false,
     _bound: false,
     WORLD_SPECS,
@@ -2298,6 +2303,10 @@
         document.body.appendChild(cv);
       }
       this.fitCanvas(cv);
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function' && !cv._resizeHooked) {
+        cv._resizeHooked = true;
+        window.addEventListener('resize', () => this.fitCanvas(cv));
+      }
       return cv;
     },
 
@@ -2305,9 +2314,11 @@
       if (!cv || !cv.style) return;
       const vw = typeof window !== 'undefined' && window.innerWidth ? Math.max(320, window.innerWidth) : 320;
       const vh = typeof window !== 'undefined' && window.innerHeight ? Math.max(180, window.innerHeight) : 180;
-      const scale = Math.min(vw / W, vh / H);
-      cv.style.width = Math.round(W * scale) + 'px';
-      cv.style.height = Math.round(H * scale) + 'px';
+      const isMapIris = this.phase === 'map_iris_in' || global.CaveChapter1?.phase === 'map_iris_in';
+      const scale = isMapIris ? Math.max(vw / W, vh / H) : Math.min(vw / W, vh / H);
+      const roundFn = isMapIris ? Math.ceil : Math.round;
+      cv.style.width = roundFn(W * scale) + 'px';
+      cv.style.height = roundFn(H * scale) + 'px';
       cv.style.display = cv.hidden ? 'none' : 'block';
     },
 
@@ -2327,8 +2338,17 @@
       this.stopMusicAudio();
       this.phase = 'map_active';
       this.running = false;
+      this._inLoop = false;
+      if (this._rafId) {
+        if (typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(this._rafId);
+        }
+        this._rafId = null;
+      }
       IrisTransition.active = false;
       IrisTransition.onDone = null;
+      const mapSec = typeof document !== 'undefined' ? document.getElementById('map') : null;
+      if (mapSec) mapSec.classList.remove('iris-entering');
       if (this.canvas) {
         this.canvas.hidden = true;
         if (this.canvas.style) {
@@ -3295,6 +3315,10 @@
           GameHUD.playSfx('shatter');
           this.clearTrembleStates();
         }
+        if (this.fractionPlatform && (activeTarget.inFraction || activeOpal.inFraction)) {
+          this.layoutFractionPieces();
+          this.updateFractionPlatformState();
+        }
         if (!activeTarget.broken && activeTarget.value > 0) {
           const hit = this.findTouchingCompatibleShadow(activeTarget, activeTarget.x, activeTarget.y);
           if (hit) {
@@ -3787,6 +3811,8 @@
     updateFractionPlatformState() {
       const fp = this.fractionPlatform;
       if (!fp || fp.broken) return;
+      fp.topPieces = (fp.topPieces || []).filter((p) => !p.broken && p.value > 0);
+      fp.bottomPieces = (fp.bottomPieces || []).filter((p) => !p.broken && p.value > 0);
       const sumTop = (fp.topPieces || []).reduce((acc, p) => acc + (p.value || 0), 0);
       const sumBottom = (fp.bottomPieces || []).reduce((acc, p) => acc + (p.value || 0), 0);
       fp.topSum = sumTop;
@@ -3863,7 +3889,8 @@
         const fp = this.fractionPlatform;
         const overTop = Math.abs(dropped.x - fp.x) <= fp.w * 0.5 && Math.abs(dropped.y - fp.topY) <= 16;
         const overBottom = Math.abs(dropped.x - fp.x) <= fp.w * 0.5 && Math.abs(dropped.y - fp.bottomY) <= 16;
-        if (overTop || overBottom) {
+        // Opala de Fogo não entra na fração: ela subtrai do cristal que está lá dentro.
+        if ((overTop || overBottom) && dropped.type !== 'opal') {
           const wasInPureEq = dropped.inEquation === 'pure';
           dropped.inFraction = overTop ? 'top' : 'bottom';
           dropped.inEquation = null;
@@ -4538,6 +4565,18 @@
         c.glowing = c.isReference;
         c.shakeTimer = 0;
       }
+    },
+
+    isInsideRiverMelodyCrystal(c, x, y) {
+      if (!c || c.x == null || c.baseY == null) return false;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+      const hw = 13;
+      if (Math.abs(x - c.x) > hw) return false;
+      const lift = Math.max(0, Number(c.liftY) || 0);
+      const cy = c.baseY - lift;
+      const minY = Math.min(cy - 22, c.baseY - 22);
+      const maxY = Math.max(cy + 16, c.baseY + 16);
+      return y >= minY && y <= maxY;
     },
 
     clickRiverMelodyCrystal(gemIdx) {
@@ -5328,14 +5367,7 @@
     handleForestNinjaPointerDown(x, y) {
       const fn = this.forestNinja;
       if (!fn || this.phase !== 'forest_ninja_game') return false;
-
-      if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch()) {
-        const vb = this.forestSlashBtnRect;
-        if (vb && x >= vb.x && x <= vb.x + vb.w && y >= vb.y && y <= vb.y + vb.h) {
-          this.handleForestNinjaKeyboardSlash();
-          return true;
-        }
-      }
+      if (y <= 20) return false;
 
       fn.isSlicing = true;
       fn.lastStrokeX = x;
@@ -5575,11 +5607,6 @@
 
       // Exibição visível da pontuação da criança
       drawPixelText(ctx, `Pontos: ${fn.score}`, barBox.x + barBox.w - 86, barBox.y + 4, '#92e8ff', '#000000', 78, 8, 'right');
-
-      // Botão virtual de corte em dispositivos touch/mobile
-      if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch() && typeof E.drawVirtualTouchButton === 'function') {
-        E.drawVirtualTouchButton(ctx, this.forestSlashBtnRect, '⎵ CORTAR', Boolean(fn.isSlicing));
-      }
 
       // 5. Banner de COMBO (COMBO X2!, COMBO X3!, COMBO X4!)
       if (fn.activeComboBanner) {
@@ -6014,6 +6041,8 @@
     },
 
     startWorldExitTransition() {
+      IrisTransition.active = false;
+      IrisTransition.onDone = null;
       this._exitIrisStarted = false;
       this.phase = 'walk_to_world_exit';
       this.phaseTime = 0;
@@ -6026,6 +6055,7 @@
     },
 
     enterJourneyMapWithIrisIn(worldCompleted = true) {
+      const wasInLoop = Boolean(this._inLoop);
       DialogueBox.close();
       TutorialModal.close();
       this.stopMusicAudio();
@@ -6070,13 +6100,25 @@
           this.canvas.style.boxShadow = 'none';
           this.canvas.style.pointerEvents = 'none';
         }
+        this.fitCanvas(this.canvas);
+        const mapSec = typeof document !== 'undefined' ? document.getElementById('map') : null;
+        if (mapSec) mapSec.classList.add('iris-entering');
         IrisTransition.start('in', 160, 90, 0.95, () => {
+          if (mapSec) mapSec.classList.remove('iris-entering');
           this.deactivateCanvas();
         });
-        if (!this.running) {
+        if (wasInLoop) {
+          this._inLoop = true;
+        }
+        if (!this.running || !wasInLoop) {
           this.running = true;
           this.lastNow = typeof performance !== 'undefined' ? performance.now() : 0;
-          requestAnimationFrame((now) => this.loop(now));
+          if (!wasInLoop) {
+            if (this._rafId && typeof cancelAnimationFrame === 'function') {
+              cancelAnimationFrame(this._rafId);
+            }
+            this._rafId = requestAnimationFrame((now) => this.loop(now));
+          }
         }
       } else {
         this.phase = 'map_active';
@@ -6145,7 +6187,7 @@
           if (this.riverMelody.phase === 'player_input') {
             for (let i = 0; i < this.riverMelody.crystals.length; i++) {
               const c = this.riverMelody.crystals[i];
-              if (Math.hypot(x - c.x, y - (c.baseY - (c.liftY || 0))) <= 18) {
+              if (this.isInsideRiverMelodyCrystal(c, x, y)) {
                 this.clickRiverMelodyCrystal(i);
                 return;
               }
@@ -6226,6 +6268,7 @@
 
       const onMove = (e) => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
+        if (GameHUD.paused || GameHUD.settingsOpen) return;
         const pt = e.touches ? e.touches[0] : e;
         if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
@@ -6417,27 +6460,53 @@
           this.handleForestNinjaKeyboardSlash();
           return;
         }
+
+        if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+            e.preventDefault();
+            GameHUD.playSfx('click');
+            if (this.phase === 'world_celebrate_complete') {
+              this.startWorldExitTransition();
+            } else {
+              this.startWorldLevel(this.worldKey, this.currentLevel + 1);
+            }
+            return;
+          }
+        }
       };
 
       if (this.canvas && typeof this.canvas.addEventListener === 'function') {
-        this.canvas.addEventListener('pointerdown', onDown);
+        this.canvas.addEventListener('pointerdown', (e) => {
+          if (e.cancelable) e.preventDefault();
+          if (this.canvas.setPointerCapture && e.pointerId != null) {
+            try { this.canvas.setPointerCapture(e.pointerId); } catch (_) {}
+          }
+          onDown(e);
+        });
         this.canvas.addEventListener('touchstart', (e) => {
           if (e.cancelable) e.preventDefault();
-          onDown(e);
         }, { passive: false });
       }
       if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
         window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
-        window.addEventListener('pointercancel', onUp);
+        window.addEventListener('pointerup', (e) => {
+          if (this.canvas?.releasePointerCapture && e.pointerId != null) {
+            try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+          }
+          onUp(e);
+        });
+        window.addEventListener('pointercancel', (e) => {
+          if (this.canvas?.releasePointerCapture && e.pointerId != null) {
+            try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+          }
+          onUp(e);
+        });
         window.addEventListener('touchmove', (e) => {
           if ((this.phase === 'forest_ninja_game' || (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2)) && e.cancelable) {
             e.preventDefault();
           }
-          onMove(e);
         }, { passive: false });
-        window.addEventListener('touchend', onUp);
-        window.addEventListener('touchcancel', onUp);
         window.addEventListener('keydown', onKeyDown);
       }
     },
@@ -7025,12 +7094,19 @@
     },
 
     loop(now) {
+      this._rafId = null;
       if (!this.running) return;
-      const dt = Math.min(0.1, Math.max(0.001, (now - this.lastNow) / 1000));
-      this.lastNow = now;
+      this._inLoop = true;
+      const currentNow = typeof now === 'number' && Number.isFinite(now) ? now : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const prevNow = typeof this.lastNow === 'number' && Number.isFinite(this.lastNow) ? this.lastNow : currentNow;
+      const dt = Math.min(0.1, Math.max(0.001, (currentNow - prevNow) / 1000));
+      this.lastNow = currentNow;
       this.update(dt);
       this.render();
-      requestAnimationFrame((n) => this.loop(n));
+      this._inLoop = false;
+      if (this.running) {
+        this._rafId = requestAnimationFrame((n) => this.loop(n));
+      }
     }
   };
 

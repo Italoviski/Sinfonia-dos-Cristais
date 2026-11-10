@@ -80,6 +80,13 @@ img, svg, canvas, #truePixelScreen, #preloaderCanvas, #menuParticles {
   -webkit-tap-highlight-color: transparent !important;
 }
 
+#truePixelScreen,
+.game-screen,
+body[data-screen="game"] {
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
 ::selection {
   background: transparent !important;
   color: inherit !important;

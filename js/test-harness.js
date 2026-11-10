@@ -85,8 +85,37 @@
       app: window.CrystalApp?.state || null,
       dialogueOpen: !!E?.DialogueBox?.isOpen,
       tutorialOpen: !!E?.TutorialModal?.isOpen,
-      sockets: E?.DialogueBox?.sockets ? { ...E.DialogueBox.sockets } : null,
+      hud: {
+        paused: Boolean(E?.GameHUD?.paused),
+        muted: Boolean(E?.GameHUD?.muted),
+        settingsOpen: Boolean(E?.GameHUD?.settingsOpen)
+      },
       performance: window.CrystalPerformance?.report?.() || null,
+      caveKaraoke: (() => {
+        const K = window.CaveRhythmKaraoke;
+        const C = window.CaveChapter1;
+        if (!K || !C || (C.currentLevel !== 5 && !C.phase?.startsWith('musical_'))) return null;
+        const isPractice = C.phase === 'musical_vignette' && C.vignetteCard === 2;
+        const mt = isPractice ? (C.vignettePracticeTime || 0) : (C.musicalTime || 0);
+        const phrase = K.getCurrentPhrase ? K.getCurrentPhrase(mt, isPractice) : null;
+        const pos = typeof K.getBallPosition === 'function' ? K.getBallPosition(mt, isPractice) : null;
+        const phraseIdx = phrase && K.phrases ? K.phrases.indexOf(phrase) : -1;
+        let wordIdx = -1;
+        if (phrase && phrase.words) {
+          wordIdx = phrase.words.findIndex(w => mt >= w.t && mt <= (w.t + (w.isHold ? (w.holdDur || w.dur) : w.dur)));
+        }
+        return {
+          phraseIndex: phraseIdx,
+          wordIndex: wordIdx,
+          musicalTime: mt,
+          ballX: pos ? pos.x : 0,
+          ballY: pos ? pos.y : 0,
+          arcHeight: pos ? pos.arcHeight : 0,
+          arcActive: pos ? Boolean(pos.arcActive) : false,
+          isPractice: Boolean(isPractice),
+          phase: C.phase
+        };
+      })(),
       worldRuntime: mod
         ? {
             module: active.kind,

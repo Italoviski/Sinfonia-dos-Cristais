@@ -72,32 +72,53 @@ function setupNodeDOM() {
       measureText: () => ({ width: 40 })
     });
 
-    const mockElement = (tag) => ({
-      tagName: tag.toUpperCase(),
-      style: {},
-      classList: {
-        add: () => {},
+    const elementsById = new Map();
+    const mockElement = (tag) => {
+      const classes = new Set();
+      const listeners = new Map();
+      return {
+        tagName: tag.toUpperCase(),
+        style: {},
+        classList: {
+          add: (...cls) => cls.forEach(c => classes.add(c)),
+          remove: (...cls) => cls.forEach(c => classes.delete(c)),
+          toggle: (c) => classes.has(c) ? (classes.delete(c), false) : (classes.add(c), true),
+          contains: (c) => classes.has(c)
+        },
+        setAttribute: () => {},
+        getAttribute: () => null,
+        appendChild: (c) => c,
+        append: () => {},
         remove: () => {},
-        toggle: () => false,
-        contains: () => false
-      },
-      setAttribute: () => {},
-      getAttribute: () => null,
-      appendChild: (c) => c,
-      append: () => {},
-      remove: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      querySelector: () => null,
-      querySelectorAll: () => [],
-      getContext: () => mockContext(),
-      toDataURL: () => 'data:image/png;base64,AA==',
-      getBoundingClientRect: () => ({ left: 0, top: 0, width: 640, height: 360 })
-    });
+        addEventListener: (type, fn) => {
+          if (!listeners.has(type)) listeners.set(type, []);
+          listeners.get(type).push(fn);
+        },
+        removeEventListener: (type, fn) => {
+          const arr = listeners.get(type);
+          if (arr) {
+            const idx = arr.indexOf(fn);
+            if (idx >= 0) arr.splice(idx, 1);
+          }
+        },
+        dispatchEvent: (evt) => {
+          const arr = listeners.get(evt.type) || [];
+          arr.forEach(fn => fn(evt));
+        },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        getContext: () => mockContext(),
+        toDataURL: () => 'data:image/png;base64,AA==',
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 640, height: 360 })
+      };
+    };
 
     globalThis.document = {
       createElement: mockElement,
-      getElementById: (id) => mockElement('div'),
+      getElementById: (id) => {
+        if (!elementsById.has(id)) elementsById.set(id, mockElement('div'));
+        return elementsById.get(id);
+      },
       querySelector: () => null,
       querySelectorAll: () => [],
       body: mockElement('body'),
@@ -106,6 +127,10 @@ function setupNodeDOM() {
       readyState: 'complete'
     };
     globalThis.document.body.dataset = {};
+  }
+  if (globalThis.TruePixelEngine?.IrisTransition) {
+    globalThis.TruePixelEngine.IrisTransition.active = false;
+    globalThis.TruePixelEngine.IrisTransition.onDone = null;
   }
 }
 
@@ -841,6 +866,98 @@ test('Mundo do Rio: Plataforma de Fração (Nós 11-14) e Simon-Says Melódico d
   assert.ok(rm.crystals[0].liftY < 14, 'Cristais devem descer suavemente de volta à água');
 
   // ============================================================================
+  // 4.1. Validação de Hitbox e Cliques (R1 e R2 - Sinfonia das Águas / Fase 15):
+  //    - Detecção no topo, centro, corpo, base e extensões visuais (anel de brilho, indicador calmo)
+  //    - Rejeição estrita em vãos, áreas vazias e fora dos limites
+  //    - Robustez contra dados nulos, indefinidos ou NaN
+  //    - Garantia de que cliques em áreas vazias não disparam som nem estado de erro
+  // ============================================================================
+  const c0 = rm.crystals[0]; // Aqua em x=76, baseY=110
+  c0.liftY = 0;
+  // Acertos em qualquer ponto visível do cristal:
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 110), true, 'Centro do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 95), true, 'Topo visível do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 90), true, 'Extremidade superior do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 88), true, 'Borda superior do anel de brilho/aura deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 105), true, 'Corpo do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 120), true, 'Base do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 125), true, 'Indicador visual do Modo Calmo abaixo do cristal deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 126), true, 'Extensão inferior do indicador de Modo Calmo deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 + 12, 110), true, 'Lateral direita dentro do corpo deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 - 12, 110), true, 'Lateral esquerda dentro do corpo deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 + 13, 110), true, 'Limite exato da largura direita deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 - 13, 110), true, 'Limite exato da largura esquerda deve registrar acerto');
+
+  // Cristal suspenso/flutuando (liftY = 14):
+  c0.liftY = 14;
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 96), true, 'Centro do cristal elevado deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 80), true, 'Topo do cristal elevado deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 75), true, 'Topo do distintivo numérico de ordem deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 74), true, 'Borda superior da aura elevada deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 110), true, 'Posição base do cristal elevado deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 120), true, 'Base física do cristal elevado deve registrar acerto');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 73), false, 'Acima do topo elevado deve retornar false');
+  c0.liftY = 0;
+
+  // Cliques fora do cristal / áreas vazias:
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 + 14, 110), false, '1px além da largura direita não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 - 14, 110), false, '1px além da largura esquerda não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 + 15, 110), false, 'Fora da largura do cristal não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76 - 15, 110), false, 'Fora da largura do cristal não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 80), false, 'Muito acima do cristal em repouso não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 128), false, 'Na faixa do pergaminho inferior (y=128) não deve registrar como cristal');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 130), false, 'Abaixo da base (área vazia) não deve registrar');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 65), false, 'Clique bem acima do cristal deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, 140), false, 'Clique bem abaixo da água deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 97, 110), false, 'Clique no vão vazio entre c0 e c1 deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 20, 30), false, 'Clique no céu/cenário deve retornar false');
+
+  // Robustez de tipos inválidos ou incompletos:
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(null, 76, 110), false, 'Cristal nulo deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(undefined, 76, 110), false, 'Cristal indefinido deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, NaN, 110), false, 'Coordenada X NaN deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal(c0, 76, NaN), false, 'Coordenada Y NaN deve retornar false');
+  assert.equal(Worlds.isInsideRiverMelodyCrystal({}, 76, 110), false, 'Objeto sem coordenadas deve retornar false');
+
+  // ============================================================================
+  // 4.2. Neutralização de Cliques Vazios na Lógica de Entrada (R2):
+  //    - Cliques fora dos cristais não chamam clickRiverMelodyCrystal nem tocam erro
+  // ============================================================================
+  Worlds.setupRiverMelodyRound(0);
+  rm.phase = 'player_input';
+  let accidentalErrorCount = 0;
+  let playedNote = null;
+  globalThis.CrystalAudio.errorFairy = () => { accidentalErrorCount++; };
+  globalThis.CrystalAudio.playRiverNote = (idx) => { playedNote = idx; };
+
+  // Cliques vazios em diferentes posições (vão, água, céu, pergaminho):
+  const emptyCoords = [
+    { x: 97, y: 110, desc: 'vão entre cristais' },
+    { x: 139, y: 110, desc: 'vão entre c1 e c2' },
+    { x: 20, y: 30, desc: 'céu/cenário' },
+    { x: 160, y: 135, desc: 'pergaminho inferior' },
+    { x: 76, y: 50, desc: 'muito acima do cristal 0' },
+    { x: 280, y: 110, desc: 'à direita do último cristal' }
+  ];
+
+  for (const pt of emptyCoords) {
+    let hitCrystal = false;
+    for (let i = 0; i < rm.crystals.length; i++) {
+      if (Worlds.isInsideRiverMelodyCrystal(rm.crystals[i], pt.x, pt.y)) {
+        hitCrystal = true;
+        Worlds.clickRiverMelodyCrystal(i);
+        break;
+      }
+    }
+    assert.equal(hitCrystal, false, `Clique em ${pt.desc} não deve atingir nenhum cristal`);
+  }
+
+  assert.equal(accidentalErrorCount, 0, 'Cliques em áreas vazias NUNCA devem tocar som ou registrar erro');
+  assert.equal(rm.phase, 'player_input', 'A fase deve continuar aguardando a entrada do jogador');
+  assert.equal(rm.playerIndex, 0, 'O índice do jogador não deve ser alterado por cliques vazios');
+  assert.equal(E.DialogueBox.isOpen, false, 'Nenhum diálogo de erro deve abrir com cliques vazios');
+
+  // ============================================================================
   // 5. Robustez matemática em CrystalRules.Board.fractionDivide:
   // ============================================================================
   await import('../js/rules.js');
@@ -1208,7 +1325,190 @@ test('Revisão Geral: Mobile/Touch, Volume 50%, Fases 9/10, Círculo Fases 13/14
   assert.equal(Worlds.phase, 'shell_game_shuffle', 'Após 1.5s, as cúpulas abaixam e iniciam o embaralhamento');
 });
 
+test('Transição em Círculo em Reverso ao concluir fase especial e retornar para o mapa', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+  await import('../js/true-pixel-worlds.js');
 
+  const Cave = globalThis.CaveChapter1;
+  const Worlds = globalThis.TruePixelWorlds;
+  const E = globalThis.TruePixelEngine;
 
+  let currentScreen = 'game';
+  let syncedIds = null;
+  globalThis.CrystalApp = {
+    syncProgress(ids, cur) { syncedIds = ids; },
+    goto(screen) {
+      currentScreen = screen;
+      globalThis.document.body.dataset.screen = screen;
+      if (screen !== 'game') {
+        Cave.deactivateCanvas();
+        Worlds.deactivateCanvas();
+      }
+      const homeSec = globalThis.document.getElementById('home');
+      const gameSec = globalThis.document.getElementById('game');
+      const mapSec = globalThis.document.getElementById('map');
+      if (homeSec) homeSec.hidden = screen !== 'home';
+      if (gameSec) gameSec.hidden = screen !== 'game';
+      if (mapSec) mapSec.hidden = screen !== 'map';
+    }
+  };
 
+  // 1. Validação da Caverna (Fase 5 Especial):
+  Cave.init();
+  Cave.currentLevel = 5;
+  Cave.phase = 'world_celebrate_complete';
+  Cave.running = true;
 
+  // Inicia saída da Caverna
+  Cave.startForestExitTransition();
+  assert.equal(Cave.phase, 'walk_to_forest_exit');
+  assert.equal(Cave.protag.state, 'walk');
+
+  // Avança até início do Iris Out
+  Cave.update(0.5);
+  assert.equal(Cave._forestExitIrisStarted, true);
+  assert.equal(E.IrisTransition.active, true);
+  assert.equal(E.IrisTransition.mode, 'out');
+
+  // Conclui o Iris Out fechando a tela (0.85s de duração)
+  Cave.update(0.9);
+  assert.equal(currentScreen, 'map', 'Deve transicionar a tela para map');
+  assert.equal(Cave.phase, 'map_iris_in', 'Deve engajar a fase map_iris_in');
+  assert.equal(Cave.running, true, 'Loop deve permanecer ativo renderizando a transição sobre o mapa');
+  assert.equal(E.IrisTransition.active, true, 'IrisTransition deve estar ativa');
+  assert.equal(E.IrisTransition.mode, 'in', 'Deve executar o efeito em reverso (mode in) revelando o mapa suavemente');
+  assert.equal(E.IrisTransition.duration, 0.95, 'Duração padrão suave de 0.95s');
+
+  const mapEl = globalThis.document.getElementById('map');
+  assert.equal(mapEl.classList.contains('iris-entering'), true, 'Elemento #map deve conter a classe iris-entering');
+
+  // Executa renderização durante map_iris_in para garantir zero erros de render
+  let drawnSpans = [];
+  const fakeCtx = {
+    fillStyle: '',
+    setTransform() {},
+    clearRect() {},
+    fillRect(x, y, w, h) {
+      drawnSpans.push({ color: this.fillStyle, x, y, w, h });
+    }
+  };
+  Cave.ctx = fakeCtx;
+  Cave.render();
+  assert.ok(drawnSpans.length > 0, 'Deve desenhar spans horizontais de transição True Pixel');
+  assert.ok(drawnSpans.every(s => s.color === '#05030f' || s.color === '#3fc6f0'), 'Cores da transição devem ser a máscara escura e o dithering azul ciano');
+
+  // Avança até a conclusão do Iris In
+  Cave.update(1.0);
+  assert.equal(Cave.running, false, 'Canvas da Caverna deve ser desativado após concluir');
+  assert.equal(Cave.phase, 'map_active');
+  assert.equal(Cave._inLoop, false, '_inLoop deve ser false ao desativar');
+  assert.equal(E.IrisTransition.onDone, null, 'IrisTransition.onDone deve ser limpo');
+  assert.equal(mapEl.classList.contains('iris-entering'), false, 'Classe iris-entering deve ser removida ao finalizar');
+  assert.equal(Cave.canvas.hidden, true);
+
+  // 1.1 Validação de prevenção de loop duplicado (single RAF lifecycle):
+  let rafCalls = 0;
+  let cancelledRafs = [];
+  const origRAF = globalThis.requestAnimationFrame;
+  const origCAF = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = (fn) => { rafCalls++; return rafCalls; };
+  globalThis.cancelAnimationFrame = (id) => { cancelledRafs.push(id); };
+  Cave.running = true;
+  Cave._inLoop = true;
+  Cave.enterJourneyMapWithIrisIn(true);
+  assert.equal(rafCalls, 0, 'enterJourneyMapWithIrisIn NÃO deve agendar RAF duplicado se já estiver dentro do loop ativo');
+  assert.equal(Cave._inLoop, true, '_inLoop deve ser preservado mesmo após goto("map") chamar deactivateCanvas');
+  Cave.deactivateCanvas();
+  assert.equal(Cave._inLoop, false, '_inLoop deve ser false ao desativar');
+  globalThis.requestAnimationFrame = origRAF;
+  globalThis.cancelAnimationFrame = origCAF;
+
+  // 2. Validação dos Mundos TruePixelWorlds (Fase 10 - Floresta Especial):
+  Worlds.init();
+  Worlds.currentLevel = 5; // Level 5 de Floresta = Fase 10
+  Worlds.worldKey = 'forest';
+  Worlds.phase = 'world_celebrate_complete';
+  Worlds.running = true;
+
+  // Atalho de teclado Space/Enter para avançar celebração do mundo
+  Worlds.bindInput();
+  const onKeyDown = Worlds._bound ? null : null; // já foi vinculado
+  // Aciona startWorldExitTransition
+  Worlds.startWorldExitTransition();
+  assert.equal(Worlds.phase, 'walk_to_world_exit');
+  assert.equal(Worlds.protag.state, 'walk');
+
+  // Avança até início do Iris Out
+  Worlds.update(0.5);
+  assert.equal(Worlds._exitIrisStarted, true);
+  assert.equal(E.IrisTransition.active, true);
+  assert.equal(E.IrisTransition.mode, 'out');
+
+  // Conclui o Iris Out (0.85s)
+  Worlds.update(0.9);
+  assert.equal(Worlds.phase, 'map_iris_in', 'Deve engajar map_iris_in em TruePixelWorlds');
+  assert.equal(Worlds.running, true);
+  assert.equal(E.IrisTransition.active, true);
+  assert.equal(E.IrisTransition.mode, 'in', 'Efeito em reverso abrindo suavemente sobre o mapa');
+  assert.equal(mapEl.classList.contains('iris-entering'), true);
+
+  Worlds.ctx = fakeCtx;
+  drawnSpans = [];
+  Worlds.render();
+  assert.ok(drawnSpans.length > 0);
+
+  // Finaliza Iris In
+  Worlds.update(1.0);
+  assert.equal(Worlds.running, false);
+  assert.equal(Worlds.phase, 'map_active');
+  assert.equal(Worlds._inLoop, false);
+  assert.equal(E.IrisTransition.onDone, null);
+  assert.equal(mapEl.classList.contains('iris-entering'), false);
+  assert.equal(Worlds.canvas.hidden, true);
+
+  // 2.1 Validação de prevenção de loop duplicado em Worlds:
+  rafCalls = 0;
+  globalThis.requestAnimationFrame = (fn) => { rafCalls++; return rafCalls; };
+  globalThis.cancelAnimationFrame = (id) => { cancelledRafs.push(id); };
+  Worlds.running = true;
+  Worlds._inLoop = true;
+  Worlds.enterJourneyMapWithIrisIn(true);
+  assert.equal(rafCalls, 0, 'Worlds.enterJourneyMapWithIrisIn NÃO deve agendar RAF duplicado se estiver dentro do loop ativo');
+  assert.equal(Worlds._inLoop, true, 'Worlds._inLoop deve ser preservado mesmo após goto("map") chamar deactivateCanvas');
+  Worlds.deactivateCanvas();
+  assert.equal(Worlds._inLoop, false);
+  globalThis.requestAnimationFrame = origRAF;
+  globalThis.cancelAnimationFrame = origCAF;
+
+  // 3. Validação de robustez contra timestamps indefinidos/NaN em Cave.loop e Worlds.loop:
+  Cave.running = true;
+  Cave.lastNow = undefined;
+  Cave.loop(undefined);
+  assert.ok(typeof Cave.lastNow === 'number' && Number.isFinite(Cave.lastNow), 'Cave.lastNow deve permanecer finito mesmo com loop(undefined)');
+  Cave.deactivateCanvas();
+
+  Worlds.running = true;
+  Worlds.lastNow = undefined;
+  Worlds.loop(undefined);
+  assert.ok(typeof Worlds.lastNow === 'number' && Number.isFinite(Worlds.lastNow), 'Worlds.lastNow deve permanecer finito mesmo com loop(undefined)');
+  Worlds.deactivateCanvas();
+
+  // 4. Validação de bloqueio de entrada (input guards) durante map_iris_in na Caverna:
+  Cave.init();
+  Cave.bindInput();
+  Cave.running = true;
+  Cave.phase = 'map_iris_in';
+  let hudClickTriggered = false;
+  const origHandleClick = E.GameHUD.handleClick;
+  E.GameHUD.handleClick = () => { hudClickTriggered = true; return true; };
+  Cave.canvas.dispatchEvent({ type: 'pointerdown', clientX: 160, clientY: 10 });
+  assert.equal(hudClickTriggered, false, 'Clicks no canvas durante map_iris_in devem ser estritamente ignorados');
+  E.GameHUD.handleClick = origHandleClick;
+  Cave.deactivateCanvas();
+
+  // 5. Validação de hook de redimensionamento de janela em Worlds.ensureCanvas:
+  const worldsCv = Worlds.ensureCanvas();
+  assert.equal(worldsCv._resizeHooked, true, 'Worlds.ensureCanvas deve marcar _resizeHooked = true para redimensionamento de janela');
+});

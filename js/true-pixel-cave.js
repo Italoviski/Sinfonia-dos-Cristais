@@ -1399,297 +1399,460 @@
       words: []
     },
     {
-      t0: 11.0,
-      t1: 18.2,
+      t0: 10.9,
+      t1: 14.3,
       words: [
-        { text: 'Era', t: 11.0, dur: 0.6 },
-        { text: 'uma', t: 11.7, dur: 0.6 },
-        { text: 'vez', t: 12.4, dur: 0.8 },
-        { text: 'um', t: 13.3, dur: 0.5 },
-        { text: 'reino', t: 13.9, dur: 0.8 },
-        { text: 'em', t: 14.8, dur: 0.4 },
-        { text: 'pura', t: 15.3, dur: 0.8 },
-        { text: 'alegria,', t: 16.2, dur: 1.8, isHold: true, holdDur: 1.8 }
+        { text: 'Era', t: 11.00, dur: 0.55 },
+        { text: 'uma', t: 11.65, dur: 0.55 },
+        { text: 'vez...', t: 12.35, dur: 1.20, isHold: true, holdDur: 1.20 }
       ]
     },
     {
-      t0: 18.2,
-      t1: 24.2,
+      t0: 14.4,
+      t1: 18.35,
       words: [
-        { text: 'guiado', t: 18.2, dur: 0.8 },
-        { text: 'por', t: 19.1, dur: 0.5 },
-        { text: 'quatro', t: 19.7, dur: 0.8 },
-        { text: 'gemas', t: 20.6, dur: 0.8 },
-        { text: 'em', t: 21.5, dur: 0.4 },
-        { text: 'harmonia...', t: 22.0, dur: 2.2, isHold: true, holdDur: 2.2 }
+        { text: 'um', t: 14.70, dur: 0.22 },
+        { text: 'reino', t: 14.95, dur: 0.45 },
+        { text: 'envolto', t: 15.45, dur: 0.60 },
+        { text: 'em', t: 16.15, dur: 0.25 },
+        { text: 'pura', t: 16.45, dur: 0.50 },
+        { text: 'alegria,', t: 17.05, dur: 1.15, isHold: true, holdDur: 1.15 }
       ]
     },
     {
-      t0: 24.5,
-      t1: 29.8,
+      t0: 18.4,
+      t1: 22.25,
       words: [
-        { text: 'Cada', t: 24.5, dur: 0.7 },
-        { text: 'cristal', t: 25.3, dur: 0.9 },
-        { text: 'tinha', t: 26.3, dur: 0.8 },
-        { text: 'a', t: 27.2, dur: 0.3 },
-        { text: 'sua', t: 27.6, dur: 0.5 },
-        { text: 'rainha,', t: 28.2, dur: 1.6, isHold: true, holdDur: 1.6 }
+        { text: 'guiado', t: 18.60, dur: 0.55 },
+        { text: 'por', t: 19.25, dur: 0.30 },
+        { text: 'quatro', t: 19.60, dur: 0.50 },
+        { text: 'gemas', t: 20.15, dur: 0.50 },
+        { text: 'em', t: 20.70, dur: 0.30 },
+        { text: 'harmonia...', t: 21.05, dur: 1.10, isHold: true, holdDur: 1.10 }
       ]
     },
     {
-      t0: 29.9,
-      t1: 36.2,
+      t0: 22.3,
+      t1: 25.95,
       words: [
-        { text: 'e', t: 29.9, dur: 0.4 },
-        { text: 'entre', t: 30.4, dur: 0.7 },
-        { text: 'elas,', t: 31.2, dur: 0.8 },
-        { text: 'a', t: 32.1, dur: 0.4 },
-        { text: 'Ordem', t: 32.6, dur: 1.0 },
-        { text: 'era', t: 33.7, dur: 0.5 },
-        { text: 'minha!', t: 34.3, dur: 1.9, isHold: true, holdDur: 1.9 }
+        { text: 'Cada', t: 22.45, dur: 0.50 },
+        { text: 'cristal', t: 23.05, dur: 0.75 },
+        { text: 'tinha', t: 23.95, dur: 0.45 },
+        { text: 'sua', t: 24.45, dur: 0.35 },
+        { text: 'rainha,', t: 24.85, dur: 1.00, isHold: true, holdDur: 1.00 }
       ]
     },
     {
-      t0: 36.5,
-      t1: 42.8,
+      t0: 26.0,
+      t1: 29.95,
       words: [
-        { text: 'Mas', t: 36.5, dur: 0.6 },
-        { text: 'com', t: 37.2, dur: 0.4 },
-        { text: 'o', t: 37.7, dur: 0.3 },
-        { text: 'tempo,', t: 38.1, dur: 0.8 },
-        { text: 'a', t: 39.0, dur: 0.3 },
-        { text: 'fumaça', t: 39.4, dur: 0.9 },
-        { text: 'e', t: 40.4, dur: 0.3 },
-        { text: 'a', t: 40.8, dur: 0.3 },
-        { text: 'ambição...', t: 41.1, dur: 1.7, isHold: true, holdDur: 1.7 }
+        { text: 'e', t: 26.05, dur: 0.30 },
+        { text: 'entre', t: 26.50, dur: 0.45 },
+        { text: 'elas,', t: 27.00, dur: 0.45 },
+        { text: 'a', t: 27.55, dur: 0.18 },
+        { text: 'Ordem', t: 27.75, dur: 0.65 },
+        { text: 'era', t: 28.55, dur: 0.30 },
+        { text: 'minha!', t: 28.90, dur: 0.95, isHold: true, holdDur: 0.95 }
       ]
     },
     {
-      t0: 42.9,
-      t1: 50.0,
+      t0: 30.0,
+      t1: 33.85,
       words: [
-        { text: 'vieram', t: 42.9, dur: 0.8 },
-        { text: 'manchar', t: 43.8, dur: 0.9 },
-        { text: 'o', t: 44.8, dur: 0.3 },
-        { text: 'ar', t: 45.2, dur: 0.7 },
-        { text: 'e', t: 46.0, dur: 0.4 },
-        { text: 'envenenar', t: 46.5, dur: 1.1 },
-        { text: 'o', t: 47.7, dur: 0.3 },
-        { text: 'chão...', t: 48.0, dur: 2.0, isHold: true, holdDur: 2.0 }
+        { text: 'Mas', t: 30.05, dur: 0.35 },
+        { text: 'com', t: 30.45, dur: 0.22 },
+        { text: 'o', t: 30.70, dur: 0.18 },
+        { text: 'tempo,', t: 30.90, dur: 0.55 },
+        { text: 'a', t: 31.55, dur: 0.18 },
+        { text: 'fumaça', t: 31.75, dur: 0.55 },
+        { text: 'e', t: 32.40, dur: 0.18 },
+        { text: 'a', t: 32.60, dur: 0.20 },
+        { text: 'ambição', t: 32.85, dur: 0.90, isHold: true, holdDur: 0.90 }
       ]
     },
     {
-      t0: 50.2,
-      t1: 56.2,
+      t0: 33.9,
+      t1: 37.65,
       words: [
-        { text: 'Mesmo', t: 50.2, dur: 0.7 },
-        { text: 'com', t: 51.0, dur: 0.4 },
-        { text: 'o', t: 51.5, dur: 0.3 },
-        { text: 'grito', t: 51.9, dur: 0.8 },
-        { text: 'de', t: 52.8, dur: 0.4 },
-        { text: 'alerta', t: 53.3, dur: 0.9 },
-        { text: 'iminente,', t: 54.3, dur: 1.9, isHold: true, holdDur: 1.9 }
+        { text: 'vieram', t: 33.95, dur: 0.48 },
+        { text: 'manchar', t: 34.50, dur: 0.52 },
+        { text: 'o', t: 35.10, dur: 0.18 },
+        { text: 'ar', t: 35.30, dur: 0.45 },
+        { text: 'e', t: 35.85, dur: 0.18 },
+        { text: 'envenenar', t: 36.05, dur: 0.62 },
+        { text: 'o', t: 36.75, dur: 0.18 },
+        { text: 'chão...', t: 36.95, dur: 0.62, isHold: true, holdDur: 0.62 }
       ]
     },
     {
-      t0: 56.3,
-      t1: 64.0,
+      t0: 37.7,
+      t1: 41.35,
       words: [
-        { text: 'viramos', t: 56.3, dur: 1.0 },
-        { text: 'cristais', t: 57.4, dur: 1.1 },
-        { text: 'voláteis...', t: 58.6, dur: 1.4, isHold: true, holdDur: 1.4 },
-        { text: 'chegamos', t: 60.1, dur: 1.1 },
-        { text: 'ao', t: 61.3, dur: 0.4 },
-        { text: 'fim.', t: 61.7, dur: 2.3, isHold: true, holdDur: 2.3 }
+        { text: 'Mesmo', t: 37.75, dur: 0.48 },
+        { text: 'com', t: 38.30, dur: 0.22 },
+        { text: 'o', t: 38.55, dur: 0.18 },
+        { text: 'grito', t: 38.75, dur: 0.50 },
+        { text: 'de', t: 39.35, dur: 0.25 },
+        { text: 'alerta', t: 39.65, dur: 0.55 },
+        { text: 'iminente,', t: 40.30, dur: 0.95, isHold: true, holdDur: 0.95 }
       ]
     },
     {
-      t0: 64.0,
+      t0: 41.4,
+      t1: 44.95,
+      words: [
+        { text: 'chamaram', t: 41.45, dur: 0.60 },
+        { text: 'de', t: 42.15, dur: 0.25 },
+        { text: 'farsa', t: 42.45, dur: 0.60 },
+        { text: 'o', t: 43.15, dur: 0.20 },
+        { text: 'perigo', t: 43.40, dur: 0.52 },
+        { text: 'presente!', t: 44.00, dur: 0.85, isHold: true, holdDur: 0.85 }
+      ]
+    },
+    {
+      t0: 45.0,
+      t1: 48.65,
+      words: [
+        { text: 'Na', t: 45.05, dur: 0.25 },
+        { text: 'sombra', t: 45.35, dur: 0.52 },
+        { text: 'gerada', t: 45.95, dur: 0.60 },
+        { text: 'por', t: 46.65, dur: 0.30 },
+        { text: 'mãos', t: 47.00, dur: 0.42 },
+        { text: 'tão', t: 47.50, dur: 0.25 },
+        { text: 'cruéis,', t: 47.80, dur: 0.75, isHold: true, holdDur: 0.75 }
+      ]
+    },
+    {
+      t0: 48.7,
+      t1: 52.25,
+      words: [
+        { text: 'viramos', t: 48.75, dur: 0.65 },
+        { text: 'cristais', t: 49.50, dur: 0.65 },
+        { text: 'voláteis,', t: 50.25, dur: 0.55 },
+        { text: 'sem', t: 50.85, dur: 0.25 },
+        { text: 'paz', t: 51.15, dur: 0.30 },
+        { text: 'nos', t: 51.50, dur: 0.22 },
+        { text: 'céus,', t: 51.75, dur: 0.45, isHold: true, holdDur: 0.45 }
+      ]
+    },
+    {
+      t0: 52.3,
+      t1: 55.85,
+      words: [
+        { text: 'intensificando', t: 52.35, dur: 1.05 },
+        { text: 'o', t: 53.50, dur: 0.18 },
+        { text: 'caos', t: 53.70, dur: 0.42 },
+        { text: 'e', t: 54.20, dur: 0.18 },
+        { text: 'a', t: 54.40, dur: 0.20 },
+        { text: 'desordem,', t: 54.65, dur: 1.05, isHold: true, holdDur: 1.05 }
+      ]
+    },
+    {
+      t0: 55.9,
+      t1: 63.8,
+      words: [
+        { text: 'e', t: 56.00, dur: 0.35 },
+        { text: 'assim...', t: 56.45, dur: 0.85, isHold: true, holdDur: 0.85 },
+        { text: 'chegamos', t: 58.00, dur: 1.20, isHold: true, holdDur: 1.20 },
+        { text: 'ao', t: 59.95, dur: 0.55 },
+        { text: 'fim.', t: 61.80, dur: 1.80, isHold: true, holdDur: 1.80 }
+      ]
+    },
+    {
+      t0: 63.85,
       t1: 79.8,
       banner: '♪ Solo de Violino — A Dança das Sombras e da Luz ♪',
       words: []
     },
     {
       t0: 80.0,
-      t1: 85.2,
+      t1: 86.85,
       words: [
-        { text: 'Mas...', t: 80.0, dur: 1.2 },
-        { text: 'uma', t: 81.3, dur: 0.6 },
-        { text: 'nova', t: 82.0, dur: 0.8 },
-        { text: 'luz', t: 82.9, dur: 0.8 },
-        { text: 'despertou!', t: 83.7, dur: 1.5, isHold: true, holdDur: 1.5 }
+        { text: 'Mas...', t: 80.70, dur: 1.20, isHold: true, holdDur: 1.20 },
+        { text: 'Era', t: 84.65, dur: 0.35 },
+        { text: 'uma', t: 85.05, dur: 0.35 },
+        { text: 'vez...', t: 85.45, dur: 1.15, isHold: true, holdDur: 1.15 }
       ]
     },
     {
-      t0: 85.3,
-      t1: 95.0,
+      t0: 86.9,
+      t1: 90.0,
       words: [
-        { text: 'Era', t: 85.3, dur: 0.7 },
-        { text: 'uma', t: 86.1, dur: 0.6 },
-        { text: 'vez', t: 86.8, dur: 0.8 },
-        { text: 'uma', t: 87.7, dur: 0.6 },
-        { text: 'criança', t: 88.4, dur: 0.9 },
-        { text: 'inocente,', t: 89.4, dur: 1.1 },
-        { text: 'vagando', t: 90.6, dur: 1.0 },
-        { text: 'cá', t: 91.7, dur: 0.7 },
-        { text: 'e', t: 92.5, dur: 0.4 },
-        { text: 'acolá!', t: 92.9, dur: 2.1, isHold: true, holdDur: 2.1 }
+        { text: 'uma', t: 87.10, dur: 0.35 },
+        { text: 'criança', t: 87.50, dur: 0.95 },
+        { text: 'inocente,', t: 88.65, dur: 1.20, isHold: true, holdDur: 1.20 }
       ]
     },
     {
-      t0: 95.5,
-      t1: 101.5,
+      t0: 90.05,
+      t1: 95.35,
       words: [
-        { text: 'Na', t: 95.5, dur: 0.5 },
-        { text: 'escuridão', t: 96.1, dur: 1.3 },
-        { text: 'da', t: 97.5, dur: 0.4 },
-        { text: 'caverna', t: 98.0, dur: 1.2 },
-        { text: 'ela', t: 99.3, dur: 0.6 },
-        { text: 'entrou...', t: 99.9, dur: 1.6, isHold: true, holdDur: 1.6 }
+        { text: 'vagando', t: 90.10, dur: 0.85 },
+        { text: 'cá', t: 91.15, dur: 0.38 },
+        { text: 'e', t: 91.60, dur: 0.25 },
+        { text: 'acolá,', t: 91.95, dur: 0.70 },
+        { text: 'tão', t: 92.75, dur: 0.35 },
+        { text: 'de', t: 93.15, dur: 0.25 },
+        { text: 'repente!', t: 93.45, dur: 1.45, isHold: true, holdDur: 1.45 }
       ]
     },
     {
-      t0: 101.6,
-      t1: 106.5,
+      t0: 95.4,
+      t1: 98.35,
       words: [
-        { text: 'O', t: 101.6, dur: 0.4 },
-        { text: 'chão', t: 102.1, dur: 0.7 },
-        { text: 'se', t: 102.9, dur: 0.4 },
-        { text: 'abriu...', t: 103.4, dur: 0.9 },
-        { text: 'ela', t: 104.4, dur: 0.5 },
-        { text: 'caiu!', t: 104.9, dur: 1.6, isHold: true, holdDur: 1.6 }
+        { text: 'Em', t: 95.50, dur: 0.20 },
+        { text: 'uma', t: 95.75, dur: 0.25 },
+        { text: 'aventura,', t: 96.05, dur: 0.75 },
+        { text: 'escuridão', t: 96.90, dur: 0.65 },
+        { text: 'da', t: 97.60, dur: 0.20 },
+        { text: 'caverna,', t: 97.85, dur: 0.45 }
       ]
     },
     {
-      t0: 106.0,
-      t1: 111.8,
+      t0: 98.4,
+      t1: 101.15,
       words: [
-        { text: 'Respira', t: 106.0, dur: 1.0 },
-        { text: 'fundo!', t: 107.1, dur: 0.9 },
-        { text: 'Isso', t: 108.1, dur: 0.6 },
-        { text: 'não', t: 108.8, dur: 0.5 },
-        { text: 'foi', t: 109.4, dur: 0.5 },
-        { text: 'o', t: 110.0, dur: 0.3 },
-        { text: 'fim!', t: 110.3, dur: 1.5, isHold: true, holdDur: 1.5 }
+        { text: 'topou', t: 98.45, dur: 0.35 },
+        { text: 'com', t: 98.85, dur: 0.18 },
+        { text: 'a', t: 99.05, dur: 0.15 },
+        { text: 'verdade', t: 99.25, dur: 0.55 },
+        { text: 'mais', t: 99.85, dur: 0.28 },
+        { text: 'dura', t: 100.15, dur: 0.32 },
+        { text: 'e', t: 100.50, dur: 0.15 },
+        { text: 'eterna:', t: 100.68, dur: 0.42 }
       ]
     },
     {
-      t0: 111.9,
-      t1: 116.0,
+      t0: 101.2,
+      t1: 105.75,
       words: [
-        { text: 'Foi', t: 111.9, dur: 0.6 },
-        { text: 'a', t: 112.6, dur: 0.3 },
-        { text: 'deixa', t: 113.0, dur: 0.7 },
-        { text: 'perfeita', t: 113.8, dur: 0.8 },
-        { text: 'pra', t: 114.7, dur: 0.3 },
-        { text: 'mim!', t: 115.0, dur: 1.0, isHold: true, holdDur: 1.0 }
+        { text: 'O', t: 101.30, dur: 0.30 },
+        { text: 'chão', t: 101.65, dur: 0.55 },
+        { text: 'se', t: 102.30, dur: 0.28 },
+        { text: 'abriu,', t: 102.65, dur: 0.65 },
+        { text: 'e', t: 103.40, dur: 0.20 },
+        { text: 'no', t: 103.62, dur: 0.22 },
+        { text: 'calabouço', t: 103.90, dur: 0.70 },
+        { text: 'ela', t: 104.65, dur: 0.30 },
+        { text: 'caiu!', t: 105.00, dur: 0.70, isHold: true, holdDur: 0.70 }
       ]
     },
     {
-      t0: 116.1,
-      t1: 121.2,
+      t0: 105.8,
+      t1: 109.1,
       words: [
-        { text: 'Olha', t: 116.1, dur: 0.6 },
-        { text: 'só', t: 116.8, dur: 0.5 },
-        { text: 'que', t: 117.4, dur: 0.4 },
-        { text: 'novidade:', t: 117.9, dur: 1.0 },
-        { text: 'eu', t: 119.0, dur: 0.4 },
-        { text: 'tô', t: 119.5, dur: 0.4 },
-        { text: 'livre!', t: 119.9, dur: 1.3, isHold: true, holdDur: 1.3 }
+        { text: 'Contudo,', t: 105.85, dur: 0.70 },
+        { text: 'respira', t: 106.75, dur: 0.48 },
+        { text: 'fundo,', t: 107.28, dur: 0.45 },
+        { text: 'isso', t: 107.80, dur: 0.28 },
+        { text: 'não', t: 108.10, dur: 0.25 },
+        { text: 'foi', t: 108.38, dur: 0.22 },
+        { text: 'o', t: 108.62, dur: 0.15 },
+        { text: 'fim!', t: 108.80, dur: 0.28 }
       ]
     },
     {
-      t0: 121.3,
-      t1: 126.0,
+      t0: 109.15,
+      t1: 112.5,
       words: [
-        { text: 'Move', t: 121.3, dur: 0.6 },
-        { text: 'o', t: 122.0, dur: 0.3 },
-        { text: 'cristal,', t: 122.4, dur: 0.8 },
-        { text: 'tudo', t: 123.3, dur: 0.6 },
-        { text: 'é', t: 124.0, dur: 0.3 },
-        { text: 'bem', t: 124.4, dur: 0.4 },
-        { text: 'facinho!', t: 124.8, dur: 1.2, isHold: true, holdDur: 1.2 }
+        { text: 'Na', t: 109.20, dur: 0.18 },
+        { text: 'verdade,', t: 109.40, dur: 0.42 },
+        { text: 'foi', t: 109.88, dur: 0.28 },
+        { text: 'a', t: 110.20, dur: 0.18 },
+        { text: 'deixa', t: 110.42, dur: 0.48 },
+        { text: 'perfeita', t: 110.95, dur: 0.55 },
+        { text: 'pra', t: 111.55, dur: 0.25 },
+        { text: 'mim!', t: 111.85, dur: 0.60, isHold: true, holdDur: 0.60 }
       ]
     },
     {
-      t0: 126.1,
-      t1: 132.0,
+      t0: 112.55,
+      t1: 115.65,
       words: [
-        { text: 'Essa', t: 126.1, dur: 0.6 },
-        { text: 'luz', t: 126.8, dur: 0.6 },
-        { text: 'faz', t: 127.5, dur: 0.5 },
-        { text: 'a', t: 128.1, dur: 0.3 },
-        { text: 'magia...', t: 128.5, dur: 1.0 },
-        { text: 'abriu-se', t: 129.6, dur: 0.8 },
-        { text: 'o', t: 130.5, dur: 0.3 },
-        { text: 'caminho!', t: 130.8, dur: 1.2, isHold: true, holdDur: 1.2 }
+        { text: 'Um,', t: 112.80, dur: 0.45 },
+        { text: 'dois,', t: 113.65, dur: 0.45 },
+        { text: 'três', t: 114.20, dur: 0.35 },
+        { text: 'e...', t: 114.60, dur: 0.30 },
+        { text: 'vamos', t: 114.95, dur: 0.32 },
+        { text: 'lá!', t: 115.30, dur: 0.32 }
       ]
     },
     {
-      t0: 132.1,
-      t1: 136.2,
+      t0: 115.7,
+      t1: 118.45,
       words: [
-        { text: 'Vai', t: 132.1, dur: 0.5 },
-        { text: 'no', t: 132.7, dur: 0.4 },
-        { text: 'sapatinho!', t: 133.2, dur: 1.1 },
-        { text: 'Pode', t: 134.4, dur: 0.5 },
-        { text: 'aplaudir!', t: 134.9, dur: 1.3, isHold: true, holdDur: 1.3 }
+        { text: 'Olha', t: 115.80, dur: 0.38 },
+        { text: 'só', t: 116.22, dur: 0.28 },
+        { text: 'que', t: 116.55, dur: 0.25 },
+        { text: 'novidade,', t: 116.85, dur: 0.68 },
+        { text: 'eu', t: 117.60, dur: 0.22 },
+        { text: 'tô', t: 117.85, dur: 0.22 },
+        { text: 'livre!', t: 118.10, dur: 0.32 }
       ]
     },
     {
-      t0: 136.3,
-      t1: 143.0,
+      t0: 118.5,
+      t1: 122.45,
       words: [
-        { text: 'Eu', t: 136.3, dur: 0.5 },
-        { text: 'sou', t: 136.9, dur: 0.5 },
-        { text: 'a', t: 137.5, dur: 0.3 },
-        { text: 'Ordem!', t: 137.9, dur: 1.0 },
-        { text: 'Chegamos', t: 139.0, dur: 0.9 },
-        { text: 'ao', t: 140.0, dur: 0.4 },
-        { text: 'topo', t: 140.5, dur: 0.7 },
-        { text: 'de', t: 141.3, dur: 0.3 },
-        { text: 'novo!', t: 141.7, dur: 1.3, isHold: true, holdDur: 1.3 }
+        { text: 'Move', t: 118.55, dur: 0.35 },
+        { text: 'o', t: 118.92, dur: 0.15 },
+        { text: 'cristal', t: 119.10, dur: 0.48 },
+        { text: 'aqui,', t: 119.62, dur: 0.38 },
+        { text: 'tudo', t: 120.05, dur: 0.35 },
+        { text: 'isso', t: 120.42, dur: 0.30 },
+        { text: 'é', t: 120.75, dur: 0.18 },
+        { text: 'bem', t: 120.95, dur: 0.35 },
+        { text: 'facinho!', t: 121.35, dur: 1.00, isHold: true, holdDur: 1.00 }
       ]
     },
     {
-      t0: 143.1,
-      t1: 149.8,
+      t0: 122.5,
+      t1: 126.25,
       words: [
-        { text: 'Move', t: 143.1, dur: 0.6 },
-        { text: 'pra', t: 143.8, dur: 0.4 },
-        { text: 'cá!', t: 144.3, dur: 0.7 },
-        { text: 'Move', t: 145.1, dur: 0.6 },
-        { text: 'pra', t: 145.8, dur: 0.4 },
-        { text: 'lá!', t: 146.3, dur: 0.7 },
-        { text: 'Tudo', t: 147.1, dur: 0.6 },
-        { text: 'vai', t: 147.8, dur: 0.5 },
-        { text: 'brilhar!', t: 148.3, dur: 1.5, isHold: true, holdDur: 1.5 }
+        { text: 'Essa', t: 122.75, dur: 0.38 },
+        { text: 'luz', t: 123.18, dur: 0.38 },
+        { text: 'faz', t: 123.60, dur: 0.30 },
+        { text: 'a', t: 123.92, dur: 0.18 },
+        { text: 'magia,', t: 124.15, dur: 0.55 },
+        { text: 'abriu-se', t: 124.75, dur: 0.52 },
+        { text: 'o', t: 125.30, dur: 0.18 },
+        { text: 'caminho!', t: 125.50, dur: 0.70, isHold: true, holdDur: 0.70 }
       ]
     },
     {
-      t0: 149.9,
-      t1: 154.5,
+      t0: 126.3,
+      t1: 129.75,
       words: [
-        { text: 'Sem', t: 149.9, dur: 0.5 },
-        { text: 'bagunça,', t: 150.5, dur: 0.8 },
-        { text: 'sem', t: 151.4, dur: 0.4 },
-        { text: 'fumaça,', t: 151.9, dur: 0.8 },
-        { text: 'pode', t: 152.8, dur: 0.4 },
-        { text: 'agradecer!', t: 153.2, dur: 1.3, isHold: true, holdDur: 1.3 }
+        { text: 'Abre', t: 126.40, dur: 0.35 },
+        { text: 'o', t: 126.78, dur: 0.18 },
+        { text: 'sapatinho!', t: 127.00, dur: 0.85 },
+        { text: 'Vai', t: 128.10, dur: 0.32 },
+        { text: 'no', t: 128.45, dur: 0.25 },
+        { text: 'sapatinho!', t: 128.75, dur: 0.90, isHold: true, holdDur: 0.90 }
       ]
     },
     {
-      t0: 154.6,
+      t0: 129.8,
+      t1: 132.6,
+      words: [
+        { text: 'Pequenos', t: 129.85, dur: 0.45 },
+        { text: 'passos', t: 130.35, dur: 0.40 },
+        { text: 'fazendo', t: 130.80, dur: 0.42 },
+        { text: 'a', t: 131.25, dur: 0.15 },
+        { text: 'terra', t: 131.42, dur: 0.35 },
+        { text: 'inteira', t: 131.80, dur: 0.38 },
+        { text: 'florescer!', t: 132.20, dur: 0.38 }
+      ]
+    },
+    {
+      t0: 132.65,
+      t1: 135.4,
+      words: [
+        { text: 'Eu', t: 132.70, dur: 0.22 },
+        { text: 'sou', t: 132.95, dur: 0.25 },
+        { text: 'a', t: 133.22, dur: 0.15 },
+        { text: 'Ordem,', t: 133.40, dur: 0.38 },
+        { text: 'está', t: 133.82, dur: 0.30 },
+        { text: 'aqui!', t: 134.15, dur: 0.35 },
+        { text: 'Pode', t: 134.55, dur: 0.30 },
+        { text: 'aplaudir!', t: 134.90, dur: 0.45 }
+      ]
+    },
+    {
+      t0: 135.45,
+      t1: 138.35,
+      words: [
+        { text: 'Siga', t: 135.50, dur: 0.35 },
+        { text: 'as', t: 135.90, dur: 0.20 },
+        { text: 'minhas', t: 136.15, dur: 0.40 },
+        { text: 'regras', t: 136.60, dur: 0.50 },
+        { text: 'que', t: 137.15, dur: 0.20 },
+        { text: 'tudo', t: 137.40, dur: 0.32 },
+        { text: 'vai', t: 137.75, dur: 0.22 },
+        { text: 'fluir!', t: 138.00, dur: 0.32 }
+      ]
+    },
+    {
+      t0: 138.4,
+      t1: 141.1,
+      words: [
+        { text: 'Chegamos,', t: 138.45, dur: 0.65 },
+        { text: 'chegamos', t: 139.20, dur: 0.60 },
+        { text: 'ao', t: 139.85, dur: 0.25 },
+        { text: 'topo', t: 140.15, dur: 0.38 },
+        { text: 'de', t: 140.55, dur: 0.20 },
+        { text: 'novo,', t: 140.78, dur: 0.30 }
+      ]
+    },
+    {
+      t0: 141.15,
+      t1: 144.3,
+      words: [
+        { text: 'o', t: 141.20, dur: 0.20 },
+        { text: 'reino', t: 141.45, dur: 0.45 },
+        { text: 'inteiro', t: 141.95, dur: 0.55 },
+        { text: 'vai...', t: 142.55, dur: 0.55 },
+        { text: 'renascer!', t: 143.15, dur: 1.05, isHold: true, holdDur: 1.05 }
+      ]
+    },
+    {
+      t0: 144.35,
+      t1: 146.95,
+      words: [
+        { text: 'Move', t: 144.50, dur: 0.38 },
+        { text: 'pra', t: 144.92, dur: 0.28 },
+        { text: 'cá!', t: 145.25, dur: 0.45 },
+        { text: 'Move', t: 145.80, dur: 0.35 },
+        { text: 'pra', t: 146.20, dur: 0.25 },
+        { text: 'lá!', t: 146.50, dur: 0.40 }
+      ]
+    },
+    {
+      t0: 147.0,
+      t1: 150.15,
+      words: [
+        { text: 'Viu', t: 147.05, dur: 0.32 },
+        { text: 'como', t: 147.42, dur: 0.35 },
+        { text: 'a', t: 147.80, dur: 0.18 },
+        { text: 'Ordem', t: 148.02, dur: 0.45 },
+        { text: 'faz', t: 148.52, dur: 0.30 },
+        { text: 'tudo', t: 148.88, dur: 0.38 },
+        { text: 'brilhar?', t: 149.30, dur: 0.80, isHold: true, holdDur: 0.80 }
+      ]
+    },
+    {
+      t0: 150.2,
+      t1: 153.9,
+      words: [
+        { text: 'Sem', t: 150.25, dur: 0.35 },
+        { text: 'bagunça,', t: 150.65, dur: 0.70 },
+        { text: 'sem', t: 151.45, dur: 0.35 },
+        { text: 'fumaça,', t: 151.85, dur: 0.65 },
+        { text: 'pode', t: 152.60, dur: 0.38 },
+        { text: 'agradecer!', t: 153.05, dur: 0.80, isHold: true, holdDur: 0.80 }
+      ]
+    },
+    {
+      t0: 153.95,
+      t1: 159.2,
+      words: [
+        { text: 'O', t: 154.00, dur: 0.28 },
+        { text: 'reino', t: 154.32, dur: 0.48 },
+        { text: 'vai', t: 154.85, dur: 0.40 },
+        { text: 'renascer!', t: 155.35, dur: 1.50, isHold: true, holdDur: 1.50 },
+        { text: 'Vai', t: 157.00, dur: 0.38 },
+        { text: 'renascer!', t: 157.45, dur: 0.80 },
+        { text: 'Bem', t: 158.30, dur: 0.30 },
+        { text: 'facinho!', t: 158.65, dur: 0.50 }
+      ]
+    },
+    {
+      t0: 159.3,
       t1: 166.5,
       words: [
-        { text: 'O', t: 154.6, dur: 0.4 },
-        { text: 'reino', t: 155.1, dur: 0.8 },
-        { text: 'inteiro', t: 156.0, dur: 1.0 },
-        { text: 'vai...', t: 157.1, dur: 0.9 },
-        { text: 'renascer!', t: 158.0, dur: 4.0, isHold: true, holdDur: 4.0 },
-        { text: 'A', t: 162.1, dur: 0.5 },
-        { text: 'Ordem', t: 162.7, dur: 1.0 },
-        { text: 'voltou!', t: 163.7, dur: 2.5, isHold: true, holdDur: 2.5 }
+        { text: 'A', t: 159.60, dur: 0.50 },
+        { text: 'Ordem', t: 160.20, dur: 0.90 },
+        { text: 'voltou!', t: 161.20, dur: 3.40, isHold: true, holdDur: 3.40 }
       ]
     }
   ];
@@ -1807,7 +1970,7 @@
       for (let i = 0; i < phrase.words.length; i++) {
         const w = phrase.words[i];
         const diff = time - w.t;
-        if (!w.judged && diff >= -0.55 && diff <= 0.28) {
+        if (!w.judged && diff >= -0.40005 && diff <= 0.36005) {
           if (Math.abs(diff) < Math.abs(minDiff)) {
             minDiff = diff;
             target = w;
@@ -1821,21 +1984,28 @@
       let score = 25;
       let col = '#68e3a2';
 
-      if (minDiff < -0.20) {
-        grade = 'cedo_demais';
-        text = 'Cedo demais';
-        score = 10;
-        col = '#ff9c42';
-      } else if (absDiff <= 0.088) {
+      if (absDiff <= 0.095) {
         grade = 'perfeito';
         text = 'Perfeito!';
         score = 50;
         col = '#ffe033';
-      } else {
+      } else if ((minDiff >= -0.22 && minDiff < -0.095) || (minDiff > 0.095 && minDiff <= 0.24)) {
         grade = 'otimo';
         text = 'Ótimo!';
         score = 25;
         col = '#68e3a2';
+      } else if (minDiff >= -0.40005 && minDiff < -0.22) {
+        grade = 'cedo_demais';
+        text = 'Cedo demais';
+        score = 10;
+        col = '#ff9c42';
+      } else if (minDiff > 0.24 && minDiff <= 0.36005) {
+        grade = 'tarde';
+        text = 'Tarde!';
+        score = 10;
+        col = '#ff9c42';
+      } else {
+        return null;
       }
       return { grade, text, label: text, score, col, target, diff: minDiff };
     },
@@ -1849,7 +2019,7 @@
         if (hit) {
           const target = hit.target;
           target.judged = true;
-          if (hit.grade === 'cedo_demais') {
+          if (hit.grade === 'cedo_demais' || hit.grade === 'tarde') {
             GameHUD.playSfx('click');
           } else if (hit.grade === 'perfeito') {
             GameHUD.playSfx('clink');
@@ -1937,7 +2107,7 @@
       const phrase = this.getCurrentPhrase(time, isPractice);
       if (phrase && phrase.words) {
         for (const w of phrase.words) {
-          if (!w.judged && time > w.t + 0.30) {
+          if (!w.judged && time > w.t + 0.38) {
             w.judged = true;
             w.missed = true;
           }
@@ -1968,8 +2138,307 @@
       }
     },
 
+    computeJumpArc(deltaT, deltaX = 30) {
+      const norm = clamp((deltaT - 0.25) / (1.40 - 0.25), 0, 1);
+      const height = Math.round(6 + norm * 19);
+      const steps = Math.max(12, Math.round(Math.abs(deltaX) / 3));
+      return {
+        height: clamp(height, 6, 25),
+        duration: deltaT,
+        steps
+      };
+    },
+
+    renderTrajectoryArc(ctx, x0, x1, yBase, arcHeight, currentU = 0) {
+      if (arcHeight <= 0) return;
+      const steps = Math.max(12, Math.round(Math.abs(x1 - x0) / 2.5));
+      for (let s = 0; s <= steps; s++) {
+        const u = s / steps;
+        const px = Math.round(x0 + (x1 - x0) * u);
+        const py = Math.round(yBase - 4 * arcHeight * u * (1 - u));
+        if (currentU > 0 && u <= currentU) {
+          // Pontos já percorridos pela bolinha: iluminados em dourado vibrante (#ffea31)
+          ctx.fillStyle = '#ffea31';
+          ctx.fillRect(px, py, 1, 1);
+        } else {
+          // Trajeto já traçado para todas as palavras do trecho desde o momento em que o trecho aparece
+          if (s % 2 === 0) {
+            ctx.fillStyle = (s % 4 === 0) ? 'rgba(122, 234, 255, 0.78)' : 'rgba(255, 234, 49, 0.65)';
+            ctx.fillRect(px, py, 1, 1);
+          }
+        }
+      }
+    },
+
+    getPhraseArcs(phrase, box = { x: 10, y: 153, w: 300, h: 25 }, time = null) {
+      if (!phrase || !phrase.words || phrase.words.length < 2) return [];
+      const words = phrase.words;
+      if (words[0].midX === undefined) {
+        this.layoutPhrase(phrase, box);
+      }
+      const arcs = [];
+      for (let i = 0; i < words.length - 1; i++) {
+        const curW = words[i];
+        const nextW = words[i + 1];
+        const nextTargetX = nextW.isHold ? Math.round(nextW.x + 3) : nextW.midX;
+        let x0, tLaunch, flightDur, arc;
+        if (curW.isHold) {
+          const holdDur = curW.holdDur || curW.dur;
+          x0 = Math.round(curW.x + curW.width - 3);
+          tLaunch = curW.t + holdDur;
+          flightDur = Math.max(0.05, nextW.t - tLaunch);
+          arc = this.computeJumpArc(flightDur, nextTargetX - x0);
+        } else {
+          const deltaT = nextW.t - curW.t;
+          const dwell = Math.min(0.12, deltaT * 0.25);
+          x0 = curW.midX;
+          tLaunch = curW.t + dwell;
+          flightDur = Math.max(0.05, nextW.t - tLaunch);
+          arc = this.computeJumpArc(deltaT, nextTargetX - x0);
+        }
+        let u = 0;
+        if (time !== null) {
+          if (time >= nextW.t) u = 1;
+          else if (time > tLaunch) u = clamp((time - tLaunch) / flightDur, 0, 1);
+        }
+        arcs.push({
+          fromIndex: i,
+          toIndex: i + 1,
+          x0,
+          x1: nextTargetX,
+          height: arc.height,
+          duration: arc.duration,
+          tLaunch,
+          tLand: nextW.t,
+          u
+        });
+      }
+      return arcs;
+    },
+
+    renderPhraseTrajectories(ctx, phrase, box, time) {
+      if (!phrase || !phrase.words || !phrase.words.length) return;
+      const words = phrase.words;
+      if (words[0].midX === undefined) {
+        this.layoutPhrase(phrase, box);
+      }
+      const wordY = box.y + 7;
+      const baseY = wordY - 5;
+
+      // 1. Traço horizontal guia sobre palavras sustentadas (isHold)
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        if (!w.isHold) continue;
+        const hx0 = Math.round(w.x + 3);
+        const hx1 = Math.round(w.x + w.width - 3);
+        const holdDur = w.holdDur || w.dur;
+        const pHold = time <= w.t ? 0 : clamp((time - w.t) / holdDur, 0, 1);
+        const curHX = Math.round(hx0 + (hx1 - hx0) * pHold);
+        for (let px = hx0; px <= hx1; px += 2) {
+          ctx.fillStyle = (pHold > 0 && px <= curHX) ? '#ffea31' : 'rgba(255, 234, 49, 0.55)';
+          ctx.fillRect(px, baseY, 1, 1);
+        }
+      }
+
+      // 2. Todos os arcos de salto entre as palavras do trecho já ficam traçados desde o início do trecho
+      const arcs = this.getPhraseArcs(phrase, box, time);
+      for (let i = 0; i < arcs.length; i++) {
+        const seg = arcs[i];
+        this.renderTrajectoryArc(ctx, seg.x0, seg.x1, baseY, seg.height, seg.u);
+      }
+    },
+
+    getBallPosition(time, isPractice = false, customBox = null) {
+      const phrase = this.getCurrentPhrase(time, isPractice);
+      const box = customBox || (isPractice ? { x: 36, y: 56, w: 248, h: 32 } : { x: 10, y: 153, w: 300, h: 25 });
+      const defaultY = box.y + 7 - 5;
+      if (!phrase || !phrase.words || !phrase.words.length) {
+        return { x: 160, y: defaultY, arcActive: false, arcHeight: 0, isGlow: false };
+      }
+
+      const words = phrase.words;
+      if (words[0].midX === undefined) {
+        this.layoutPhrase(phrase, box);
+      }
+      const wordY = box.y + 7;
+      const baseY = wordY - 5;
+      const firstW = words[0];
+      const lastW = words[words.length - 1];
+
+      // Caso 1: Antes da primeira palavra da frase (time < firstW.t)
+      if (time < firstW.t) {
+        const targetFirstX = firstW.isHold ? Math.round(firstW.x + 3) : firstW.midX;
+        const availablePrep = firstW.t - phrase.t0;
+        if (availablePrep < 0.15) {
+          return { x: targetFirstX, y: baseY, arcActive: false, arcHeight: 0, isGlow: false };
+        }
+        const hopDist = Math.min(16, Math.max(8, Math.round(availablePrep * 35)));
+        const startX = targetFirstX - hopDist;
+        const tLaunch = Math.max(phrase.t0, firstW.t - 0.4);
+        if (time < tLaunch) {
+          return { x: startX, y: baseY, arcActive: false, arcHeight: 0, isGlow: false };
+        }
+        const tau = Math.max(0.1, firstW.t - tLaunch);
+        const p = clamp((time - tLaunch) / tau, 0, 1);
+        const arc = this.computeJumpArc(tau, hopDist);
+        const ballX = Math.round(startX + (targetFirstX - startX) * p);
+        const ballY = baseY - Math.round(4 * arc.height * p * (1 - p));
+        return {
+          x: ballX,
+          y: ballY,
+          arcActive: true,
+          arcHeight: arc.height,
+          isGlow: true,
+          arcX0: startX,
+          arcX1: targetFirstX,
+          arcU: p
+        };
+      }
+
+      // Caso 2: Entre as palavras da frase atual
+      for (let i = 0; i < words.length; i++) {
+        const curW = words[i];
+        const nextW = (i < words.length - 1) ? words[i + 1] : null;
+
+        if (nextW) {
+          if (time >= curW.t && time < nextW.t) {
+            const nextTargetX = nextW.isHold ? Math.round(nextW.x + 3) : nextW.midX;
+            if (curW.isHold) {
+              const holdDur = curW.holdDur || curW.dur;
+              const tHoldEnd = curW.t + holdDur;
+              if (time < tHoldEnd) {
+                const pHold = clamp((time - curW.t) / holdDur, 0, 1);
+                const ballX = Math.round(curW.x + 3 + (curW.width - 6) * pHold);
+                const pRampIn = clamp((time - curW.t) / 0.12, 0, 1);
+                let ballY = baseY;
+                if (curW.holdFailed) {
+                  ballY = baseY + Math.round(1 * pRampIn);
+                } else if (curW.holding || curW.holdSuccess) {
+                  const targetElev = -5 + Math.sin(time * 12) * 1.5;
+                  ballY = baseY + Math.round(targetElev * pRampIn);
+                } else {
+                  const targetElev = -1 + Math.sin(time * 10) * 1.0;
+                  ballY = baseY + Math.round(targetElev * pRampIn);
+                }
+                const guideStart = Math.round(curW.x + curW.width - 3);
+                const flightDur = Math.max(0.05, nextW.t - tHoldEnd);
+                const arc = this.computeJumpArc(flightDur, nextTargetX - guideStart);
+                return {
+                  x: ballX,
+                  y: ballY,
+                  arcActive: false,
+                  arcHeight: 0,
+                  isGlow: true,
+                  guideX0: guideStart,
+                  guideX1: nextTargetX,
+                  guideHeight: arc.height
+                };
+              } else {
+                const xStart = Math.round(curW.x + curW.width - 3);
+                const flightDur = Math.max(0.05, nextW.t - tHoldEnd);
+                const p = clamp((time - tHoldEnd) / flightDur, 0, 1);
+                const arc = this.computeJumpArc(flightDur, nextTargetX - xStart);
+                const ballX = Math.round(xStart + (nextTargetX - xStart) * p);
+                const yStart = (curW.holding || curW.holdSuccess) ? (baseY - 5) : (curW.holdFailed ? (baseY + 1) : (baseY - 1));
+                const yBaseCur = yStart + (baseY - yStart) * p;
+                const ballY = Math.round(yBaseCur - 4 * arc.height * p * (1 - p));
+                return {
+                  x: ballX,
+                  y: ballY,
+                  arcActive: true,
+                  arcHeight: arc.height,
+                  isGlow: true,
+                  arcX0: xStart,
+                  arcX1: nextTargetX,
+                  arcU: p
+                };
+              }
+            } else {
+              const deltaT = nextW.t - curW.t;
+              const dwell = Math.min(0.12, deltaT * 0.25);
+              const xStart = curW.midX;
+              const arc = this.computeJumpArc(deltaT, nextTargetX - xStart);
+              if (time < curW.t + dwell) {
+                const pBounce = (time - curW.t) / dwell;
+                const ballX = curW.midX;
+                const ballY = baseY - Math.round(Math.sin(pBounce * Math.PI) * 2.5);
+                return {
+                  x: ballX,
+                  y: ballY,
+                  arcActive: false,
+                  arcHeight: 0,
+                  isGlow: true,
+                  guideX0: xStart,
+                  guideX1: nextTargetX,
+                  guideHeight: arc.height
+                };
+              } else {
+                const tLaunch = curW.t + dwell;
+                const flightDur = Math.max(0.05, nextW.t - tLaunch);
+                const p = clamp((time - tLaunch) / flightDur, 0, 1);
+                const ballX = Math.round(xStart + (nextTargetX - xStart) * p);
+                const ballY = baseY - Math.round(4 * arc.height * p * (1 - p));
+                return {
+                  x: ballX,
+                  y: ballY,
+                  arcActive: true,
+                  arcHeight: arc.height,
+                  isGlow: true,
+                  arcX0: xStart,
+                  arcX1: nextTargetX,
+                  arcU: p
+                };
+              }
+            }
+          }
+        } else {
+          // Última palavra da frase
+          if (time >= curW.t) {
+            if (curW.isHold) {
+              const holdDur = curW.holdDur || curW.dur;
+              const tHoldEnd = curW.t + holdDur;
+              if (time <= tHoldEnd) {
+                const pHold = clamp((time - curW.t) / holdDur, 0, 1);
+                const ballX = Math.round(curW.x + 3 + (curW.width - 6) * pHold);
+                const pRampIn = clamp((time - curW.t) / 0.12, 0, 1);
+                let ballY = baseY;
+                if (curW.holdFailed) {
+                  ballY = baseY + Math.round(1 * pRampIn);
+                } else if (curW.holding || curW.holdSuccess) {
+                  const targetElev = -5 + Math.sin(time * 12) * 1.5;
+                  ballY = baseY + Math.round(targetElev * pRampIn);
+                } else {
+                  const targetElev = -1 + Math.sin(time * 10) * 1.0;
+                  ballY = baseY + Math.round(targetElev * pRampIn);
+                }
+                return { x: ballX, y: ballY, arcActive: false, arcHeight: 0, isGlow: true };
+              } else {
+                const ballX = Math.round(curW.x + curW.width - 3);
+                const pSettle = clamp((time - tHoldEnd) / 0.15, 0, 1);
+                const yHoldExit = (curW.holding || curW.holdSuccess) ? (baseY - 5) : (curW.holdFailed ? (baseY + 1) : (baseY - 1));
+                const ballY = Math.round(yHoldExit + (baseY - yHoldExit) * pSettle);
+                return { x: ballX, y: ballY, arcActive: false, arcHeight: 0, isGlow: false };
+              }
+            } else {
+              if (time <= curW.t + 0.16) {
+                const pBounce = clamp((time - curW.t) / 0.16, 0, 1);
+                const ballX = curW.midX;
+                const ballY = baseY - Math.round(Math.sin(pBounce * Math.PI) * 2.5);
+                return { x: ballX, y: ballY, arcActive: false, arcHeight: 0, isGlow: true };
+              } else {
+                return { x: curW.midX, y: baseY, arcActive: false, arcHeight: 0, isGlow: false };
+              }
+            }
+          }
+        }
+      }
+
+      const lastEndX = lastW.isHold ? Math.round(lastW.x + lastW.width - 3) : lastW.midX;
+      return { x: lastEndX, y: baseY, arcActive: false, arcHeight: 0, isGlow: false };
+    },
+
     render(ctx, time, isPractice = false, customBox = null) {
-      const box = customBox || { x: 10, y: 153, w: 300, h: 25 };
+      const box = customBox || (isPractice ? { x: 36, y: 56, w: 248, h: 32 } : { x: 10, y: 153, w: 300, h: 25 });
       drawParchmentBox(ctx, box.x, box.y, box.w, box.h);
 
       const phrase = this.getCurrentPhrase(time, isPractice);
@@ -1985,71 +2454,28 @@
 
       this.layoutPhrase(phrase, box);
       const wordY = box.y + 7;
+      const baseY = wordY - 5;
 
       let activeIndex = -1;
-      let nextIndex = -1;
       for (let i = 0; i < words.length; i++) {
         const w = words[i];
         const span = w.isHold ? (w.holdDur || w.dur) : w.dur;
         if (time >= w.t && time <= (w.t + span)) {
           activeIndex = i;
-        }
-        if (w.t > time && nextIndex === -1) {
-          nextIndex = i;
+          break;
         }
       }
 
-      let ballX = words[0].midX;
-      let ballY = wordY - 5;
-      let ballGlow = false;
+      const ballPos = this.getBallPosition(time, isPractice, customBox);
+      const ballX = ballPos.x;
+      const ballY = ballPos.y;
+      const ballGlow = ballPos.isGlow;
 
-      if (activeIndex >= 0) {
-        const curW = words[activeIndex];
-        if (curW.isHold) {
-          const pHold = clamp((time - curW.t) / (curW.holdDur || curW.dur), 0, 1);
-          ballX = Math.round(curW.x + 3 + (curW.width - 6) * pHold);
-          if (curW.holdFailed) {
-            ballY = wordY - 4;
-            ballGlow = false;
-          } else if (curW.holding || curW.holdSuccess) {
-            ballY = wordY - 10 + Math.round(Math.sin(time * 12) * 1.5);
-            ballGlow = true;
-          } else {
-            ballY = wordY - 6 + Math.round(Math.sin(time * 10) * 1.0);
-            ballGlow = true;
-          }
-        } else {
-          const pBounce = clamp((time - curW.t) / 0.16, 0, 1);
-          ballX = curW.midX;
-          ballY = wordY - 5 - Math.round(Math.sin(pBounce * Math.PI) * 2.5);
-          ballGlow = true;
-        }
-      } else if (nextIndex >= 0) {
-        const nextW = words[nextIndex];
-        const prevW = nextIndex === 0 ? null : words[nextIndex - 1];
-        const prevMidX = prevW
-          ? (prevW.isHold ? Math.round(prevW.x + prevW.width - 3) : prevW.midX)
-          : (nextW.midX - 18);
-        const prevEnd = prevW ? (prevW.isHold ? prevW.t + prevW.holdDur : prevW.t + prevW.dur) : phrase.t0;
-        const availableTime = Math.max(0.22, nextW.t - prevEnd);
-        const jumpDur = clamp(availableTime, 0.22, 0.40);
-        const jumpStart = nextW.t - jumpDur;
-        if (time >= jumpStart) {
-          const p = clamp((time - jumpStart) / jumpDur, 0, 1);
-          ballX = Math.round(prevMidX + (nextW.midX - prevMidX) * p);
-          const arcH = 12 + Math.min(8, Math.abs(nextW.midX - prevMidX) * 0.18);
-          ballY = wordY - 5 - Math.round(4 * arcH * p * (1 - p));
-          ballGlow = true;
-        } else {
-          ballX = prevMidX;
-          ballY = wordY - 5;
-          ballGlow = false;
-        }
-      } else {
-        const lastW = words[words.length - 1];
-        ballX = lastW.isHold ? Math.round(lastW.x + lastW.width - 3) : lastW.midX;
-        ballY = wordY - 5;
-        ballGlow = false;
+      // Renderiza todos os arcos de salto entre as palavras do trecho desde o instante em que o trecho aparece
+      this.renderPhraseTrajectories(ctx, phrase, box, time);
+      // Caso a bolinha esteja no salto inicial de entrada antes da primeira palavra, desenha também o arco de entrada
+      if (time < words[0].t && ballPos.arcActive && ballPos.arcX0 !== undefined && ballPos.arcX1 !== undefined) {
+        this.renderTrajectoryArc(ctx, ballPos.arcX0, ballPos.arcX1, baseY, ballPos.arcHeight, ballPos.arcU);
       }
 
       // Approach Circle: círculo que se fecha sobre a palavra alvo no tempo exato
@@ -2143,6 +2569,8 @@
     canvas: null,
     ctx: null,
     running: false,
+    _inLoop: false,
+    _rafId: null,
     t: 0,
     lastNow: 0,
 
@@ -2179,6 +2607,8 @@
     // Controle do Show Musical da Fase 5 (O Sussurro da Fada)
     musicAudio: null,
     musicalTime: 0,
+    _lastAudioTime: null,
+    _lastAudioPerf: null,
     cloudPopTime: -1,
     skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
     vignetteCard: 1,
@@ -2211,7 +2641,7 @@
 
     init(canvasElement) {
       this.canvas = canvasElement || this.ensureCanvas();
-      this.ctx = this.canvas.getContext('2d', { alpha: false });
+      this.ctx = this.canvas.getContext('2d');
       this.ctx.imageSmoothingEnabled = false;
       this.bindInput();
 
@@ -2267,8 +2697,17 @@
       global.CrystalMenuAudio?.pause?.();
       this.phase = 'map_active';
       this.running = false;
+      this._inLoop = false;
+      if (this._rafId) {
+        if (typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(this._rafId);
+        }
+        this._rafId = null;
+      }
       IrisTransition.active = false;
       IrisTransition.onDone = null;
+      const mapSec = typeof document !== 'undefined' ? document.getElementById('map') : null;
+      if (mapSec) mapSec.classList.remove('iris-entering');
       if (this.canvas) {
         this.canvas.hidden = true;
         if (this.canvas.style) {
@@ -2411,12 +2850,14 @@
 
     fitCanvas(cv) {
       if (!cv || !cv.style) return;
-      // Enquadramento 16:9 exato ocupando a área total da janela sem bordas desalinhadas
+      // Enquadramento 16:9 exato; durante map_iris_in cobre 100% da janela (incluindo bordas) igual ao .journey-map
       const vw = typeof window !== 'undefined' && window.innerWidth ? Math.max(320, window.innerWidth) : 320;
       const vh = typeof window !== 'undefined' && window.innerHeight ? Math.max(180, window.innerHeight) : 180;
-      const scale = Math.min(vw / W, vh / H);
-      cv.style.width = Math.round(W * scale) + 'px';
-      cv.style.height = Math.round(H * scale) + 'px';
+      const isMapIris = this.phase === 'map_iris_in' || global.TruePixelWorlds?.phase === 'map_iris_in';
+      const scale = isMapIris ? Math.max(vw / W, vh / H) : Math.min(vw / W, vh / H);
+      const roundFn = isMapIris ? Math.ceil : Math.round;
+      cv.style.width = roundFn(W * scale) + 'px';
+      cv.style.height = roundFn(H * scale) + 'px';
       cv.style.display = cv.hidden ? 'none' : 'block';
     },
 
@@ -2441,7 +2882,7 @@
       this._bound = true;
 
       const onDown = (e) => {
-        if (!this.running) return;
+        if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
         const pt = e.touches ? e.touches[0] : e;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
 
@@ -2551,7 +2992,7 @@
       };
 
       const onMove = (e) => {
-        if (!this.running) return;
+        if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
         const pt = e.touches ? e.touches[0] : e;
         if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
@@ -2590,7 +3031,7 @@
       };
 
       const onUp = () => {
-        if (!this.running) return;
+        if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
 
         if (this.isHoldingSpace) {
           this.isHoldingSpace = false;
@@ -2635,6 +3076,7 @@
       };
 
       const onKeyDown = (e) => {
+        if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
         if (e.key === 'r' || e.key === 'R') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
           if (this.isActiveGame()) {
@@ -3149,6 +3591,9 @@
       this.ordemActor.y = 36;
       this.ordemActor.state = 'back_silhouette';
       this.stopMusicAudio();
+      this.musicalTime = 0;
+      this._lastAudioTime = null;
+      this._lastAudioPerf = null;
       CaveRhythmKaraoke.resetPractice();
       IrisTransition.start('in', 160, 90, 0.45);
 
@@ -3361,6 +3806,8 @@
       this.phase = 'musical_part1_shadows';
       this.phaseTime = 0;
       this.musicalTime = 0;
+      this._lastAudioTime = null;
+      this._lastAudioPerf = null;
       this.cloudPopTime = -1;
       this.isHoldingSpace = false;
       CaveRhythmKaraoke.resetSong();
@@ -3448,6 +3895,8 @@
 
     startForestExitTransition() {
       // Os personagens caminham juntos até a entrada para o mundo da Floresta (reutilizando `walk`)
+      IrisTransition.active = false;
+      IrisTransition.onDone = null;
       this._forestExitIrisStarted = false;
       this.phase = 'walk_to_forest_exit';
       this.phaseTime = 0;
@@ -3456,6 +3905,7 @@
     },
 
     enterJourneyMapWithIrisIn(worldCompleted = true) {
+      const wasInLoop = Boolean(this._inLoop);
       if (typeof DialogueBox.close === 'function') DialogueBox.close();
       if (typeof TutorialModal.close === 'function') TutorialModal.close();
       this.stopMusicAudio();
@@ -3527,13 +3977,25 @@
           this.canvas.style.boxShadow = 'none';
           this.canvas.style.pointerEvents = 'none';
         }
+        this.fitCanvas(this.canvas);
+        const mapSec = typeof document !== 'undefined' ? document.getElementById('map') : null;
+        if (mapSec) mapSec.classList.add('iris-entering');
         IrisTransition.start('in', 160, 90, 0.95, () => {
+          if (mapSec) mapSec.classList.remove('iris-entering');
           this.deactivateCanvas();
         });
-        if (!this.running) {
+        if (wasInLoop) {
+          this._inLoop = true;
+        }
+        if (!this.running || !wasInLoop) {
           this.running = true;
           this.lastNow = typeof performance !== 'undefined' ? performance.now() : 0;
-          requestAnimationFrame((now) => this.loop(now));
+          if (!wasInLoop) {
+            if (this._rafId && typeof cancelAnimationFrame === 'function') {
+              cancelAnimationFrame(this._rafId);
+            }
+            this._rafId = requestAnimationFrame((now) => this.loop(now));
+          }
         }
       } else {
         this.phase = 'map_active';
@@ -4246,9 +4708,19 @@
           this.openMusicalVignette();
         }
       } else if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
-        // Sincroniza com o áudio real se estiver tocando, ou avança pelo relógio lógico
+        // Relógio contínuo de alta precisão (Precision Audio Clock) com amortecimento de drift e calibração de latência (~45ms)
         if (this.musicAudio && !this.musicAudio.paused && this.musicAudio.currentTime > 0) {
-          this.musicalTime = this.musicAudio.currentTime;
+          const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+          if (this._lastAudioTime !== this.musicAudio.currentTime) {
+            this._lastAudioTime = this.musicAudio.currentTime;
+            this._lastAudioPerf = nowPerf;
+          }
+          const estimated = this._lastAudioTime + (nowPerf - this._lastAudioPerf) / 1000 - 0.045;
+          if (Math.abs(estimated - this.musicalTime) > 0.4) {
+            this.musicalTime = Math.max(0, estimated);
+          } else {
+            this.musicalTime = Math.max(0, this.musicalTime + (estimated - this.musicalTime) * 0.35);
+          }
         } else {
           this.musicalTime += dt;
         }
@@ -4813,12 +5285,19 @@
     },
 
     loop(now) {
+      this._rafId = null;
       if (!this.running) return;
-      const dt = Math.min(0.1, Math.max(0.001, (now - this.lastNow) / 1000));
-      this.lastNow = now;
+      this._inLoop = true;
+      const currentNow = typeof now === 'number' && Number.isFinite(now) ? now : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const prevNow = typeof this.lastNow === 'number' && Number.isFinite(this.lastNow) ? this.lastNow : currentNow;
+      const dt = Math.min(0.1, Math.max(0.001, (currentNow - prevNow) / 1000));
+      this.lastNow = currentNow;
       this.update(dt);
       this.render();
-      requestAnimationFrame((n) => this.loop(n));
+      this._inLoop = false;
+      if (this.running) {
+        this._rafId = requestAnimationFrame((n) => this.loop(n));
+      }
     }
   };
 
