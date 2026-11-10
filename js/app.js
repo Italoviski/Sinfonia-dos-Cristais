@@ -468,6 +468,11 @@
   });
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('pagehide', persist);
+    // Previne menu de contexto e seleção nativa ao segurar o toque no mobile
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+    }, { passive: false });
   }
 
   syncTruePixelSockets();

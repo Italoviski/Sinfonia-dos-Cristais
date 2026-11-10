@@ -38,17 +38,73 @@
   --txt-outline-lg: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 2px 0 0 #000, 0 -2px 0 #000, -2px 0 0 #000, 2px 3px 5px rgba(0,0,0,0.95);
 }
 
-* { box-sizing: border-box; }
-body {
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+html, body {
   margin: 0;
   background: var(--ink);
   color: var(--menu-white);
   overflow: hidden;
   font-family: var(--game-font);
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  touch-action: manipulation;
 }
+
+/* Previne seleção nativa azul e arrasto de imagens no mobile e desktop */
+button, a, canvas, svg, img, label, span, p, h1, h2, div, section, main, header, footer, dialog, [role="button"], [role="tab"] {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+img, svg, canvas, #truePixelScreen, #preloaderCanvas, #menuParticles {
+  -webkit-user-drag: none !important;
+  -khtml-user-drag: none !important;
+  -moz-user-drag: none !important;
+  -o-user-drag: none !important;
+  user-drag: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+::selection {
+  background: transparent !important;
+  color: inherit !important;
+}
+::-moz-selection {
+  background: transparent !important;
+  color: inherit !important;
+}
+
 button, input { font: inherit; font-family: var(--game-font); }
 button { cursor: pointer; color: inherit; }
 button:disabled { cursor: not-allowed; }
+
+:focus:not(:focus-visible) {
+  outline: none !important;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible),
+[role="tab"]:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--ice); outline-offset: 5px; }
 h1, h2, p { margin: 0; }
 h1, h2 {

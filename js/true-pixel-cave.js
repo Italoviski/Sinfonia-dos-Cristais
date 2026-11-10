@@ -2390,7 +2390,11 @@
           'background:#05030f',
           'box-shadow:0 0 0 100vmax #05030f',
           'cursor:pointer',
-          'touch-action:none'
+          'touch-action:none',
+          '-webkit-tap-highlight-color:transparent',
+          '-webkit-touch-callout:none',
+          '-webkit-user-select:none',
+          'user-select:none'
         ].join(';');
         document.body.appendChild(cv);
       } else if (cv.width !== HW || cv.height !== HH) {

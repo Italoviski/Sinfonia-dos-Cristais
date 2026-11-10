@@ -2292,7 +2292,8 @@
         cv.style.cssText = [
           'position:fixed', 'left:50%', 'top:50%', 'transform:translate(-50%,-50%)',
           'display:block', 'z-index:40', 'image-rendering:pixelated', 'image-rendering:crisp-edges',
-          'background:#05030f', 'box-shadow:0 0 0 100vmax #05030f', 'cursor:pointer', 'touch-action:none'
+          'background:#05030f', 'box-shadow:0 0 0 100vmax #05030f', 'cursor:pointer', 'touch-action:none',
+          '-webkit-tap-highlight-color:transparent', '-webkit-touch-callout:none', '-webkit-user-select:none', 'user-select:none'
         ].join(';');
         document.body.appendChild(cv);
       }
