@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-10T06:31:42.746Z",
+  "timestamp": "2026-11-17T18:27:57.549Z",
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "screensTested": [
     "home",
@@ -148,8 +148,8 @@
     },
     {
       "id": 21,
-      "name": "Porta - Fase 1",
-      "initialPieces": 5,
+      "name": "Fase Final - 1/4: Floresta (Araci) - Fase 1",
+      "initialPieces": 0,
       "solved": true,
       "finished": true
     }
@@ -163,7 +163,8 @@
       "voice": false,
       "contrast": true,
       "motion": true,
-      "assist": true
+      "assist": true,
+      "frameScale": 1
     }
   },
   "performance": {

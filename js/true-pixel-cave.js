@@ -113,29 +113,39 @@
     return c;
   }
 
-  // Paleta Owlboy pictórica quente e suave (warm muted tones, sem neon agressivo nem bordas pretas)
-  const GEM_SPRITES = {
-    white_pure: buildHiBitGem('quartz', {
+  // Paleta Owlboy pictórica quente e suave (cristais sombrios preservam a cor equivalente em tom denso/corrompido)
+  const GEM_PALETTES = {
+    white_pure: {
       W: '#ffffff', H: '#e3f4f7', L: '#a8d8e6', M: '#6caac4', D: '#437794', K: '#294c66'
-    }),
-    white_shadow: buildHiBitGem('quartz', {
-      W: '#b8a6d9', H: '#8572ab', L: '#5e4d82', M: '#413361', D: '#2a1f42', K: '#1a122b'
-    }),
-    rose_pure: buildHiBitGem('quartz', {
+    },
+    white_shadow: {
+      W: '#d8f3fa', H: '#9ad0e3', L: '#5b9bb8', M: '#386c8a', D: '#1f425c', K: '#2a123d'
+    },
+    rose_pure: {
       W: '#fff2f5', H: '#f7cad8', L: '#e396b1', M: '#bf6588', D: '#8c3f60', K: '#59223b'
-    }),
-    rose_shadow: buildHiBitGem('quartz', {
-      W: '#cfa3c4', H: '#96688c', L: '#6e4666', M: '#4d2d47', D: '#331a2e', K: '#1f0e1c'
-    }),
-    opal_pure: buildHiBitGem('opal', {
+    },
+    rose_shadow: {
+      W: '#ffe0eb', H: '#eba0bc', L: '#c45e86', M: '#8f355b', D: '#591936', K: '#2d0b2e'
+    },
+    opal_pure: {
       W: '#fff6cc', H: '#f7c97e', L: '#e68a49', M: '#c45131', D: '#8c2d1f', K: '#541812'
-    }),
-    opal_shadow: buildHiBitGem('opal', {
-      W: '#c99b8f', H: '#8f5d52', L: '#693c34', M: '#4a2620', D: '#301512', K: '#1c0b09'
-    }),
-    flash: buildHiBitGem('quartz', {
+    },
+    opal_shadow: {
+      W: '#ffe8b8', H: '#e89e54', L: '#c45e28', M: '#8c3314', D: '#54180b', K: '#2b0924'
+    },
+    flash: {
       W: '#ffffff', H: '#ffffff', L: '#ffffff', M: '#ffffff', D: '#e8f6ff', K: '#b8ecff'
-    })
+    }
+  };
+
+  const GEM_SPRITES = {
+    white_pure: buildHiBitGem('quartz', GEM_PALETTES.white_pure),
+    white_shadow: buildHiBitGem('quartz', GEM_PALETTES.white_shadow),
+    rose_pure: buildHiBitGem('quartz', GEM_PALETTES.rose_pure),
+    rose_shadow: buildHiBitGem('quartz', GEM_PALETTES.rose_shadow),
+    opal_pure: buildHiBitGem('opal', GEM_PALETTES.opal_pure),
+    opal_shadow: buildHiBitGem('opal', GEM_PALETTES.opal_shadow),
+    flash: buildHiBitGem('quartz', GEM_PALETTES.flash)
   };
 
   const SHARD_ROWS = [
@@ -195,10 +205,14 @@
   function drawCrystalPiece(ctx, piece, t) {
     if (!piece || piece.broken || piece.value <= 0) return;
 
-    // 100% ESTÁTICO por padrão: só treme quando a Opala de Fogo está próxima ou em rejeição de cor!
     const isTrembling = Boolean(piece.trembling) || Boolean(piece.rejectUntil && t < piece.rejectUntil);
     const [tx, ty] = ActorAnimator.getCrystalTrembleOffset(t, isTrembling, ctx, piece.x, piece.y);
-    const x = RH(piece.x + tx), y = RH(piece.y + ty);
+    const idle = ActorAnimator.getCrystalIdleAnim(piece, t);
+    const x = RH(piece.x + tx), y = RH(piece.y + ty + idle.bobY);
+
+    if (piece.shadow) {
+      ActorAnimator.drawShadowCrystalAura(ctx, x, y, t, idle.phase, 11.5);
+    }
 
     if (piece.dragging) {
       drawRing(ctx, R(x), R(y), 14, '#e6cf9c');
@@ -218,21 +232,27 @@
     const gw = spr.width * 0.5, gh = spr.height * 0.5;
     ctx.drawImage(spr, RH(x - gw / 2), RH(y - gh / 2), gw, gh);
 
+    if (idle.sparkleActive) {
+      P1(ctx, R(x + idle.sparkleCorner * 4), R(y - 5), piece.shadow ? '#d8b4fe' : '#ffffff');
+    }
+
     // Desenha as unidades como bolinhas luminosas FORA do cristal em um arco acima dele
     const val = clamp(piece.value || 1, 1, 6);
     const orbCoords = EXTERNAL_ORB_ARCS[val] || EXTERNAL_ORB_ARCS[1];
     const recentlyChanged = Boolean(piece.lastValChangeAt && (t - piece.lastValChangeAt) < 0.28);
 
-    const coreCol = piece.shadow ? '#f3e0ff' : '#fffdf2';
+    const coreCol = piece.shadow
+      ? (piece.type === 'rose' ? '#ffe0eb' : (piece.type === 'opal' ? '#ffe8b8' : '#e0f7ff'))
+      : '#fffdf2';
     const midCol = piece.shadow
-      ? (piece.type === 'rose' ? '#cfa3c4' : '#9b84c4')
+      ? (piece.type === 'rose' ? '#d46a92' : (piece.type === 'opal' ? '#d97538' : '#68b0c9'))
       : piece.type === 'opal'
         ? '#f7b259'
         : piece.type === 'rose'
           ? '#f29bb8'
           : '#7fd4e6';
-    const rimCol = piece.shadow ? '#1f142e' : (piece.type === 'opal' ? '#4a1912' : (piece.type === 'rose' ? '#4f1e35' : '#1e3a4d'));
-    const linkCol = piece.shadow ? '#6e5794' : (piece.type === 'opal' ? '#e68a49' : (piece.type === 'rose' ? '#d97a9c' : '#569bb0'));
+    const rimCol = piece.shadow ? '#240b36' : (piece.type === 'opal' ? '#4a1912' : (piece.type === 'rose' ? '#4f1e35' : '#1e3a4d'));
+    const linkCol = piece.shadow ? '#7e22ce' : (piece.type === 'opal' ? '#e68a49' : (piece.type === 'rose' ? '#d97a9c' : '#569bb0'));
 
     // Filamento energético suave conectando o arco de bolinhas externas ao topo do cristal
     ctx.fillStyle = linkCol;
@@ -251,6 +271,26 @@
     }
   }
 
+  function getDynamicEquationRadius(eq, members = []) {
+    if (!eq) return { rx: 30, ry: 20 };
+    let count = 0;
+    if (Array.isArray(members)) {
+      count = members.length;
+    } else if (typeof members === 'number') {
+      count = members;
+    } else if (eq.memberCount !== undefined) {
+      count = eq.memberCount;
+    }
+    const isReceptive = Boolean(eq.expanded || eq.dropHover || eq.removeHover);
+    const spacing = (eq.expanded || isReceptive) ? 24 : 18;
+    const halfSpan = count > 1 ? ((count - 1) * spacing) * 0.5 : 0;
+    const baseRx = isReceptive ? 46 : 30;
+    const baseRy = isReceptive ? 28 : 20;
+    const rx = Math.max(baseRx, Math.round(halfSpan + (isReceptive ? 26 : 20)));
+    const ry = Math.max(baseRy, count >= 3 ? (isReceptive ? 30 : 24) : baseRy);
+    return { rx, ry };
+  }
+
   // ============================================================================
   // AURA EXPANSÍVEL DA EQUAÇÃO CRISTALINA EM LOOP (Estilo Pictórico Owlboy)
   // Inclui conexões luminosas entre os cristais internos e destaque de encaixe!
@@ -259,8 +299,7 @@
     if (!eq || eq.broken) return;
     const f12 = Math.floor(t * SPRITE_FPS);
     const isReceptive = Boolean(eq.expanded || eq.dropHover || eq.removeHover);
-    const rx = isReceptive ? 46 : 29;
-    const ry = isReceptive ? 26 : 18;
+    const { rx, ry } = getDynamicEquationRadius(eq, members);
     const cx = R(eq.x), cy = R(eq.y);
 
     if (isReceptive) {
@@ -286,8 +325,9 @@
         ? '#c45131'
         : (eq.shadow ? '#5e4d82' : (eq.expanded ? '#5e96ab' : '#8c7248'));
 
-    for (let a = 0; a < 76; a++) {
-      const ang = (a / 76) * Math.PI * 2;
+    const numDots = Math.max(76, Math.round(rx * 1.8));
+    for (let a = 0; a < numDots; a++) {
+      const ang = (a / numDots) * Math.PI * 2;
       const wave = Math.sin(ang * 4 + f12 * 0.6) * (isReceptive ? 1.2 : 0.7);
       const px = R(cx + Math.cos(ang) * (rx + wave));
       const py = R(cy + Math.sin(ang) * (ry + wave * 0.6));
@@ -2604,7 +2644,8 @@
     waveRadius: 0,
     waveActive: false,
 
-    // Controle do Show Musical da Fase 5 (O Sussurro da Fada)
+    // Controle do Show Musical da Fase 5 (O Sussurro da Fada) e BGM da Caverna
+    regularAudio: null,
     musicAudio: null,
     musicalTime: 0,
     _lastAudioTime: null,
@@ -2621,6 +2662,7 @@
     draggedPiece: null,
     equationPointer: null,
     magneticAnim: null,
+    equationShockEffect: null,
 
     opalDrainTimer: 0,
     opalStepInterval: 0.55,
@@ -2660,10 +2702,14 @@
       GameHUD.onMuteChange = (muted, effMus) => {
         const vol = effMus !== undefined ? effMus : (muted ? 0 : GameHUD.musicVol / 100);
         const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
+        const inRegularCave = this.isActiveGame() && this.currentLevel >= 1 && this.currentLevel <= 4;
 
         if (this.musicAudio) {
           this.musicAudio.muted = !!muted || vol <= 0;
-          this.musicAudio.volume = vol;
+          this.musicAudio._fadeTargetVol = vol;
+          if (!this.musicAudio._fadingIn) {
+            this.musicAudio.volume = vol;
+          }
           if (inMusical) {
             if (muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
               try { this.musicAudio.pause(); } catch (_) {}
@@ -2673,19 +2719,68 @@
           }
         }
 
+        if (this.regularAudio) {
+          this.regularAudio.muted = !!muted || vol <= 0;
+          this.regularAudio._fadeTargetVol = vol;
+          if (!this.regularAudio._fadingIn) {
+            this.regularAudio.volume = vol;
+          }
+          if (!inRegularCave || inMusical || muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen) {
+            try { this.regularAudio.pause(); } catch (_) {}
+          } else if (this.regularAudio.paused) {
+            try { this.regularAudio.play().catch(() => {}); } catch (_) {}
+          }
+        }
+
         if (global.CrystalMenuAudio && global.CrystalMenuAudio.track) {
           const menuTr = global.CrystalMenuAudio.track;
           menuTr.muted = !!muted || vol <= 0;
-          menuTr.volume = vol;
-          if (inMusical || muted || vol <= 0 || GameHUD.paused || GameHUD.settingsOpen || !this.isActiveGame()) {
+          menuTr._fadeTargetVol = vol;
+          if (!menuTr._fadingIn) {
+            menuTr.volume = vol;
+          }
+          if (this.isActiveGame()) {
             try { menuTr.pause(); } catch (_) {}
-          } else if (this.running && menuTr.paused && this.isActiveGame()) {
-            try { menuTr.play().catch(() => {}); } catch (_) {}
           }
         }
       };
 
       GameHUD.syncAudio();
+    },
+
+    playRegularBgm() {
+      try {
+        if (this.musicAudio) {
+          try { this.musicAudio.pause(); } catch (_) {}
+        }
+        global.CrystalAudio?.stopAllMusic?.(this.regularAudio);
+        global.CrystalMenuAudio?.pause?.();
+        if (!this.regularAudio) {
+          this.regularAudio = new Audio('assets/audio/musica-menu.mp3');
+          this.regularAudio.loop = true;
+          this.regularAudio.preload = 'auto';
+          global.CrystalAudio?.setupSeamlessLoop?.(this.regularAudio, { loopStart: 3.2, loopEndOffset: 0.6, fadeMs: 320 });
+        }
+        const effMus = GameHUD.muted ? 0 : clamp(GameHUD.musicVol / 100, 0, 1);
+        this.regularAudio.muted = GameHUD.muted || effMus <= 0;
+        const startOffset = 3.2;
+        if (this.regularAudio.paused || !Number.isFinite(this.regularAudio.currentTime) || this.regularAudio.currentTime < 2.5) {
+          if (global.CrystalAudio?.fadeInTrack) {
+            global.CrystalAudio.fadeInTrack(this.regularAudio, effMus, 650, startOffset);
+          } else {
+            try { this.regularAudio.currentTime = startOffset; } catch (_) {}
+            this.regularAudio.volume = effMus;
+          }
+          if (!GameHUD.muted && effMus > 0) {
+            this.regularAudio.play().catch(() => {});
+          }
+        } else {
+          this.regularAudio._fadeTargetVol = effMus;
+          if (!this.regularAudio._fadingIn) {
+            this.regularAudio.volume = effMus;
+          }
+        }
+      } catch (_) {}
     },
 
     isActiveGame() {
@@ -2762,6 +2857,7 @@
       this.draggedPiece = null;
       this.equationPointer = null;
       this.magneticAnim = null;
+      this.equationShockEffect = null;
       this.clearTrembleStates();
       this.shards = [];
       this.cushionAlpha = 0;
@@ -2808,6 +2904,7 @@
         this.lastNow = (typeof performance !== 'undefined' ? performance.now() : 0);
         requestAnimationFrame((now) => this.loop(now));
       }
+      this.playRegularBgm();
     },
 
     ensureCanvas() {
@@ -2854,7 +2951,8 @@
       const vw = typeof window !== 'undefined' && window.innerWidth ? Math.max(320, window.innerWidth) : 320;
       const vh = typeof window !== 'undefined' && window.innerHeight ? Math.max(180, window.innerHeight) : 180;
       const isMapIris = this.phase === 'map_iris_in' || global.TruePixelWorlds?.phase === 'map_iris_in';
-      const scale = isMapIris ? Math.max(vw / W, vh / H) : Math.min(vw / W, vh / H);
+      const userFrameScale = isMapIris ? 1 : clamp(Number(global.CrystalFrameScale) || 1, 0.8, 1.2);
+      const scale = (isMapIris ? Math.max(vw / W, vh / H) : Math.min(vw / W, vh / H)) * userFrameScale;
       const roundFn = isMapIris ? Math.ceil : Math.round;
       cv.style.width = roundFn(W * scale) + 'px';
       cv.style.height = roundFn(H * scale) + 'px';
@@ -2869,10 +2967,24 @@
       };
     },
 
+    getEquationRadius(eq, memberCountOrList) {
+      if (memberCountOrList === undefined) {
+        if (eq?.memberCount !== undefined && eq.memberCount > 0) {
+          memberCountOrList = eq.memberCount;
+        } else if (Array.isArray(this.pieces)) {
+          const piecesInEq = this.pieces.filter((p) => !p.broken && p.value > 0 && p.inEquation === (eq?.shadow ? 'shadow' : 'pure')).length;
+          memberCountOrList = piecesInEq || eq?.memberCount || 0;
+        } else {
+          memberCountOrList = eq?.memberCount || 0;
+        }
+      }
+      return getDynamicEquationRadius(eq, memberCountOrList);
+    },
+
     isInsideEquationAura(eq, x, y, allowReception = false) {
       if (!eq || eq.broken) return false;
-      const rx = (eq.expanded || allowReception) ? 48 : 30;
-      const ry = (eq.expanded || allowReception) ? 28 : 18;
+      const testEq = allowReception ? { ...eq, expanded: true } : eq;
+      const { rx, ry } = this.getEquationRadius(testEq);
       const dx = (x - eq.x) / rx, dy = (y - eq.y) / ry;
       return dx * dx + dy * dy <= 1.08;
     },
@@ -2920,7 +3032,7 @@
         // Botão para avançar/concluir durante o show musical caso o jogador queira pular ou tocar no ritmo
         if (this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright') {
           const sb = this.skipMusicalBtnRect;
-          if (x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
+          if (GameHUD.godMode && x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
             GameHUD.playSfx('click');
             this.finishMusicalShow();
             return;
@@ -3088,6 +3200,17 @@
 
         if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (DialogueBox.isOpen) {
+            e.preventDefault();
+            GameHUD.playSfx('click');
+            DialogueBox.advance();
+            return;
+          }
+          if (TutorialModal.isOpen) {
+            e.preventDefault();
+            TutorialModal.nextStep();
+            return;
+          }
           if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
             e.preventDefault();
             GameHUD.playSfx('click');
@@ -3472,6 +3595,7 @@
     layoutEquationPieces(eq, tag) {
       if (!eq || eq.broken) return;
       const members = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation === tag);
+      eq.memberCount = members.length;
       const spacing = eq.expanded ? 24 : 18;
       const halfSpan = members.length > 1 ? ((members.length - 1) * spacing) * 0.5 : 0;
       if (this.phase !== 'equation_magnetic') {
@@ -3522,6 +3646,7 @@
         this.lastNow = performance.now();
         requestAnimationFrame((now) => this.loop(now));
       }
+      this.playRegularBgm();
     },
 
     startFase2(onFinish = null) {
@@ -3564,6 +3689,7 @@
         this.lastNow = performance.now();
         requestAnimationFrame((now) => this.loop(now));
       }
+      this.playRegularBgm();
     },
 
     startFase5(onFinish = null) {
@@ -3757,6 +3883,7 @@
         this.lastNow = performance.now();
         requestAnimationFrame((now) => this.loop(now));
       }
+      this.playRegularBgm();
     },
 
     openFase4IntroDialogue() {
@@ -3824,6 +3951,10 @@
       this.ordemActor.state = 'back_silhouette';
 
       try {
+        if (this.regularAudio) {
+          try { this.regularAudio.pause(); } catch (_) {}
+        }
+        global.CrystalAudio?.stopAllMusic?.(this.musicAudio);
         if (global.CrystalMenuAudio) {
           global.CrystalMenuAudio.pause?.();
         }
@@ -3835,10 +3966,15 @@
           this.musicAudio.preload = 'auto';
         }
         GameHUD.syncAudio();
-        this.musicAudio.currentTime = 0;
         const effMus = GameHUD.muted ? 0 : clamp(GameHUD.musicVol / 100, 0, 1);
         this.musicAudio.muted = GameHUD.muted || effMus <= 0;
-        this.musicAudio.volume = effMus;
+        if (global.CrystalAudio?.fadeInTrack) {
+          this.musicAudio.currentTime = 0.15;
+          global.CrystalAudio.fadeInTrack(this.musicAudio, effMus, 450, 0.15);
+        } else {
+          this.musicAudio.currentTime = 0.15;
+          this.musicAudio.volume = effMus;
+        }
         if (!GameHUD.muted && GameHUD.musicVol > 0) {
           this.musicAudio.play().catch(() => {});
         }
@@ -3846,6 +3982,9 @@
     },
 
     stopMusicAudio() {
+      if (this.regularAudio) {
+        try { this.regularAudio.pause(); } catch (_) {}
+      }
       if (this.musicAudio) {
         try { this.musicAudio.pause(); } catch (_) {}
       }
@@ -3882,7 +4021,22 @@
         {
           speaker: 'Ordem',
           portrait: 'portrait_ordem',
-          text: 'Agora devemos ir para a Floresta restaurar a próxima gema!'
+          text: 'Há muito tempo, a Grande Sinfonia unia todos os cristais em uma canção pura que dava vida e equilíbrio ao nosso mundo.'
+        },
+        {
+          speaker: 'Ordem',
+          portrait: 'portrait_ordem',
+          text: 'Mas uma dissonância sombria espalhou o silêncio pelos biomas e fragmentou a melodia ancestral.'
+        },
+        {
+          speaker: 'Ordem',
+          portrait: 'portrait_ordem',
+          text: 'Para restaurar a harmonia completa, precisamos reunir as quatro Gemas Primordiais no topo do nosso brasão!'
+        },
+        {
+          speaker: 'Ordem',
+          portrait: 'portrait_ordem',
+          text: 'A próxima Gema Primordial está na Floresta da Guardiã Araci. Vamos seguir juntos para lá!'
         }
       ], () => {
         // Corta para a animação de conclusão de fase MAIS ANIMADA que o comum (última fase do mundo)
@@ -4009,6 +4163,7 @@
       this.pureEquation = null;
       this.shadowEquation = null;
       this.magneticAnim = null;
+      this.equationShockEffect = null;
 
       if (level === 1) {
         this.totalSteps = 1;
@@ -4439,6 +4594,7 @@
         this.phase = 'next_step_pause';
         this.phaseTime = 0;
       } else if (this.currentLevel === 4) {
+        global.CrystalApp?.syncProgress?.([1, 2, 3, 4], 5);
         this.phase = 'ceiling_crystal_shatter';
         this.phaseTime = 0;
         this.ceilingCrystalFlash = true;
@@ -4581,6 +4737,9 @@
         if (this.musicAudio && !this.musicAudio.paused) {
           try { this.musicAudio.pause(); } catch (_) {}
         }
+        if (this.regularAudio && !this.regularAudio.paused) {
+          try { this.regularAudio.pause(); } catch (_) {}
+        }
         return;
       }
 
@@ -4597,6 +4756,19 @@
       this.phaseTime += dt;
       IrisTransition.update(dt);
       DialogueBox.update(dt);
+      if (this.phase === 'tutorial' && !TutorialModal.isOpen) {
+        this.phase = 'gameplay';
+        this.phaseTime = 0;
+      }
+      if (this.equationShockEffect) {
+        this.equationShockEffect.elapsed += dt;
+        if (this.equationShockEffect.elapsed >= this.equationShockEffect.duration) {
+          this.equationShockEffect = null;
+        }
+      }
+      if (this.regularAudio && !this.regularAudio.paused) {
+        global.CrystalAudio?.checkSeamlessLoop?.(this.regularAudio);
+      }
 
       if (this.obstacleDecay < this.targetObstacleDecay) {
         this.obstacleDecay = Math.min(this.targetObstacleDecay, this.obstacleDecay + dt * 1.4);
@@ -4664,14 +4836,21 @@
           this.openFase4IntroDialogue();
         }
       } else if (this.phase === 'equation_magnetic' && this.magneticAnim) {
-        const p = easeInOut(clamp(this.phaseTime / 0.75, 0, 1));
         const m = this.magneticAnim;
-        this.pureEquation.x = R(m.pStartX + (m.midX - 10 - m.pStartX) * p);
-        this.pureEquation.y = R(m.pStartY + (m.midY - m.pStartY) * p);
-        this.shadowEquation.x = R(m.sStartX + (m.midX + 10 - m.sStartX) * p);
-        this.shadowEquation.y = R(m.sStartY + (m.midY - m.sStartY) * p);
+        const st = ActorAnimator.computeEquationMagneticState(m, this.phaseTime);
+        this.pureEquation.x = st.pureX;
+        this.pureEquation.y = st.pureY;
+        this.shadowEquation.x = st.shadowX;
+        this.shadowEquation.y = st.shadowY;
         this.layoutEquationPieces(this.pureEquation, 'pure');
         this.layoutEquationPieces(this.shadowEquation, 'shadow');
+
+        if (st.isImpactShock && !m.shockTriggered) {
+          m.shockTriggered = true;
+          this.equationShockEffect = { x: m.midX, y: m.midY, elapsed: 0, duration: 0.48 };
+          this.spawnShatter(m.midX, m.midY, 'pure', 8);
+          this.spawnShatter(m.midX, m.midY, 'shadow', 8);
+        }
 
         if (this.phaseTime >= 0.78) {
           this.pureEquation.broken = true;
@@ -4691,6 +4870,7 @@
           if (remainingShadows) {
             this.phase = 'gameplay';
             this.phaseTime = 0;
+            this.triggerDefeatIfImpossible();
           } else {
             this.onStepCleared(m.midX, m.midY);
           }
@@ -5147,7 +5327,13 @@
       this.composeBackground();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.putImageData(BG_IMAGE, 0, 0);
-      ctx.setTransform(2, 0, 0, 2, 0, 0);
+      let shakeX = 0, shakeY = 0;
+      if (this.phase === 'equation_magnetic' && this.magneticAnim) {
+        const magSt = ActorAnimator.computeEquationMagneticState(this.magneticAnim, this.phaseTime);
+        shakeX = magSt.shakeX;
+        shakeY = magSt.shakeY;
+      }
+      ctx.setTransform(2, 0, 0, 2, shakeX * 2, shakeY * 2);
 
       // Na saída para a Floresta, mantém o panorama aberto à direita
       if (this.phase === 'post_musical_ordem_dlg' || this.phase === 'world_celebrate_complete' || this.phase === 'walk_to_forest_exit') {
@@ -5227,13 +5413,6 @@
         this.phase === 'defeat_pause' ||
         this.phase === 'game_over'
       ) {
-        if (this.phase === 'equation_magnetic' && this.pureEquation && this.shadowEquation) {
-          const f12 = Math.floor(tq * 12);
-          for (let x = this.pureEquation.x; x <= this.shadowEquation.x; x += 3) {
-            P1(ctx, x, this.pureEquation.y + ((x + f12) & 1 ? -1 : 1), '#ffffff');
-          }
-        }
-
         const pureEqMembers = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation === 'pure');
         const shadowEqMembers = this.pieces.filter(p => !p.broken && p.value > 0 && p.inEquation === 'shadow');
         drawEquationAura(ctx, this.pureEquation, tq, pureEqMembers);
@@ -5242,16 +5421,24 @@
         for (const p of this.pieces) {
           drawCrystalPiece(ctx, p, tq);
         }
+
+        if (this.phase === 'equation_magnetic' && this.magneticAnim) {
+          ActorAnimator.drawEquationMagneticShock(ctx, this.pureEquation, this.shadowEquation, this.magneticAnim, this.phaseTime, tq);
+        }
       }
 
       this.drawShards(ctx);
+      if (this.equationShockEffect) {
+        ActorAnimator.drawEquationShockwave(ctx, this.equationShockEffect, tq);
+      }
 
+      ctx.setTransform(2, 0, 0, 2, 0, 0);
       // HUD Superior Completo (Título da Fase, Etapa + Botões de Pause, Recomeçar, Mudo e Configurações)
       const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
       GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical);
 
-      // Botão Pular >> no topo durante o show musical, enquadrado ao lado dos 4 botões do HUD
-      if (inMusical) {
+      // Botão Pular >> no topo durante o show musical, visível apenas no God Mode
+      if (inMusical && GameHUD.godMode) {
         const sb = this.skipMusicalBtnRect;
         ctx.fillStyle = '#3d2b24';
         ctx.fillRect(sb.x, sb.y, sb.w, sb.h);
@@ -5334,6 +5521,7 @@
     hookPlayButton();
   }
 
+  CaveChapter1.GEM_PALETTES = GEM_PALETTES;
   CaveChapter1.CaveRhythmKaraoke = CaveRhythmKaraoke;
   global.CaveChapter1 = CaveChapter1;
 })(typeof window !== 'undefined' ? window : globalThis);
