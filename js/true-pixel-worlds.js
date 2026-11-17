@@ -7681,8 +7681,6 @@
           ActorAnimator.drawActor(ctx, 'araci', 'sing', 94, 142, tq, { flipX: false });
           ActorAnimator.drawActor(ctx, 'irece', 'sing', 168, 142, tq, { flipX: true });
           ActorAnimator.drawActor(ctx, 'jurema', 'sing', 196, 142, tq, { flipX: true });
-          ActorAnimator.drawStoneNeonAnimal(ctx, 'cyan', extraVoice, 18, 142, tq, false);
-          ActorAnimator.drawStoneNeonAnimal(ctx, 'magenta', extraVoice, 302, 142, tq, true);
         } else {
           if (mt >= 47.0) {
             drawNextBiomePanorama(ctx, spec.nextBiome, (mt - 47.0) / 5.5, tq);
@@ -7694,11 +7692,6 @@
           }
           if (mt >= 42.0 && mt < 47.0) {
             drawMagicCrystalDrum(ctx, 118, 118, tq);
-          }
-          ActorAnimator.drawStoneNeonAnimal(ctx, 'cyan', extraVoice, 18, 142, tq, false);
-          ActorAnimator.drawStoneNeonAnimal(ctx, 'magenta', extraVoice, 206, 142, tq, true);
-          if (mt < 47.0) {
-            ActorAnimator.drawStoneNeonAnimal(ctx, 'gold', extraVoice, 298, 142, tq, true);
           }
           ActorAnimator.drawMusicNotesLoop(ctx, this.guardianActor.x, this.guardianActor.y - 24, tq, {
             count: 4,
@@ -7751,8 +7744,6 @@
         drawAncientSanctuaryGate(ctx, this.obstacleDecay, this.gateOpenRatio, tq);
       } else if (this.phase === 'post_musical_dlg' || this.phase === 'world_celebrate_complete' || this.phase === 'walk_to_world_exit') {
         drawNextBiomePanorama(ctx, spec.nextBiome, 1.0, tq);
-        ActorAnimator.drawStoneNeonAnimal(ctx, 'cyan', this.phase === 'world_celebrate_complete', 20, 142, tq, false);
-        ActorAnimator.drawStoneNeonAnimal(ctx, 'magenta', this.phase === 'world_celebrate_complete', 298, 142, tq, true);
       } else if (this.isWorldFinale()) {
         drawGiantBiomeCrystal(ctx, this.worldKey, this.obstacleDecay, this.giantCrystalFlash, this.giantCrystalBroken, tq);
         if (!this.giantCrystalBroken) {

@@ -3146,6 +3146,48 @@ test('Prompt #10: Floresta Fase 5 (Tempo 20s, Combo Multi-Corte e HUD Top-Right)
   Worlds.deactivateCanvas();
 });
 
+test('Prompt 11: Modais dos Mundos sem borda azul/fundo escuro/texto indevido e Bichinhos de Pedra exclusivos da Caverna e expressivos', async (t) => {
+  setupNodeDOM();
+  const fs = await import('node:fs');
+
+  // 1. Verificação no CSS do Modal de Seleção de Fase (css/journey.css)
+  const journeyCss = fs.readFileSync('css/journey.css', 'utf-8');
+  assert.match(journeyCss, /\.journey-dialog[^{]*\{[^}]*box-shadow:\s*none\s*!important/, 'journey-dialog deve anular box-shadow com !important para eliminar a borda azul');
+  assert.match(journeyCss, /\.journey-stars[^{]*\{[^}]*background:\s*transparent/, 'journey-stars deve ter background transparente para não cortar a arte');
+  assert.match(journeyCss, /\.journey-dialog\s+p[^{]*\{[^}]*background:\s*transparent/, 'journey-dialog p deve ter background transparente');
+
+  // Botões temáticos por mundo
+  assert.match(journeyCss, /\[data-world="0"\]/, 'Deve conter regras específicas para o Mundo 0 (Caverna)');
+  assert.match(journeyCss, /\[data-world="1"\]/, 'Deve conter regras específicas para o Mundo 1 (Floresta)');
+  assert.match(journeyCss, /\[data-world="2"\]/, 'Deve conter regras específicas para o Mundo 2 (Rio)');
+  assert.match(journeyCss, /\[data-world="3"\]/, 'Deve conter regras específicas para o Mundo 3 (Caatinga)');
+
+  // 2. Verificação em js/journey-map.js: ausência da frase "Fase inédita"
+  const journeyJs = fs.readFileSync('js/journey-map.js', 'utf-8');
+  assert.doesNotMatch(journeyJs, /Fase inédita/i, 'js/journey-map.js NÃO deve conter a frase "Fase inédita"');
+
+  // 3. Verificação em js/true-pixel-worlds.js: exclusividade dos bichinhos de pedra (apenas Caverna)
+  const worldsJs = fs.readFileSync('js/true-pixel-worlds.js', 'utf-8');
+  assert.doesNotMatch(worldsJs, /drawStoneNeonAnimal/, 'js/true-pixel-worlds.js NÃO deve chamar drawStoneNeonAnimal em nenhum mundo (exclusivo da Caverna)');
+
+  // 4. Verificação de renderização do bichinho de pedra no SpriteBank da Caverna
+  const engineJs = fs.readFileSync('js/true-pixel-engine.js', 'utf-8');
+  eval(engineJs);
+  const E = globalThis.TruePixelEngine;
+  assert.ok(E.SpriteBank.stoneNeonAnimals, 'SpriteBank deve conter stoneNeonAnimals');
+  assert.ok(E.SpriteBank.stoneNeonAnimals.cyan, 'Deve conter variante cyan');
+  assert.ok(E.SpriteBank.stoneNeonAnimals.magenta, 'Deve conter variante magenta');
+  assert.ok(E.SpriteBank.stoneNeonAnimals.gold, 'Deve conter variante gold');
+
+  // Testa desenho sem lançar erros no contexto mock
+  const [testCanvas, testCtx] = E.mk(100, 100);
+  assert.doesNotThrow(() => {
+    E.ActorAnimator.drawStoneNeonAnimal(testCtx, 'cyan', false, 50, 50, 0, false);
+    E.ActorAnimator.drawStoneNeonAnimal(testCtx, 'magenta', true, 50, 50, 0.5, true);
+    E.ActorAnimator.drawStoneNeonAnimal(testCtx, 'gold', true, 50, 50, 1.0, false);
+  }, 'drawStoneNeonAnimal deve desenhar corretamente todos os estados e variantes');
+});
+
 
 
 

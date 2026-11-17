@@ -5612,11 +5612,13 @@
 
   // ============================================================================
   // ANIMAIS DE PEDRA COM MUSGO E CRISTAIS LUMINOSOS — HI-BIT 38x36 PIXELS (ESTILO OWLBOY)
-  // Criaturas rochosas esculpidas em tons terrosos (#262020, #3b3332, #524846, #6e635f)
-  // com musgo vivo (#367030, #539e43, #7ec456) e veios cristalinos suaves.
   // ============================================================================
-  function buildHiBitStoneAnimal(neonHi, neonMid, isSing = false) {
-    const W = 38, H = 36;
+  // BICHINHOS DE PEDRA MUSICAIS (EXCLUSIVOS DA CAVERNA)
+  // Criaturas de pedra arredondadas, expressivas e fofas/caricatas com coroinha
+  // de cristais cintilantes, bochechinhas coradas, olhões kawaii e boquinha em "O".
+  // ============================================================================
+  function buildHiBitStoneAnimal(neonHi, neonMid, isSing = false, frame = 0, cheekCol = '#ff9eb5') {
+    const W = 40, H = 38;
     const [c, x] = mk(W, H);
     c.hib = true;
     const put = (px, py, col) => {
@@ -5639,60 +5641,186 @@
       }
     };
 
-    const ROCK_0 = '#262020', ROCK_1 = '#3b3332', ROCK_2 = '#524846', ROCK_3 = '#6e635f';
-    const MOSS_0 = '#367030', MOSS_1 = '#539e43', MOSS_2 = '#7ec456';
+    const ROCK_0 = '#221c1c'; // contorno
+    const ROCK_1 = '#382e2c'; // sombra
+    const ROCK_2 = '#544745'; // tom médio
+    const ROCK_3 = '#726360'; // brilho
+    const ROCK_4 = '#8f807c'; // luz superior
+    const MOSS_0 = '#2f5e27';
+    const MOSS_1 = '#4e943c';
+    const MOSS_2 = '#79bd54';
 
-    // Cristais nas costas do guardião de pedra
-    for (const [cx, cy, h] of [[13, 9, 8], [19, 7, 10], [25, 10, 7]]) {
+    const squashY = (isSing && frame === 1) ? -1 : 0;
+    const centerY = 23 + squashY;
+
+    // 1. Cristais cintilantes no topo da cabeça
+    const crystals = [
+      [13, 10 + squashY, 7, -1],
+      [20, 7 + squashY, 9, 0],
+      [27, 10 + squashY, 7, 1]
+    ];
+    for (const [cx, cy, h, lean] of crystals) {
       for (let py = cy - h; py <= cy; py++) {
-        const w = Math.max(1, Math.round((1 - (cy - py) / h) * 3));
-        for (let px = cx - w; px <= cx + w; px++) {
-          put(px, py, px < cx ? '#ffffff' : (px === cx ? neonHi : neonMid));
+        const progress = (cy - py) / h;
+        const w = Math.max(1, Math.round((1 - progress) * 2.8));
+        const lx = Math.round(lean * (1 - progress));
+        for (let px = cx - w + lx; px <= cx + w + lx; px++) {
+          let col = neonMid;
+          if (px < cx) col = (py === cy - h) ? '#ffffff' : neonHi;
+          else if (px === cx) col = (py <= cy - h + 1 || (frame === 1 && ((px + py) & 1) === 0)) ? '#ffffff' : neonHi;
+          put(px, py, col);
         }
       }
     }
 
-    // Corpo rochoso esculpido (guardião coruja/golem de pedra estilo Owlboy)
-    fillEll(19, 22, 13, 10, (px, py, dx, dy, d) => {
-      if (d > 0.85) return ROCK_0;
-      if (dy < -0.55) {
-        return ((px + py) & 1) === 0 ? MOSS_2 : (dy < -0.7 ? MOSS_1 : MOSS_0);
-      }
-      if (dx + dy < -0.2) return ROCK_3;
+    // 2. Corpinho arredondado gordinho e fofo (batatinha de pedra alegre)
+    const bodyRx = 13.5;
+    const bodyRy = 10.5 + ((isSing && frame === 0) ? 0.5 : (isSing && frame === 1) ? -0.5 : 0);
+    fillEll(20, centerY, bodyRx, bodyRy, (px, py, dx, dy, d) => {
+      if (d > 0.82) return ROCK_0;
+      if (dy < -0.58 && dx < 0.2) return ((px + py) & 1) === 0 ? MOSS_2 : MOSS_1;
+      if (dy < -0.48 && dx < 0.25 && d > 0.6) return MOSS_0;
+      if (dy < -0.4 && dx > -0.3 && dx < 0.3) return ROCK_4;
+      if (dx + dy < -0.15) return ROCK_3;
       if (dx + dy > 0.35) return ROCK_1;
       return ROCK_2;
     });
 
-    // Patas de pedra na base
-    fillEll(13, 32, 4, 3, (px, py, dx, dy) => dy < 0 ? ROCK_2 : ROCK_0);
-    fillEll(25, 32, 4, 3, (px, py, dx, dy) => dy < 0 ? ROCK_2 : ROCK_0);
+    // 3. Patinhas curtas redondinhas de pedra na base
+    const footY = 33 + squashY;
+    fillEll(14, footY, 3.8, 2.8, (px, py, dx, dy, d) => d > 0.75 ? ROCK_0 : dy < -0.2 ? ROCK_3 : ROCK_1);
+    fillEll(26, footY, 3.8, 2.8, (px, py, dx, dy, d) => d > 0.75 ? ROCK_0 : dy < -0.2 ? ROCK_3 : ROCK_1);
 
-    // Olhos minerais luminosos e boca cantando
-    for (const ox of [15, 23]) {
-      put(ox, 19, neonHi);
-      put(ox + 1, 19, '#ffffff');
-      put(ox, 20, neonMid);
-      put(ox + 1, 20, neonHi);
+    // 4. Bochechinhas coradas fofas (rosadas/iluminadas)
+    const cheekY = centerY + 1;
+    put(13, cheekY, cheekCol);
+    put(14, cheekY, cheekCol);
+    put(13, cheekY + 1, cheekCol);
+    put(14, cheekY + 1, cheekCol);
+    put(25, cheekY, cheekCol);
+    put(26, cheekY, cheekCol);
+    put(25, cheekY + 1, cheekCol);
+    put(26, cheekY + 1, cheekCol);
+
+    // 5. Olhos grandes expressivos e caricatos
+    const eyeY = centerY - 2;
+    if (isSing && frame === 1) {
+      // Olhos fechados em arco de felicidade ao cantar nota aguda (^ ^)
+      put(14, eyeY, ROCK_0);
+      put(15, eyeY - 1, ROCK_0);
+      put(16, eyeY - 1, ROCK_0);
+      put(17, eyeY, ROCK_0);
+      put(22, eyeY, ROCK_0);
+      put(23, eyeY - 1, ROCK_0);
+      put(24, eyeY - 1, ROCK_0);
+      put(25, eyeY, ROCK_0);
+    } else {
+      // Olhões grandes brilhantes "kawaii" com brilho duplo
+      for (const ox of [15, 23]) {
+        put(ox - 1, eyeY - 2, ROCK_0);
+        put(ox, eyeY - 2, ROCK_0);
+        put(ox + 1, eyeY - 2, ROCK_0);
+        put(ox + 2, eyeY - 2, ROCK_0);
+
+        put(ox - 1, eyeY - 1, ROCK_0);
+        put(ox, eyeY - 1, '#ffffff'); // Brilho principal
+        put(ox + 1, eyeY - 1, '#ffffff');
+        put(ox + 2, eyeY - 1, ROCK_0);
+
+        put(ox - 1, eyeY, ROCK_0);
+        put(ox, eyeY, neonMid);      // Íris
+        put(ox + 1, eyeY, neonHi);   // Brilho da íris
+        put(ox + 2, eyeY, ROCK_0);
+
+        put(ox - 1, eyeY + 1, ROCK_0);
+        put(ox, eyeY + 1, ROCK_0);
+        put(ox + 1, eyeY + 1, '#ffffff'); // Brilho secundário
+        put(ox + 2, eyeY + 1, ROCK_0);
+
+        put(ox, eyeY + 2, ROCK_0);
+        put(ox + 1, eyeY + 2, ROCK_0);
+      }
     }
+
+    // 6. Boquinha expressiva e cômica
+    const mouthY = centerY + 2;
     if (isSing) {
-      for (let py = 23; py <= 26; py++) {
-        for (let px = 17; px <= 21; px++) {
-          put(px, py, py === 23 ? '#ffffff' : neonHi);
-        }
+      if (frame === 0) {
+        // Boquinha em 'O' redondinha clássica
+        put(18, mouthY - 1, ROCK_0);
+        put(19, mouthY - 1, ROCK_0);
+        put(20, mouthY - 1, ROCK_0);
+        put(21, mouthY - 1, ROCK_0);
+
+        put(17, mouthY, ROCK_0);
+        put(18, mouthY, '#831843');
+        put(19, mouthY, '#ec4899'); // linguinha fofa
+        put(20, mouthY, '#831843');
+        put(21, mouthY, ROCK_0);
+
+        put(17, mouthY + 1, ROCK_0);
+        put(18, mouthY + 1, '#831843');
+        put(19, mouthY + 1, '#831843');
+        put(20, mouthY + 1, '#831843');
+        put(21, mouthY + 1, ROCK_0);
+
+        put(18, mouthY + 2, ROCK_0);
+        put(19, mouthY + 2, ROCK_0);
+        put(20, mouthY + 2, ROCK_0);
+        put(21, mouthY + 2, ROCK_0);
+      } else {
+        // Boquinha em 'O' mais aberta, vibrando
+        put(18, mouthY - 1, ROCK_0);
+        put(19, mouthY - 1, ROCK_0);
+        put(20, mouthY - 1, ROCK_0);
+        put(21, mouthY - 1, ROCK_0);
+
+        put(17, mouthY, ROCK_0);
+        put(18, mouthY, '#9d174d');
+        put(19, mouthY, '#f472b6');
+        put(20, mouthY, '#f472b6');
+        put(21, mouthY, '#9d174d');
+        put(22, mouthY, ROCK_0);
+
+        put(17, mouthY + 1, ROCK_0);
+        put(18, mouthY + 1, '#500724');
+        put(19, mouthY + 1, '#f472b6');
+        put(20, mouthY + 1, '#f472b6');
+        put(21, mouthY + 1, '#500724');
+        put(22, mouthY + 1, ROCK_0);
+
+        put(17, mouthY + 2, ROCK_0);
+        put(18, mouthY + 2, '#500724');
+        put(19, mouthY + 2, '#500724');
+        put(20, mouthY + 2, '#500724');
+        put(21, mouthY + 2, '#500724');
+        put(22, mouthY + 2, ROCK_0);
+
+        put(18, mouthY + 3, ROCK_0);
+        put(19, mouthY + 3, ROCK_0);
+        put(20, mouthY + 3, ROCK_0);
+        put(21, mouthY + 3, ROCK_0);
       }
     } else {
-      for (let px = 17; px <= 21; px++) put(px, 24, ROCK_0);
+      // Boquinha sorridente fofa no estado idle (sorrisinho :3)
+      put(17, mouthY, ROCK_0);
+      put(18, mouthY + 1, ROCK_0);
+      put(19, mouthY, ROCK_0);
+      put(20, mouthY + 1, ROCK_0);
+      put(21, mouthY, ROCK_0);
     }
 
     return c;
   }
 
-  function makeStoneNeonAnimal(neonHi, neonMid) {
-    const idle0 = buildHiBitStoneAnimal(neonHi, neonMid, false);
-    const sing0 = buildHiBitStoneAnimal(neonHi, neonMid, true);
+  function makeStoneNeonAnimal(neonHi, neonMid, cheekCol = '#ff9eb5') {
+    const idle0 = buildHiBitStoneAnimal(neonHi, neonMid, false, 0, cheekCol);
+    const idle1 = buildHiBitStoneAnimal(neonHi, neonMid, false, 1, cheekCol);
+    const sing0 = buildHiBitStoneAnimal(neonHi, neonMid, true, 0, cheekCol);
+    const sing1 = buildHiBitStoneAnimal(neonHi, neonMid, true, 1, cheekCol);
     return {
-      idle: [idle0],
-      sing: [sing0, idle0]
+      idle: [idle0, idle0, idle1, idle0],
+      sing: [sing0, sing1, sing0, sing1]
     };
   }
 
@@ -5829,9 +5957,9 @@
     irece: makeGuardianActor(GUARDIAN_SPRITE_SPECS.irece),
     jurema: makeGuardianActor(GUARDIAN_SPRITE_SPECS.jurema),
     stoneNeonAnimals: {
-      cyan: makeStoneNeonAnimal('#a8e6cf', '#56ab91'),
-      magenta: makeStoneNeonAnimal('#f2b8c6', '#bd6b82'),
-      gold: makeStoneNeonAnimal('#f5df98', '#c49b45')
+      cyan: makeStoneNeonAnimal('#67e8f9', '#0891b2', '#f472b6'),
+      magenta: makeStoneNeonAnimal('#f472b6', '#be185d', '#fda4af'),
+      gold: makeStoneNeonAnimal('#fde047', '#ca8a04', '#f87171')
     },
     portraits: {
       portrait_protagonist_male: PORTRAIT_PROTAG_MALE_SET,

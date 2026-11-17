@@ -63,7 +63,7 @@
  const setPosition=(p)=>{position=p;fairy.style.left=p[0]+'%';fairy.style.top=p[1]+'%';};setPosition(position);
  function panel(level){const w=level.world,record=state.records?.[level.id];dialog.dataset.world=w;dialog.style.setProperty('--panel-x',(w%2)*100+'%');dialog.style.setProperty('--panel-y',Math.floor(w/2)*100+'%');dialog.replaceChildren();
   const title=document.createElement('h2');title.id='journey-title';title.textContent=level.name;const stars=document.createElement('div');stars.className='journey-stars';stars.setAttribute('aria-label',`${record?.stars||0} de 3 estrelas`);stars.textContent=Array.from({length:3},(_,i)=>i<(record?.stars||0)?'★':'☆').join(' ');
-  const info=document.createElement('p');info.textContent=record?`Melhor desempenho: ${record.points} pontos`:'Fase inédita · conquiste suas estrelas';
+  const info=document.createElement('p');info.textContent=record?`Melhor desempenho: ${record.points} pontos`:'';if(!record)info.style.display='none';
   const start=document.createElement('button');start.className='journey-begin';start.textContent='Começar';start.onclick=()=>{dialog.close();state.start(level.id);};const back=document.createElement('button');back.className='journey-back';back.textContent='Voltar';back.onclick=()=>dialog.close();dialog.append(title,stars,info,start,back);dialog.showModal();start.focus();
  }
  function isLevelLocked(level,opts){
