@@ -74,9 +74,10 @@
   if(level.id===21)return ![5,10,15,20].every(id=>comp.includes(id));
   return level.id>(opts?.unlocked||1);
  }
- function select(level){if(isLevelLocked(level,state)){state?.notify?.(level.id===21?'Reúna as quatro gemas primordiais para abrir a fase final.':'Siga as luzes na ordem para aprender cada movimento.');return;}if(travel){if(selected===level.id){travel=null;setPosition(level.id===21?finalPedestal:coordinates[level.id-1]);panel(level);}return;}if(selected===level.id){panel(level);return;}selected=level.id;
+ function select(level){if(isLevelLocked(level,state)){state?.notify?.(level.id===21?'Reúna as quatro gemas primordiais para abrir a fase final.':'Siga as luzes na ordem para aprender cada movimento.');return;}if(travel&&selected===level.id){travel=null;setPosition(level.id===21?finalPedestal:coordinates[level.id-1]);panel(level);return;}if(selected===level.id){panel(level);return;}travel=null;selected=level.id;
   const target=level.id===21?route.length-1:route.findIndex(p=>p===coordinates[level.id-1]);const points=[position];const direction=target>=at?1:-1;for(let i=at+direction;direction>0?i<=target:i>=target;i+=direction)points.push(route[i]);at=target;
-  if(state.reduced||points.length<2){setPosition(points.at(-1));state.notify('A Fada chegou. Selecione a fase novamente para abrir.');return;}
+  if(points.length<2){setPosition(points.at(-1));panel(level);return;}
+  if(state.reduced){setPosition(points.at(-1));state.notify('A Fada chegou. Selecione a fase novamente para abrir.');return;}
   travel={points,index:0,progress:0};state.notify('A Fada está seguindo o caminho.');
  }
  function frame(now){const dt=Math.min(.04,(now-(last||now))/1000);last=now;if(!screen.hidden&&!document.hidden){if(travel){const a=travel.points[travel.index],b=travel.points[travel.index+1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);travel.progress+=dt*22/Math.max(.1,length);const f=Math.min(1,travel.progress);setPosition([a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]);if(f===1){travel.index++;travel.progress=0;if(travel.index===travel.points.length-1){travel=null;state.notify('A Fada chegou. Clique novamente na fase para abrir.');}}}fairy.style.backgroundPosition=`${Math.floor(now/170)%4/3*100}% ${travel?100:0}%`;}requestAnimationFrame(frame);}requestAnimationFrame(frame);

@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/pixel.css?v=9">
+<link rel="stylesheet" href="css/pixel.css?v=10">
 <link rel="stylesheet" href="css/menu.css?v=7">
-<link rel="stylesheet" href="css/journey.css?v=8">
+<link rel="stylesheet" href="css/journey.css?v=9">
 <link rel="preload" as="audio" href="assets/audio/musica-menu.mp3" type="audio/mp3">
 <link rel="stylesheet" href="css/experience.css?v=12">
 <link rel="stylesheet" href="css/responsive.css?v=3">
@@ -151,7 +151,7 @@
 </section>
 <section id="map" class="screen map-screen" aria-labelledby="mapTitle" hidden>
 <div class="map-art" aria-hidden="true"></div><div class="map-shade" aria-hidden="true"></div>
-<header class="screen-bar"><button data-home class="square-button" aria-label="Voltar ao início">⌂</button><div><span class="eyebrow">A JORNADA ECOLÓGICA</span><h2 id="mapTitle">O caminho da luz</h2></div><button data-settings class="square-button" aria-label="Configurações">⚙</button></header>
+<header class="screen-bar"><button data-home class="square-button" aria-label="Voltar ao início">⌂</button><div><span class="eyebrow">A JORNADA ECOLÓGICA</span><h2 id="mapTitle">O caminho da luz</h2></div><div class="map-bar-actions"><button type="button" id="levelMenuBtn" class="pixel-button level-menu-trigger" aria-label="Abrir lista de fases">☰ Fases</button><button data-settings class="square-button" aria-label="Configurações">⚙</button></div></header>
 <div id="worldLabels" class="world-labels"></div><div class="route-wrap"><svg id="mapRoute" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"></svg><div id="levelNodes"></div></div>
 <div class="map-caption" hidden><span id="mapProgress"></span><p>Escolha uma luz no caminho.</p></div>
 </section>
@@ -206,6 +206,7 @@
       <label class="setting-row"><input id="contrastToggle" type="checkbox"><span>Alto contraste<small>Realça bordas e textos da interface</small></span></label>
       <label class="setting-row"><input id="motionToggle" type="checkbox"><span>Reduzir movimentos<small>Sem tremores, giros ou animações intensas</small></span></label>
       <label class="setting-row"><input id="assistToggle" type="checkbox"><span>Ritmo tranquilo<small>Experiência contemplativa sem pressa</small></span></label>
+      <label class="setting-row"><input id="godModeToggle" type="checkbox"><span>Modo Livre (God Mode)<small>Libera todas as fases e ferramentas infinitas no celular e no PC</small></span></label>
       <p class="keyboard-guide">Arraste cristais para somar, subtrair ou anular; toque em Citrinos e Água-Marinhas para dividir; pressione R para reiniciar a fase; pressione F para alternar Tela Cheia.</p>
     </div>
     <footer class="settings-footer crystal-settings-footer">
@@ -275,18 +276,46 @@
     </footer>
   </form>
 </dialog>
-<script src="js/true-pixel-engine.js?v=24"></script>
+<dialog id="levelListDialog" class="settings-dialog crystal-settings-dialog crystal-levels-dialog" aria-labelledby="levelListTitle">
+  <form method="dialog" class="crystal-settings-card crystal-levels-card">
+    <div class="crystal-card-prism-border" aria-hidden="true"></div>
+    <header class="crystal-settings-header">
+      <div class="crystal-card-gems" aria-hidden="true">
+        <span class="c-gem gem-cyan">◆</span>
+        <span class="c-gem gem-emerald">◆</span>
+        <span class="c-gem gem-paraiba">◆</span>
+        <span class="c-gem gem-opal">◆</span>
+      </div>
+      <div class="crystal-settings-title-row">
+        <h2 id="levelListTitle" class="crystal-settings-title">Seleção de Fases</h2>
+        <button id="levelListCloseBtn" class="square-button close crystal-close-x" aria-label="Fechar seleção de fases">×</button>
+      </div>
+    </header>
+    <div class="level-list-godmode-bar">
+      <div class="level-list-godmode-info">
+        <strong>Modo Livre (God Mode)</strong>
+        <small>Desbloqueia todas as 21 fases e ferramentas infinitas</small>
+      </div>
+      <button type="button" id="levelListGodModeBtn" class="pixel-button crystal-btn-accent level-godmode-btn" aria-pressed="false">⚡ Ativar God Mode</button>
+    </div>
+    <div id="levelListContainer" class="crystal-card-body level-list-body"></div>
+    <footer class="settings-footer crystal-settings-footer">
+      <button class="pixel-button crystal-close-btn" aria-label="Voltar ao Mapa">✦ Voltar ao Mapa ✦</button>
+    </footer>
+  </form>
+</dialog>
+<script src="js/true-pixel-engine.js?v=25"></script>
 <script src="js/preloader.js?v=4"></script>
 <script src="js/true-pixel-cave.js?v=24"></script>
-<script src="js/true-pixel-worlds.js?v=7"></script>
+<script src="js/true-pixel-worlds.js?v=8"></script>
 <script src="js/final-phase.js?v=2"></script>
 <script src="js/performance.js"></script>
 <script src="js/campaign.js?v=7"></script>
 <script src="js/campaign-current.js?v=3"></script>
 <script src="js/rules.js"></script>
 <script src="js/audio.js?v=16"></script>
-<script src="js/journey-map.js?v=4"></script>
-<script src="js/app.js?v=15"></script>
+<script src="js/journey-map.js?v=5"></script>
+<script src="js/app.js?v=16"></script>
 <script src="js/menu.js?v=15"></script>
 <script src="js/test-harness.js?v=4"></script>
 </body></html>

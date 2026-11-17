@@ -3188,6 +3188,28 @@ test('Prompt 11: Modais dos Mundos sem borda azul/fundo escuro/texto indevido e 
   }, 'drawStoneNeonAnimal deve desenhar corretamente todos os estados e variantes');
 });
 
+test('Menu Alternativo de Fases Mobile, God Mode Touch/URL/Opções e Enquadramento Responsivo do Mapa e Painéis', async () => {
+  setupNodeDOM();
+  const fs = await import('node:fs');
+
+  const indexHtml = fs.readFileSync('index.html', 'utf8');
+  assert.match(indexHtml, /id="levelMenuBtn"/, 'index.html deve possuir botão alternativo de fases no cabeçalho do mapa');
+  assert.match(indexHtml, /id="levelListDialog"/, 'index.html deve possuir modal alternativo #levelListDialog');
+  assert.match(indexHtml, /id="levelListGodModeBtn"/, 'index.html deve possuir toggle direto de God Mode no menu de fases');
+  assert.match(indexHtml, /id="godModeToggle"/, 'index.html deve possuir opção de God Mode nas configurações');
+
+  const journeyCss = fs.readFileSync('css/journey.css', 'utf8');
+  assert.match(journeyCss, /calc\(88dvh \* 1\.5\)/, 'Modal de fase deve limitar largura pela altura disponível mantendo aspect-ratio 1.5 no mobile');
+  assert.match(journeyCss, /@media\(max-aspect-ratio:1\/1\)/, 'Mapa em modo retrato deve conter todas as fases sem cortar os lados');
+
+  const appJs = fs.readFileSync('js/app.js', 'utf8');
+  assert.match(appJs, /renderLevelList/, 'app.js deve implementar renderLevelList');
+  assert.match(appJs, /godmode/, 'app.js deve suportar ativação via parâmetro de URL ?godmode=1');
+
+  const journeyMapJs = fs.readFileSync('js/journey-map.js', 'utf8');
+  assert.match(journeyMapJs, /if\(points\.length<2\)\{setPosition\(points\.at\(-1\)\);panel\(level\);return;\}/, 'Clicar no nó onde a fada já está deve abrir o painel imediatamente');
+});
+
 
 
 

@@ -386,10 +386,107 @@
     if (toggle) toggle.checked = isFull;
   }
 
+  function syncGodModeUI() {
+    const active = isGodModeActive();
+    const gmToggle = $('godModeToggle');
+    if (gmToggle) gmToggle.checked = active;
+    const gmBtn = $('levelListGodModeBtn');
+    if (gmBtn) {
+      gmBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      gmBtn.textContent = active ? '⚡ God Mode: ATIVO (Desativar)' : '⚡ Ativar God Mode';
+    }
+    if ($('levelListDialog')?.open) {
+      renderLevelList();
+    }
+  }
+
+  function renderLevelList() {
+    const container = $('levelListContainer');
+    if (!container) return;
+    container.replaceChildren();
+    const gm = isGodModeActive();
+    const unl = unlocked();
+    const levels = window.CrystalCampaign?.levels || [];
+    const groups = [
+      { title: 'Caverna dos Cristais', world: 0, filter: l => l.world === 0 && l.id <= 5 },
+      { title: 'Floresta Amazônica', world: 1, filter: l => l.world === 1 },
+      { title: 'Rio das Águas Claras', world: 2, filter: l => l.world === 2 },
+      { title: 'Caatinga Dourada', world: 3, filter: l => l.world === 3 },
+      { title: 'Santuário Final', world: 0, filter: l => l.id === 21 }
+    ];
+    for (const g of groups) {
+      const items = levels.filter(g.filter);
+      if (!items.length) continue;
+      const section = document.createElement('section');
+      section.className = 'level-list-world-group';
+      const heading = document.createElement('h3');
+      heading.className = 'level-list-world-title';
+      heading.textContent = g.title;
+      const grid = document.createElement('div');
+      grid.className = 'level-list-grid';
+      for (const level of items) {
+        const isDone = completed.includes(level.id);
+        const locked = !gm && !isDone && (
+          level.id === 21
+            ? ![5, 10, 15, 20].every(id => completed.includes(id))
+            : level.id > unl
+        );
+        const rec = records[level.id];
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'level-list-item';
+        if (isDone) card.classList.add('done');
+        if (level.id === current) card.classList.add('current');
+        if (locked) card.classList.add('locked');
+        card.setAttribute('aria-disabled', locked ? 'true' : 'false');
+
+        const top = document.createElement('div');
+        top.className = 'level-list-item-top';
+        const num = document.createElement('span');
+        num.textContent = level.id === 21 ? '★ Final' : `Fase ${level.id}`;
+        const badge = document.createElement('span');
+        badge.textContent = isDone ? '✓ Concluída' : (locked ? '🔒 Bloqueada' : '▶ Jogar');
+        top.append(num, badge);
+
+        const title = document.createElement('div');
+        title.className = 'level-list-item-name';
+        title.textContent = level.name;
+
+        const stars = document.createElement('div');
+        stars.className = 'level-list-item-stars';
+        const count = rec?.stars || 0;
+        stars.textContent = Array.from({ length: 3 }, (_, i) => i < count ? '★' : '☆').join('');
+
+        card.append(top, title, stars);
+        card.onclick = () => {
+          if (locked) {
+            notify(level.id === 21
+              ? 'Reúna as quatro gemas ou ative o God Mode acima para abrir a fase final.'
+              : 'Conclua as fases anteriores ou ative o God Mode acima para testar livremente.');
+            return;
+          }
+          $('levelListDialog')?.close?.();
+          startFromMap(level.id);
+        };
+        grid.append(card);
+      }
+      section.append(heading, grid);
+      container.append(section);
+    }
+  }
+
+  function openLevelList() {
+    persist();
+    syncGodModeUI();
+    renderLevelList();
+    $('levelListDialog')?.showModal?.();
+  }
+
   function openSettings() {
     persist();
     if ($('fileStatus')) $('fileStatus').textContent = '';
     syncFullscreenUI();
+    syncGodModeUI();
     $('settingsDialog')?.showModal();
   }
 
@@ -462,6 +559,39 @@
       document.addEventListener(evt, syncFullscreenUI);
     }
   });
+
+  if ($('levelMenuBtn')) {
+    $('levelMenuBtn').onclick = openLevelList;
+  }
+  if ($('levelListGodModeBtn')) {
+    $('levelListGodModeBtn').onclick = () => {
+      window.TruePixelEngine?.GameHUD?.toggleGodMode?.();
+      syncGodModeUI();
+    };
+  }
+  if ($('godModeToggle')) {
+    $('godModeToggle').onchange = (e) => {
+      window.TruePixelEngine?.GameHUD?.setGodMode?.(Boolean(e.target.checked));
+      syncGodModeUI();
+    };
+  }
+
+  // Gesto secreto de 5 toques rápidos para alternar God Mode no mobile
+  for (const secretEl of [$('mapTitle'), $('gameTitle')]) {
+    if (!secretEl) continue;
+    let tapCount = 0;
+    let tapResetTimer = null;
+    secretEl.addEventListener('pointerdown', () => {
+      tapCount++;
+      clearTimeout(tapResetTimer);
+      tapResetTimer = setTimeout(() => { tapCount = 0; }, 2200);
+      if (tapCount >= 5) {
+        tapCount = 0;
+        window.TruePixelEngine?.GameHUD?.toggleGodMode?.();
+        syncGodModeUI();
+      }
+    });
+  }
 
   document.querySelectorAll('[data-settings]').forEach(b => {
     b.onclick = openSettings;
@@ -941,9 +1071,20 @@
   if (window.TruePixelEngine?.GameHUD) {
     window.TruePixelEngine.GameHUD.onGodModeChange = (active) => {
       if (screen === 'map') renderMap();
+      syncGodModeUI();
       notify(active ? 'God Mode ativado: Mapa livre e habilidades infinitas!' : 'God Mode desativado.');
     };
+    try {
+      const params = typeof window !== 'undefined' && window.location?.search
+        ? new URLSearchParams(window.location.search)
+        : null;
+      const urlGod = params?.get('godmode') ?? params?.get('god') ?? params?.get('gm');
+      if (urlGod === '1' || urlGod === 'true') {
+        window.TruePixelEngine.GameHUD.setGodMode?.(true, true);
+      }
+    } catch {}
     window.TruePixelEngine.GameHUD.syncGodModeBadge?.();
+    syncGodModeUI();
   }
   renderMap();
   updateProgressLabels();
@@ -960,6 +1101,7 @@
     syncProgress,
     notify,
     openSettings,
+    openLevelList,
     get godMode() {
       return isGodModeActive();
     },
