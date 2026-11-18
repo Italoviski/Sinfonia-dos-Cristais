@@ -287,6 +287,7 @@
     window.TruePixelWorlds?.stopMusicAudio?.();
     window.CrystalJourney?.close?.();
     syncTruePixelSockets();
+    window.TruePixelEngine?.GameHUD?.resetAbilityCharges?.();
 
     current = levelId;
     hasSave = true;

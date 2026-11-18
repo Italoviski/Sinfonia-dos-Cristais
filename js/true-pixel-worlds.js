@@ -2539,6 +2539,8 @@
 
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
+      GameHUD.guideOpen = false;
+      if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
 
@@ -2655,6 +2657,8 @@
       this.stopRegularBgm();
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
+      GameHUD.guideOpen = false;
+      if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       this.draggedPiece = null;
       this.dragStartPos = null;
       this.equationPointer = null;
@@ -6757,6 +6761,8 @@
       global.CrystalMenuAudio?.pause?.();
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
+      GameHUD.guideOpen = false;
+      if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       this.draggedPiece = null;
       this.equationPointer = null;
       this.shellGame = null;

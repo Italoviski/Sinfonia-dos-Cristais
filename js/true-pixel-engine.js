@@ -6756,6 +6756,9 @@
       this.sockets.forest = Boolean(this.sockets.forest || list.includes(10));
       this.sockets.river = Boolean(this.sockets.river || list.includes(15));
       this.sockets.caatinga = Boolean(this.sockets.caatinga || list.includes(20));
+      if (typeof GameHUD !== 'undefined' && typeof GameHUD.syncAbilitiesState === 'function') {
+        GameHUD.syncAbilitiesState(false);
+      }
     },
 
     open(lines, onComplete = null) {
@@ -7881,12 +7884,26 @@
     guideItemIndex: 0,
     guideCardPage: 0,
     guideLayout: null,
+    _lastHideSteps: false,
     muted: false,
     musicVol: 50,
     sfxVol: 50,
     reducedMotion: false,
     godMode: false,
     restartFlashUntil: 0,
+
+    // Sistema de Habilidades dos Cristais Primordiais
+    abilityButtons: {
+      vision: { id: 'vision', num: 1, label: 'Visão',  x: 4,  y: 22, w: 52, h: 16 },
+      rewind: { id: 'rewind', num: 2, label: 'Voltar', x: 60, y: 22, w: 52, h: 16 }
+    },
+    abilities: {
+      vision: { unlocked: false, charges: 0, maxCharges: 0, usedCount: 0, infinite: false, flashUntil: 0, chargeSources: [] },
+      rewind: { unlocked: false, charges: 0, maxCharges: 0, usedCount: 0, infinite: false, flashUntil: 0, chargeSources: [] }
+    },
+    abilityParticles: [],
+    onUseAbility1: null,
+    onUseAbility2: null,
 
     // Botões na barra superior (320x20):
     buttons: {
@@ -8110,10 +8127,12 @@
       const next = Boolean(active);
       if (this.godMode === next) {
         this.syncGodModeBadge();
+        this.syncAbilitiesState(false);
         return this.godMode;
       }
       this.godMode = next;
       this.syncGodModeBadge();
+      this.syncAbilitiesState(false);
       if (!silent) {
         this.playSfx(this.godMode ? 'reward' : 'click');
       }
@@ -8213,7 +8232,9 @@
     triggerRestart() {
       this.paused = false;
       this.settingsOpen = false;
+      this.guideOpen = false;
       this.restartFlashUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 280;
+      this.resetAbilityCharges();
       this.playSfx('click');
       if (typeof this.onRestart === 'function') {
         this.onRestart();
@@ -8221,6 +8242,233 @@
         global.TruePixelWorlds.restartCurrentPhase();
       } else if (global.CaveChapter1 && typeof global.CaveChapter1.restartCurrentPhase === 'function') {
         global.CaveChapter1.restartCurrentPhase();
+      }
+    },
+
+    resolveAbilityKey(idOrNum) {
+      if (idOrNum === 2 || idOrNum === '2' || idOrNum === 'rewind' || idOrNum === 'undo') {
+        return 'rewind';
+      }
+      if (idOrNum === 1 || idOrNum === '1' || idOrNum === 'vision' || idOrNum === 'ghost') {
+        return 'vision';
+      }
+      return 'vision';
+    },
+
+    syncAbilitiesState(resetCharges = false) {
+      const completed = Array.isArray(global.CrystalApp?.state?.completed)
+        ? global.CrystalApp.state.completed
+        : [];
+      const sockets = (typeof DialogueBox !== 'undefined' && DialogueBox.sockets) ? DialogueBox.sockets : {};
+      const caveDone = Boolean(sockets.fairy || completed.includes(5));
+      const forestDone = Boolean(sockets.forest || completed.includes(10));
+      const riverDone = Boolean(sockets.river || completed.includes(15));
+      const caatingaDone = Boolean(sockets.caatinga || completed.includes(20));
+
+      const bonus = (riverDone ? 1 : 0) + (caatingaDone ? 1 : 0);
+      const sources = ['base'];
+      if (riverDone) sources.push('river');
+      if (caatingaDone) sources.push('caatinga');
+
+      const updateOne = (key, worldDone) => {
+        const st = this.abilities[key];
+        const unlocked = Boolean(this.godMode || worldDone);
+        const maxCharges = unlocked ? (1 + bonus) : 0;
+        if (resetCharges) {
+          st.usedCount = 0;
+        }
+        st.unlocked = unlocked;
+        st.maxCharges = maxCharges;
+        st.infinite = Boolean(this.godMode);
+        st.chargeSources = unlocked ? sources.slice() : [];
+        if (this.godMode) {
+          st.charges = Math.max(3, maxCharges);
+        } else {
+          st.usedCount = clamp(st.usedCount || 0, 0, maxCharges);
+          st.charges = Math.max(0, maxCharges - st.usedCount);
+        }
+      };
+
+      updateOne('vision', caveDone);
+      updateOne('rewind', forestDone);
+      return this.abilities;
+    },
+
+    getAbilityState(idOrNum) {
+      this.syncAbilitiesState(false);
+      const key = this.resolveAbilityKey(idOrNum);
+      return this.abilities[key];
+    },
+
+    isAbilityUnlocked(idOrNum) {
+      return Boolean(this.getAbilityState(idOrNum).unlocked);
+    },
+
+    getMaxAbilityCharges(idOrNum) {
+      return this.getAbilityState(idOrNum).maxCharges || 0;
+    },
+
+    resetAbilityCharges() {
+      this.syncAbilitiesState(true);
+      this.abilityParticles = [];
+    },
+
+    spawnAbilityParticles(key) {
+      const btn = this.abilityButtons[key] || this.abilityButtons.vision;
+      const cx = btn.x + btn.w * 0.5;
+      const cy = btn.y + btn.h * 0.5;
+      const palette = key === 'vision'
+        ? ['#e040fb', '#c084fc', '#92e8ff', '#ffffff']
+        : ['#4ade80', '#69f0ae', '#ffe887', '#ffffff'];
+      for (let i = 0; i < 10; i++) {
+        const ang = (i / 10) * Math.PI * 2 + (i & 1 ? 0.25 : 0);
+        const sp = 0.35 + (i % 3) * 0.25;
+        this.abilityParticles.push({
+          x: cx + Math.cos(ang) * 4,
+          y: cy + Math.sin(ang) * 3,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp - 0.15,
+          life: 18 + (i % 4) * 3,
+          col: palette[i % palette.length]
+        });
+      }
+    },
+
+    useAbility(idOrNum) {
+      this.syncAbilitiesState(false);
+      const key = this.resolveAbilityKey(idOrNum);
+      const st = this.abilities[key];
+      if (!st || !st.unlocked || (!this.godMode && st.charges <= 0)) {
+        this.playSfx('error');
+        return false;
+      }
+
+      const cb = key === 'vision' ? this.onUseAbility1 : this.onUseAbility2;
+      if (typeof cb === 'function') {
+        const res = cb(key, { ...st });
+        if (res === false) {
+          return false;
+        }
+      }
+
+      if (!this.godMode) {
+        st.usedCount = (st.usedCount || 0) + 1;
+        st.charges = Math.max(0, st.maxCharges - st.usedCount);
+      }
+      st.flashUntil = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + 360;
+      this.spawnAbilityParticles(key);
+      this.playSfx('tutorialAdvance');
+      return true;
+    },
+
+    drawCrystalAbilityButton(ctx, btn, st, key, t) {
+      const x = R(btn.x), y = R(btn.y), w = R(btn.w), h = R(btn.h);
+      const isVision = key === 'vision';
+      const nowMs = typeof performance !== 'undefined' ? performance.now() : 0;
+      const flashing = nowMs < (st.flashUntil || 0);
+      const ready = st.unlocked && (st.infinite || st.charges > 0);
+      const pulse = ready ? ((Math.floor(t * 4) & 1) === 0) : false;
+
+      // Cores cristalinas por mundo de origem:
+      // Visão = Gema da Caverna (ametista #e040fb / #c084fc)
+      // Voltar = Esmeralda da Floresta (#4ade80 / #69f0ae)
+      const rimCol = !st.unlocked
+        ? '#323c54'
+        : (!ready ? '#4a5568' : (isVision ? (flashing ? '#ffffff' : '#e040fb') : (flashing ? '#ffffff' : '#4ade80')));
+      const hiCol = !st.unlocked
+        ? '#45516e'
+        : (isVision ? '#c084fc' : '#69f0ae');
+      const bgCol = !st.unlocked
+        ? '#141826'
+        : (flashing ? (isVision ? '#4c1d95' : '#14532d') : (ready ? (isVision ? '#2a1647' : '#113524') : '#1c2130'));
+
+      // Moldura facetada cristalina (cantos chanfrados)
+      ctx.fillStyle = '#0d0f1a';
+      ctx.fillRect(x, y + 1, w, h - 2);
+      ctx.fillRect(x + 1, y, w - 2, h);
+
+      ctx.fillStyle = bgCol;
+      ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+
+      // Filete cristalino externo + chanfro superior
+      ctx.fillStyle = rimCol;
+      ctx.fillRect(x + 2, y, w - 4, 1);
+      ctx.fillRect(x + 2, y + h - 1, w - 4, 1);
+      ctx.fillRect(x, y + 2, 1, h - 4);
+      ctx.fillRect(x + w - 1, y + 2, 1, h - 4);
+      P1(ctx, x + 1, y + 1, hiCol);
+      P1(ctx, x + w - 2, y + 1, hiCol);
+      P1(ctx, x + 1, y + h - 2, hiCol);
+      P1(ctx, x + w - 2, y + h - 2, hiCol);
+
+      // Ícone do cristal primordial à esquerda (losango Caverna vs gota/folha Esmeralda Floresta)
+      const ix = x + 6, iy = y + 8;
+      if (!st.unlocked) {
+        ctx.fillStyle = '#5a6580';
+        ctx.fillRect(ix - 2, iy - 1, 5, 4);
+        ctx.fillRect(ix - 1, iy - 3, 3, 2);
+      } else if (isVision) {
+        ctx.fillStyle = ready ? '#e040fb' : '#6b7280';
+        ctx.fillRect(ix - 2, iy - 3, 5, 6);
+        ctx.fillRect(ix - 3, iy - 1, 7, 2);
+        P1(ctx, ix - 1, iy - 2, '#ffffff');
+        if (ready && pulse) P1(ctx, ix + 3, iy - 4, '#c084fc');
+      } else {
+        ctx.fillStyle = ready ? '#4ade80' : '#6b7280';
+        ctx.fillRect(ix - 2, iy - 3, 5, 6);
+        ctx.fillRect(ix - 3, iy - 2, 7, 4);
+        P1(ctx, ix - 1, iy - 2, '#ffffff');
+        P1(ctx, ix + 2, iy + 2, '#69f0ae');
+      }
+
+      // Rótulo da habilidade
+      const labelCol = !st.unlocked ? '#64748b' : (ready ? '#ffffff' : '#94a3b8');
+      this.renderSingleLineHudText(ctx, btn.label, x + 12, y + 3, w - 15, labelCol, '#000000', 5.6);
+
+      // Indicadores de cargas disponíveis na base direita com cores das gemas de origem
+      if (st.unlocked) {
+        if (st.infinite || this.godMode) {
+          this.renderSingleLineHudText(ctx, '∞', x + w - 11, y + 6, 10, '#ffea31', '#000000', 6.2);
+        } else {
+          const maxC = st.maxCharges || 1;
+          for (let i = 0; i < maxC; i++) {
+            const src = (st.chargeSources && st.chargeSources[i]) || 'base';
+            const gemCol = src === 'caatinga'
+              ? '#fbbf24'
+              : (src === 'river' ? '#38bdf8' : (isVision ? '#e040fb' : '#4ade80'));
+            const gx = x + w - 6 - (maxC - 1 - i) * 6;
+            const gy = y + h - 5;
+            ctx.fillStyle = '#0f1320';
+            ctx.fillRect(gx - 1, gy - 1, 5, 5);
+            ctx.fillStyle = i < st.charges ? gemCol : '#1e2638';
+            ctx.fillRect(gx, gy, 3, 3);
+            if (i < st.charges) {
+              P1(ctx, gx, gy, '#ffffff');
+            }
+          }
+        }
+      }
+    },
+
+    renderAbilities(ctx, t = 0) {
+      if (!ctx) return;
+      this.syncAbilitiesState(false);
+      this.drawCrystalAbilityButton(ctx, this.abilityButtons.vision, this.abilities.vision, 'vision', t);
+      this.drawCrystalAbilityButton(ctx, this.abilityButtons.rewind, this.abilities.rewind, 'rewind', t);
+
+      // Partículas cristalinas ao acionar habilidades
+      if (this.abilityParticles && this.abilityParticles.length > 0) {
+        const nextParticles = [];
+        for (const p of this.abilityParticles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 1;
+          if (p.life > 0) {
+            P1(ctx, R(p.x), R(p.y), p.col);
+            nextParticles.push(p);
+          }
+        }
+        this.abilityParticles = nextParticles;
       }
     },
 
@@ -8436,6 +8684,17 @@
         return true;
       }
 
+      if (!this._lastHideSteps && !this.paused && !this.settingsOpen && !this.guideOpen) {
+        if (this.isAbilityUnlocked('vision') && this.inRect(x, y, this.abilityButtons.vision, 1)) {
+          this.useAbility('vision');
+          return true;
+        }
+        if (this.isAbilityUnlocked('rewind') && this.inRect(x, y, this.abilityButtons.rewind, 1)) {
+          this.useAbility('rewind');
+          return true;
+        }
+      }
+
       return false;
     },
 
@@ -8499,6 +8758,7 @@
     },
 
     renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false, customTitle = null) {
+      this._lastHideSteps = Boolean(hideSteps);
       // Barra Superior Esculpida (0..20) com alto contraste para texto branco/azul
       ctx.fillStyle = '#141930';
       ctx.fillRect(0, 0, W, 20);
@@ -8667,8 +8927,13 @@
       ctx.fillStyle = '#141930';
       ctx.fillRect(gx - 1, gy - 1, 3, 3);
 
+      if (!hideSteps) {
+        const nowSec = (typeof performance !== 'undefined' ? performance.now() : 0) / 1000;
+        this.renderAbilities(ctx, nowSec);
+      }
+
       if (this.godMode) {
-        const bx = 3, by = 21, bw = 56, bh = 11;
+        const bx = hideSteps ? 3 : 116, by = hideSteps ? 21 : 23, bw = 56, bh = 11;
         ctx.fillStyle = 'rgba(24, 14, 42, 0.88)';
         ctx.fillRect(bx, by, bw, bh);
         ctx.fillStyle = '#ffea31';

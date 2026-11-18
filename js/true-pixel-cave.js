@@ -2845,6 +2845,8 @@
       };
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
+      GameHUD.guideOpen = false;
+      if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
 
@@ -2854,6 +2856,8 @@
       if (typeof TutorialModal.close === 'function') TutorialModal.close();
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
+      GameHUD.guideOpen = false;
+      if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       this.draggedPiece = null;
       this.equationPointer = null;
       this.magneticAnim = null;
