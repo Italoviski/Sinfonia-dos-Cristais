@@ -2664,6 +2664,13 @@
     magneticAnim: null,
     equationShockEffect: null,
     ghostHandAnim: null,
+    actionHistory: [],
+    _gestureSnapshot: null,
+    _gestureCommitted: false,
+    _committingAction: false,
+    rewindAnim: null,
+    deadEndAutoRewindPending: false,
+    DEAD_END_REWIND_DELAY: 1.75,
 
     opalDrainTimer: 0,
     opalStepInterval: 0.55,
@@ -2848,6 +2855,7 @@
       GameHUD.settingsOpen = false;
       GameHUD.guideOpen = false;
       GameHUD.onUseAbility1 = () => this.triggerGhostHandHint();
+      GameHUD.onUseAbility2 = () => this.triggerTimeRewind(this.phase === 'defeat_pause');
       if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
@@ -2865,6 +2873,12 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.actionHistory = [];
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this._committingAction = false;
+      this.rewindAnim = null;
+      this.deadEndAutoRewindPending = false;
       this.clearTrembleStates();
       this.shards = [];
       this.cushionAlpha = 0;
@@ -3074,6 +3088,8 @@
         const clickedInEq = this.isInsideEquationAura(eq, x, y);
 
         if (eq && !eq.broken && !eq.expanded && clickedInEq) {
+          this._gestureSnapshot = this.captureStepSnapshot();
+          this._gestureCommitted = false;
           this.equationPointer = {
             startX: x,
             startY: y,
@@ -3088,6 +3104,8 @@
           const p = this.pieces[i];
           if (!p.shadow && !p.broken && p.value > 0 && Math.hypot(x - p.x, y - p.y) <= 16) {
             if (p.inEquation && eq && !eq.expanded) continue;
+            this._gestureSnapshot = this.captureStepSnapshot();
+            this._gestureCommitted = false;
             GameHUD.playSfx(p.type === 'opal' ? 'opalGrab' : (p.type === 'rose' ? 'roseGrab' : 'quartzGrab'));
             this.draggedPiece = p;
             p.dragging = true;
@@ -3100,6 +3118,8 @@
         }
 
         if (eq && !eq.broken && eq.expanded && clickedInEq) {
+          this._gestureSnapshot = this.captureStepSnapshot();
+          this._gestureCommitted = false;
           this.equationPointer = {
             startX: x,
             startY: y,
@@ -3174,6 +3194,7 @@
         if (this.equationPointer && this.pureEquation && !this.pureEquation.broken) {
           const wasTap = !this.equationPointer.moved;
           this.equationPointer = null;
+          this.commitActionSnapshot();
           if (wasTap) {
             this.pureEquation.expanded = !this.pureEquation.expanded;
             GameHUD.playSfx(this.pureEquation.expanded ? 'equationExpand' : 'equationCollapse');
@@ -3181,6 +3202,8 @@
           } else {
             GameHUD.playSfx('quartzDrop');
           }
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
           this.checkEquationSolved();
           return;
         }
@@ -3194,9 +3217,20 @@
             this.pureEquation.removeHover = false;
           }
           this.clearTrembleStates();
-          if (p.broken || p.value <= 0 || this.phase !== 'gameplay') return;
+          if (p.broken || p.value <= 0 || this.phase !== 'gameplay') {
+            this._gestureSnapshot = null;
+            this._gestureCommitted = false;
+            return;
+          }
+          const startMatch = this._gestureSnapshot?.pieces?.find(k => k.id === p.id);
+          const movedSignificantly = startMatch && Math.hypot(p.x - startMatch.x, p.y - startMatch.y) >= 4;
           GameHUD.playSfx(p.type === 'opal' ? 'opalDrop' : (p.type === 'rose' ? 'roseDrop' : 'quartzDrop'));
           this.checkPieceDrop(p);
+          if (movedSignificantly && !this._gestureCommitted) {
+            this.commitActionSnapshot();
+          }
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
           if (this.phase === 'gameplay') {
             this.checkEquationSolved();
             this.triggerDefeatIfImpossible();
@@ -3348,6 +3382,7 @@
 
     triggerImmediateAnnulment(purePiece, shadowTarget) {
       if (!purePiece || !shadowTarget || purePiece.broken || shadowTarget.broken) return false;
+      this.commitActionSnapshot();
 
       // Cancela imediatamente o estado de arrasto para evitar ponteiros fantasmas
       purePiece.dragging = false;
@@ -4296,6 +4331,12 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.actionHistory = [];
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this._committingAction = false;
+      this.rewindAnim = null;
+      this.deadEndAutoRewindPending = false;
 
       if (level === 1) {
         this.totalSteps = 1;
@@ -4535,6 +4576,103 @@
       return true;
     },
 
+    /** Captura um snapshot completo do estado atual da etapa para o histórico da Habilidade 2. */
+    captureStepSnapshot() {
+      return {
+        pieces: (this.pieces || []).map((p) => ({
+          id: p.id,
+          type: p.type,
+          value: p.value,
+          shadow: Boolean(p.shadow),
+          broken: Boolean(p.broken),
+          inEquation: p.inEquation || null,
+          x: p.x,
+          y: p.y
+        })),
+        pureEquation: this.pureEquation ? { ...this.pureEquation } : null,
+        shadowEquation: this.shadowEquation ? { ...this.shadowEquation } : null
+      };
+    },
+
+    /** Empilha o snapshot pré-ação no histórico (sem duplicar dentro do mesmo gesto). */
+    commitActionSnapshot(customSnap = null) {
+      if (this._committingAction) return;
+      if (this._gestureSnapshot) {
+        if (!this._gestureCommitted) {
+          this.actionHistory.push(this._gestureSnapshot);
+          this._gestureCommitted = true;
+        }
+        return;
+      }
+      this.actionHistory.push(customSnap || this.captureStepSnapshot());
+    },
+
+    /** Restaura exatamente um snapshot salvo da etapa, gerando trilhas visuais de retorno. */
+    restoreStepSnapshot(snap, isAutoDeadEnd = false) {
+      if (!snap) return false;
+      const visType = (p) => (p.type === 'opal' ? 'opal' : (p.shadow ? 'shadow' : (p.type === 'white' ? 'pure' : p.type)));
+      const curById = new Map((this.pieces || []).map((p) => [p.id, p]));
+      const trails = [];
+      for (const sp of snap.pieces) {
+        if (sp.broken || sp.shadow) continue;
+        const cur = curById.get(sp.id);
+        if (cur && (cur.broken || Math.hypot((cur.x || 0) - sp.x, (cur.y || 0) - sp.y) >= 4 || cur.value !== sp.value)) {
+          trails.push({
+            fromX: cur.x ?? sp.x,
+            fromY: cur.y ?? sp.y,
+            toX: sp.x,
+            toY: sp.y,
+            pieceType: visType(sp),
+            pieceValue: sp.value
+          });
+        }
+      }
+
+      this.pieces = (snap.pieces || []).map((p) => ({
+        ...p,
+        dragging: false,
+        trembling: false
+      }));
+      this.pureEquation = snap.pureEquation ? { ...snap.pureEquation, dropHover: false, removeHover: false } : null;
+      this.shadowEquation = snap.shadowEquation ? { ...snap.shadowEquation } : null;
+      this.draggedPiece = null;
+      this.equationPointer = null;
+      this.magneticAnim = null;
+      this.equationShockEffect = null;
+      this.ghostHandAnim = null;
+      this.opalDrainTimer = 0;
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this.deadEndAutoRewindPending = false;
+      this.clearTrembleStates();
+
+      this.phase = 'gameplay';
+      this.phaseTime = 0;
+      this.protag.state = 'idle';
+      this.rewindAnim = {
+        t: 0,
+        duration: 0.75,
+        isAutoDeadEnd: Boolean(isAutoDeadEnd),
+        label: isAutoDeadEnd ? 'BECO SEM SAÍDA DESFEITO!' : 'VOLTANDO NO TEMPO!',
+        trails
+      };
+      this.spawnShatter(160, 96, 'pure', 10);
+      return true;
+    },
+
+    /** Executa a Habilidade 2 (Voltar no Tempo), manual em gameplay ou automática após Beco sem Saída. */
+    triggerTimeRewind(isAutoDeadEnd = false) {
+      const canRunAuto = Boolean(isAutoDeadEnd) && this.phase === 'defeat_pause';
+      if (this.phase !== 'gameplay' && !canRunAuto) return false;
+      if (TutorialModal.isOpen || DialogueBox.isOpen) return false;
+      if (!this.actionHistory || this.actionHistory.length === 0) return false;
+
+      const prevSnap = this.actionHistory.pop();
+      this.restoreStepSnapshot(prevSnap, canRunAuto);
+      GameHUD.playSfx('timeRewind');
+      return true;
+    },
+
     spawnShatter(cx, cy, setKey, count = 12) {
       const rnd = mulberry(R(cx * 31 + cy * 17 + this.t * 100));
       for (let i = 0; i < count; i++) {
@@ -4596,6 +4734,9 @@
 
       if (this.opalDrainTimer >= this.opalStepInterval) {
         this.opalDrainTimer -= this.opalStepInterval;
+        this.commitActionSnapshot();
+        this._gestureSnapshot = null;
+        this._gestureCommitted = false;
         activeTarget.value -= 1;
         activeOpal.value -= 1;
         activeTarget.lastValChangeAt = this.t;
@@ -4646,6 +4787,15 @@
     checkPieceDrop(dropped) {
       if (!dropped || dropped.broken || dropped.value <= 0) return;
 
+      const preDropSnap = this._gestureSnapshot || this.captureStepSnapshot();
+      const commitDropOnce = () => {
+        if (this._gestureSnapshot) {
+          this.commitActionSnapshot();
+        } else {
+          this.actionHistory.push(preDropSnap);
+        }
+      };
+
       // Garante limites do cenário e separação sólida ao soltar livremente pelo campo
       const clamped = this.clampCrystalPos(dropped.x, dropped.y);
       dropped.x = clamped.x;
@@ -4669,6 +4819,7 @@
               this.resolveFreeCrystalCollisions();
               return;
             }
+            commitDropOnce();
             other.value += dropped.value;
             other.lastValChangeAt = this.t;
             dropped.broken = true;
@@ -4679,7 +4830,13 @@
             }
             const mergedShadowHit = this.findTouchingCompatibleShadow(other, other.x, other.y);
             if (mergedShadowHit) {
-              this.triggerImmediateAnnulment(other, mergedShadowHit);
+              const prevCommitting = this._committingAction;
+              this._committingAction = true;
+              try {
+                this.triggerImmediateAnnulment(other, mergedShadowHit);
+              } finally {
+                this._committingAction = prevCommitting;
+              }
             }
             return;
           }
@@ -4690,12 +4847,14 @@
       if (this.pureEquation && !this.pureEquation.broken) {
         if (this.isInsideEquationAura(this.pureEquation, dropped.x, dropped.y, true)) {
           if (dropped.inEquation !== 'pure') {
+            commitDropOnce();
             dropped.inEquation = 'pure';
             GameHUD.playSfx('equationInsert');
           }
           this.layoutEquationPieces(this.pureEquation, 'pure');
           return;
         } else if (dropped.inEquation === 'pure') {
+          commitDropOnce();
           dropped.inEquation = null;
           GameHUD.playSfx('equationRemove');
           this.layoutEquationPieces(this.pureEquation, 'pure');
@@ -4805,6 +4964,12 @@
         }
         this.clearTrembleStates();
         GameHUD.playSfx('error');
+        this.deadEndAutoRewindPending = Boolean(
+          this.actionHistory &&
+          this.actionHistory.length > 0 &&
+          typeof GameHUD.canUseAbility === 'function' &&
+          GameHUD.canUseAbility(2)
+        );
         this.phase = 'defeat_pause';
         this.phaseTime = 0;
       }
@@ -5033,6 +5198,12 @@
         this.ghostHandAnim.t += dt;
         if (this.ghostHandAnim.t >= (this.ghostHandAnim.duration || 2.2)) {
           this.ghostHandAnim = null;
+        }
+      }
+      if (this.rewindAnim) {
+        this.rewindAnim.t += dt;
+        if (this.rewindAnim.t >= (this.rewindAnim.duration || 0.75)) {
+          this.rewindAnim = null;
         }
       }
       if (this.regularAudio && !this.regularAudio.paused) {
@@ -5376,7 +5547,20 @@
         }
       } else if (this.phase === 'defeat_pause') {
         this.protag.state = 'shock';
-        if (this.phaseTime >= 0.65) {
+        if (
+          this.deadEndAutoRewindPending &&
+          this.actionHistory &&
+          this.actionHistory.length > 0 &&
+          typeof GameHUD.canUseAbility === 'function' &&
+          GameHUD.canUseAbility(2)
+        ) {
+          if (this.phaseTime >= (this.DEAD_END_REWIND_DELAY || 1.75)) {
+            this.deadEndAutoRewindPending = false;
+            if (!GameHUD.useAbility(2)) {
+              this.triggerTimeRewind(true);
+            }
+          }
+        } else if (this.phaseTime >= 0.65) {
           this.phase = 'game_over';
           this.phaseTime = 0;
           GameHUD.playSfx('gameOver');
@@ -5725,6 +5909,12 @@
 
       if (this.phase === 'gameplay' && this.ghostHandAnim && typeof E.drawGhostHandHint === 'function') {
         E.drawGhostHandHint(ctx, this.ghostHandAnim, tq);
+      }
+      if (this.rewindAnim && typeof E.drawTimeRewindEffect === 'function') {
+        E.drawTimeRewindEffect(ctx, this.rewindAnim, tq);
+      }
+      if (this.phase === 'defeat_pause' && typeof E.drawDeadEndAlert === 'function') {
+        E.drawDeadEndAlert(ctx, this.phaseTime, this.deadEndAutoRewindPending, tq, this.pieces);
       }
 
       DialogueBox.render(ctx, tq);

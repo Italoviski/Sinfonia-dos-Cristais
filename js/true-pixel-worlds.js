@@ -2342,6 +2342,13 @@
     magneticAnim: null,
     equationShockEffect: null,
     ghostHandAnim: null,
+    actionHistory: [],
+    _gestureSnapshot: null,
+    _gestureCommitted: false,
+    _committingAction: false,
+    rewindAnim: null,
+    deadEndAutoRewindPending: false,
+    DEAD_END_REWIND_DELAY: 1.75,
     opalDrainTimer: 0,
     opalStepInterval: 0.42,
     shards: [],
@@ -2542,6 +2549,7 @@
       GameHUD.settingsOpen = false;
       GameHUD.guideOpen = false;
       GameHUD.onUseAbility1 = () => this.triggerGhostHandHint();
+      GameHUD.onUseAbility2 = () => this.triggerTimeRewind(this.phase === 'defeat_pause');
       if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
@@ -2607,6 +2615,12 @@
       this.fractionPlatform = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.actionHistory = [];
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this._committingAction = false;
+      this.rewindAnim = null;
+      this.deadEndAutoRewindPending = false;
       this.camPanY = (this.worldKey === 'caatinga' && this.currentLevel === 1) ? -14 : 0;
       this.emeraldAltar = null;
       this.pureEquation = null;
@@ -2668,6 +2682,12 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.actionHistory = [];
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this._committingAction = false;
+      this.rewindAnim = null;
+      this.deadEndAutoRewindPending = false;
       this.clearTrembleStates();
       this.shards = [];
       this.waveActive = false;
@@ -2755,6 +2775,12 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.actionHistory = [];
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this._committingAction = false;
+      this.rewindAnim = null;
+      this.deadEndAutoRewindPending = false;
       this.selectedPiece = null;
       this.tessellationPreview = null;
       this.tutorialHighlightId = stepDef.tutorialHighlightId || null;
@@ -3022,6 +3048,7 @@
 
     triggerImmediateAnnulment(purePiece, shadowTarget) {
       if (!purePiece || !shadowTarget || purePiece.broken || shadowTarget.broken) return false;
+      this.commitActionSnapshot();
       purePiece.dragging = false;
       if (this.draggedPiece === purePiece) {
         this.draggedPiece = null;
@@ -3059,6 +3086,7 @@
       if (!this.emeraldAltar || !piece || piece.shadow || piece.broken || piece.value <= 0) return false;
       if (piece.type === 'opal' || piece.boosted || piece.value * 2 > 6) return false;
       if (Math.hypot(piece.x - this.emeraldAltar.x, piece.y - this.emeraldAltar.y) <= 22) {
+        this.commitActionSnapshot();
         piece.value = clamp(piece.value * 2, 1, 6);
         piece.boosted = true;
         piece.lastValChangeAt = this.t;
@@ -3066,7 +3094,13 @@
         this.spawnShatter(this.emeraldAltar.x, this.emeraldAltar.y, 'emerald', 10);
         const hit = this.findTouchingCompatibleShadow(piece, piece.x, piece.y);
         if (hit) {
-          this.triggerImmediateAnnulment(piece, hit);
+          const prevCommitting = this._committingAction;
+          this._committingAction = true;
+          try {
+            this.triggerImmediateAnnulment(piece, hit);
+          } finally {
+            this._committingAction = prevCommitting;
+          }
         }
         return true;
       }
@@ -3078,6 +3112,7 @@
       if (piece.type !== 'citrine' && piece.type !== 'aqua') return false;
       if (this.selectedPiece === piece) this.selectedPiece = null;
 
+      this.commitActionSnapshot();
       const half = piece.value / 2;
       piece.value = half;
       piece.lastValChangeAt = this.t;
@@ -3106,11 +3141,17 @@
         this.resolveFreeCrystalCollisions();
       }
 
-      for (const candidate of [piece, clone]) {
-        if (!candidate.broken) {
-          const hit = this.findTouchingCompatibleShadow(candidate, candidate.x, candidate.y);
-          if (hit) this.triggerImmediateAnnulment(candidate, hit);
+      const prevCommitting = this._committingAction;
+      this._committingAction = true;
+      try {
+        for (const candidate of [piece, clone]) {
+          if (!candidate.broken) {
+            const hit = this.findTouchingCompatibleShadow(candidate, candidate.x, candidate.y);
+            if (hit) this.triggerImmediateAnnulment(candidate, hit);
+          }
         }
+      } finally {
+        this._committingAction = prevCommitting;
       }
       if (this.phase === 'gameplay') {
         this.checkEquationSolved();
@@ -3444,6 +3485,9 @@
 
       if (this.opalDrainTimer >= this.opalStepInterval) {
         this.opalDrainTimer -= this.opalStepInterval;
+        this.commitActionSnapshot();
+        this._gestureSnapshot = null;
+        this._gestureCommitted = false;
         activeTarget.value -= 1;
         activeOpal.value -= 1;
         activeTarget.lastValChangeAt = this.t;
@@ -3473,7 +3517,13 @@
         if (!activeTarget.broken && activeTarget.value > 0) {
           const hit = this.findTouchingCompatibleShadow(activeTarget, activeTarget.x, activeTarget.y);
           if (hit) {
-            this.triggerImmediateAnnulment(activeTarget, hit);
+            const prevCommitting = this._committingAction;
+            this._committingAction = true;
+            try {
+              this.triggerImmediateAnnulment(activeTarget, hit);
+            } finally {
+              this._committingAction = prevCommitting;
+            }
             return;
           }
         }
@@ -3675,6 +3725,7 @@
 
     ejectCrystalFromMold(piece, keepPosition = false) {
       if (!piece || !piece.inMoldId) return false;
+      this.commitActionSnapshot();
       const node = (this.electricShapes || []).find((es) => es.id === piece.inMoldId);
       piece.inMoldId = null;
       if (node && node.firstPieceId === piece.id) {
@@ -3744,6 +3795,7 @@
         if (validList.length !== 1 || validList[0].shape) {
           return this.rejectAtElectricShape(node, validList);
         }
+        this.commitActionSnapshot();
         const p = validList[0];
         const snap = this.snapshotPiece(p);
         p.shape = 'circle';
@@ -3767,7 +3819,15 @@
         this.spawnFloatingBanner('circle', node.x, node.y);
         this.spawnShatter(node.x, node.y, SHARD_SPR[p.type] ? p.type : 'pure', 10);
         const hit = this.findTouchingCompatibleShadow(p, p.x, p.y);
-        if (hit) this.triggerImmediateAnnulment(p, hit);
+        if (hit) {
+          const prevCommitting = this._committingAction;
+          this._committingAction = true;
+          try {
+            this.triggerImmediateAnnulment(p, hit);
+          } finally {
+            this._committingAction = prevCommitting;
+          }
+        }
         return true;
       }
 
@@ -3783,6 +3843,7 @@
         }
 
         if (!existingFirst) {
+          this.commitActionSnapshot();
           const prevEqSnap = (incoming.inEquation === 'pure' && this.pureEquation && !this.pureEquation.broken)
             ? { x: this.pureEquation.x, y: this.pureEquation.y, expanded: Boolean(this.pureEquation.expanded) }
             : null;
@@ -3829,6 +3890,7 @@
         return this.rejectAtElectricShape(node, rejectPair || [second]);
       }
 
+      this.commitActionSnapshot();
       const snap1 = this.snapshotPiece(first);
       const snap2 = this.snapshotPiece(second);
       first.shape = node.shape;
@@ -3863,7 +3925,15 @@
       this.spawnShatter(node.x, node.y, SHARD_SPR[first.type] ? first.type : 'pure', 12);
 
       const hit = this.findTouchingCompatibleShadow(first, first.x, first.y);
-      if (hit) this.triggerImmediateAnnulment(first, hit);
+      if (hit) {
+        const prevCommitting = this._committingAction;
+        this._committingAction = true;
+        try {
+          this.triggerImmediateAnnulment(first, hit);
+        } finally {
+          this._committingAction = prevCommitting;
+        }
+      }
       return true;
     },
 
@@ -3884,6 +3954,7 @@
         (target.borderType || target.type) === (dropped.borderType || dropped.type) &&
         (target.coreType || target.type) === (dropped.coreType || dropped.type)
       ) {
+        this.commitActionSnapshot();
         target.shape = 'rectangle';
         target.joinedSquares = true;
         target.value += dropped.value;
@@ -3898,12 +3969,17 @@
         this.spawnFloatingBanner('rectangle', target.x, target.y);
         this.spawnShatter(target.x, target.y, 'pure', 12);
         const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-        if (hit) this.triggerImmediateAnnulment(target, hit);
+        if (hit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try { this.triggerImmediateAnnulment(target, hit); } finally { this._committingAction = prevC; }
+        }
         return true;
       }
 
       // 2. 1 Trapézio + 1 Triângulo -> Pentágono (preserva 100% as cores do Triângulo no topo e do Trapézio na base)
       if ((s1 === 'trapezoid' && s2 === 'triangle') || (s1 === 'triangle' && s2 === 'trapezoid')) {
+        this.commitActionSnapshot();
         const trap = s1 === 'trapezoid' ? target : dropped;
         const tri = s1 === 'triangle' ? target : dropped;
         const trapB = trap.borderType || trap.type;
@@ -3933,12 +4009,17 @@
         this.spawnFloatingBanner('pentagon', target.x, target.y);
         this.spawnShatter(target.x, target.y, 'citrine', 12);
         const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-        if (hit) this.triggerImmediateAnnulment(target, hit);
+        if (hit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try { this.triggerImmediateAnnulment(target, hit); } finally { this._committingAction = prevC; }
+        }
         return true;
       }
 
       // 3. Tesselação radial de 6 Triângulos equiláteros -> Hexágono
       if (s1 === 'triangle' && s2 === 'triangle' && ((target.subTriangles || 0) > 0 || (dropped.subTriangles || 0) > 0)) {
+        this.commitActionSnapshot();
         const totalTris = (target.subTriangles || 1) + (dropped.subTriangles || 1);
         target.value += dropped.value;
         target.subTriangles = totalTris;
@@ -3957,7 +4038,11 @@
         }
         this.spawnShatter(target.x, target.y, 'citrine', 10);
         const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-        if (hit) this.triggerImmediateAnnulment(target, hit);
+        if (hit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try { this.triggerImmediateAnnulment(target, hit); } finally { this._committingAction = prevC; }
+        }
         return true;
       }
 
@@ -3969,6 +4054,7 @@
         (target.borderType || target.type) === (dropped.borderType || dropped.type) &&
         (target.coreType || target.type) === (dropped.coreType || dropped.type)
       ) {
+        this.commitActionSnapshot();
         target.shape = 'rhombus';
         target.value += dropped.value;
         target.components = [snapT, snapD];
@@ -3982,7 +4068,11 @@
         this.spawnFloatingBanner('rhombus', target.x, target.y);
         this.spawnShatter(target.x, target.y, 'pure', 12);
         const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-        if (hit) this.triggerImmediateAnnulment(target, hit);
+        if (hit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try { this.triggerImmediateAnnulment(target, hit); } finally { this._committingAction = prevC; }
+        }
         return true;
       }
 
@@ -3992,6 +4082,7 @@
     tryDisassembleShapeOnTap(piece) {
       if (!piece || piece.shadow || piece.broken || !piece.shape) return false;
       if (!piece.components || piece.components.length === 0) return false;
+      this.commitActionSnapshot();
 
       const ox = piece.x, oy = piece.y;
       const comps = piece.components;
@@ -4319,6 +4410,169 @@
       return true;
     },
 
+    /** Clona recursivamente subcomponentes de formas geométricas da Caatinga. */
+    _cloneComponents(comps) {
+      if (!Array.isArray(comps)) return null;
+      return comps.map((c) => ({
+        ...c,
+        restorableEquation: c.restorableEquation ? { ...c.restorableEquation } : null,
+        components: this._cloneComponents(c.components)
+      }));
+    },
+
+    /** Clona profundamente uma peça dos Mundos 2–5 preservando fração, molde e geometria. */
+    _clonePieceState(p) {
+      return {
+        id: p.id,
+        type: p.type,
+        value: p.value,
+        shadow: Boolean(p.shadow),
+        boosted: Boolean(p.boosted),
+        broken: Boolean(p.broken),
+        inEquation: p.inEquation || null,
+        inFraction: p.inFraction || null,
+        inMoldId: p.inMoldId || null,
+        restorableEquation: p.restorableEquation ? { ...p.restorableEquation } : null,
+        shape: p.shape || null,
+        borderType: p.borderType || null,
+        coreType: p.coreType || null,
+        upperType: p.upperType || null,
+        lowerType: p.lowerType || null,
+        triBorder: p.triBorder || null,
+        triCore: p.triCore || null,
+        trapBorder: p.trapBorder || null,
+        trapCore: p.trapCore || null,
+        joinedSquares: Boolean(p.joinedSquares),
+        subTriangles: p.subTriangles || 0,
+        rotAngle: Number(p.rotAngle) || 0,
+        targetRotAngle: Number(p.targetRotAngle) || 0,
+        sourceNodeId: p.sourceNodeId || null,
+        components: this._cloneComponents(p.components),
+        x: p.x,
+        y: p.y
+      };
+    },
+
+    /** Captura um snapshot completo do estado atual da etapa dos Mundos 2–5. */
+    captureStepSnapshot() {
+      return {
+        pieces: (this.pieces || []).map((p) => this._clonePieceState(p)),
+        pureEquation: this.pureEquation ? { ...this.pureEquation } : null,
+        shadowEquation: this.shadowEquation ? { ...this.shadowEquation } : null,
+        emeraldAltar: this.emeraldAltar ? { ...this.emeraldAltar } : null,
+        tutorialHighlightId: this.tutorialHighlightId || null,
+        fractionPlatform: this.fractionPlatform ? {
+          ...this.fractionPlatform,
+          topPieces: [],
+          bottomPieces: [],
+          topPieceIds: (this.fractionPlatform.topPieces || []).map((p) => p.id),
+          bottomPieceIds: (this.fractionPlatform.bottomPieces || []).map((p) => p.id)
+        } : null,
+        electricShapes: (this.electricShapes || []).map((es) => ({ ...es }))
+      };
+    },
+
+    /** Empilha o snapshot pré-ação no histórico (sem duplicar dentro do mesmo gesto). */
+    commitActionSnapshot(customSnap = null) {
+      if (this._committingAction) return;
+      if (this._gestureSnapshot) {
+        if (!this._gestureCommitted) {
+          this.actionHistory.push(this._gestureSnapshot);
+          this._gestureCommitted = true;
+        }
+        return;
+      }
+      this.actionHistory.push(customSnap || this.captureStepSnapshot());
+    },
+
+    /** Restaura exatamente um snapshot dos Mundos 2–5, reconectando frações/moldes e efeito temporal. */
+    restoreStepSnapshot(snap, isAutoDeadEnd = false) {
+      if (!snap) return false;
+      const visType = (p) => (p.type === 'opal' ? 'opal' : (p.shadow ? 'shadow' : (p.type === 'white' ? 'pure' : p.type)));
+      const curById = new Map((this.pieces || []).map((p) => [p.id, p]));
+      const trails = [];
+      for (const sp of snap.pieces) {
+        if (sp.broken || sp.shadow) continue;
+        const cur = curById.get(sp.id);
+        if (cur && (cur.broken || Math.hypot((cur.x || 0) - sp.x, (cur.y || 0) - sp.y) >= 4 || cur.value !== sp.value || cur.shape !== sp.shape)) {
+          trails.push({
+            fromX: cur.x ?? sp.x,
+            fromY: cur.y ?? sp.y,
+            toX: sp.x,
+            toY: sp.y,
+            pieceType: visType(sp),
+            pieceValue: sp.value
+          });
+        }
+      }
+
+      this.pieces = (snap.pieces || []).map((p) => ({
+        ...this._clonePieceState(p),
+        dragging: false,
+        trembling: false
+      }));
+      this.pureEquation = snap.pureEquation ? { ...snap.pureEquation, dropHover: false, removeHover: false } : null;
+      this.shadowEquation = snap.shadowEquation ? { ...snap.shadowEquation } : null;
+      this.emeraldAltar = snap.emeraldAltar ? { ...snap.emeraldAltar } : null;
+      this.tutorialHighlightId = snap.tutorialHighlightId || null;
+      this.electricShapes = (snap.electricShapes || []).map((es) => ({ ...es, hover: false }));
+
+      if (snap.fractionPlatform) {
+        const pieceMap = new Map(this.pieces.map((p) => [p.id, p]));
+        const restoredFp = { ...snap.fractionPlatform, topHover: false, bottomHover: false };
+        restoredFp.topPieces = (snap.fractionPlatform.topPieceIds || []).map((id) => pieceMap.get(id)).filter(Boolean);
+        restoredFp.bottomPieces = (snap.fractionPlatform.bottomPieceIds || []).map((id) => pieceMap.get(id)).filter(Boolean);
+        delete restoredFp.topPieceIds;
+        delete restoredFp.bottomPieceIds;
+        this.fractionPlatform = restoredFp;
+        if (typeof this.updateFractionPlatformState === 'function') {
+          this.updateFractionPlatformState();
+        }
+      } else {
+        this.fractionPlatform = null;
+      }
+
+      this.selectedPiece = null;
+      this.draggedPiece = null;
+      this.dragStartPos = null;
+      this.equationPointer = null;
+      this.tessellationPreview = null;
+      this.magneticAnim = null;
+      this.equationShockEffect = null;
+      this.ghostHandAnim = null;
+      this.opalDrainTimer = 0;
+      this._gestureSnapshot = null;
+      this._gestureCommitted = false;
+      this.deadEndAutoRewindPending = false;
+      this.clearTrembleStates();
+
+      this.phase = 'gameplay';
+      this.phaseTime = 0;
+      this.protag.state = 'idle';
+      this.rewindAnim = {
+        t: 0,
+        duration: 0.75,
+        isAutoDeadEnd: Boolean(isAutoDeadEnd),
+        label: isAutoDeadEnd ? 'BECO SEM SAÍDA DESFEITO!' : 'VOLTANDO NO TEMPO!',
+        trails
+      };
+      this.spawnShatter(160, 96, 'emerald', 10);
+      return true;
+    },
+
+    /** Executa a Habilidade 2 (Voltar no Tempo) nos Mundos 2–5. */
+    triggerTimeRewind(isAutoDeadEnd = false) {
+      const canRunAuto = Boolean(isAutoDeadEnd) && this.phase === 'defeat_pause';
+      if (this.phase !== 'gameplay' && !canRunAuto) return false;
+      if (TutorialModal.isOpen || DialogueBox.isOpen || this.forestNinja || this.riverMelody || this.shellGame) return false;
+      if (!this.actionHistory || this.actionHistory.length === 0) return false;
+
+      const prevSnap = this.actionHistory.pop();
+      this.restoreStepSnapshot(prevSnap, canRunAuto);
+      GameHUD.playSfx('timeRewind');
+      return true;
+    },
+
     updateFractionPlatformState() {
       const fp = this.fractionPlatform;
       if (!fp || fp.broken) return;
@@ -4349,6 +4603,7 @@
     triggerFractionDivide() {
       const fp = this.fractionPlatform;
       if (!fp || fp.broken || !fp.glowing) return;
+      this.commitActionSnapshot();
       fp.broken = true;
 
       this.spawnShatter(fp.x, fp.y, 'rose', 16);
@@ -4391,6 +4646,7 @@
       if (target.inFraction || source.inFraction || target.type === 'opal' || source.type === 'opal') return false;
       if (target.type !== source.type || (target.value + source.value) > 6) return false;
 
+      this.commitActionSnapshot();
       target.value += source.value;
       target.boosted = Boolean(target.boosted || source.boosted);
       target.lastValChangeAt = this.t;
@@ -4410,12 +4666,29 @@
         this.resolveFreeCrystalCollisions();
       }
       const mergedHit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-      if (mergedHit) this.triggerImmediateAnnulment(target, mergedHit);
+      if (mergedHit) {
+        const prevC = this._committingAction;
+        this._committingAction = true;
+        try {
+          this.triggerImmediateAnnulment(target, mergedHit);
+        } finally {
+          this._committingAction = prevC;
+        }
+      }
       return true;
     },
 
     checkPieceDrop(dropped) {
       if (!dropped || dropped.broken || dropped.value <= 0) return;
+
+      const preDropSnap = this._gestureSnapshot || this.captureStepSnapshot();
+      const commitDropOnce = () => {
+        if (this._gestureSnapshot) {
+          this.commitActionSnapshot();
+        } else {
+          this.actionHistory.push(preDropSnap);
+        }
+      };
 
       const clamped = this.clampCrystalPos(dropped.x, dropped.y);
       dropped.x = clamped.x;
@@ -4430,6 +4703,7 @@
         const inFracBody = Math.abs(dropped.x - fp.x) <= (fp.w * 0.5 + 8) && Math.abs(dropped.y - fp.y) <= (fp.h * 0.5 + 10);
         // Opala de Fogo não entra na fração: ela subtrai do cristal que está lá dentro.
         if (inFracBody && dropped.type !== 'opal') {
+          commitDropOnce();
           let targetSlot;
           if (dropped.y < fp.y - 4) {
             targetSlot = 'top';
@@ -4536,6 +4810,7 @@
             }
           }
           if (dropped.inEquation !== 'pure') {
+            commitDropOnce();
             dropped.inEquation = 'pure';
             GameHUD.playSfx('equationInsert');
           } else {
@@ -4550,6 +4825,7 @@
           this.layoutEquationPieces(this.pureEquation, 'pure');
           return;
         } else if (dropped.inEquation === 'pure') {
+          commitDropOnce();
           dropped.inEquation = null;
           GameHUD.playSfx('equationRemove');
           this.layoutEquationPieces(this.pureEquation, 'pure');
@@ -4573,6 +4849,7 @@
           ) {
             if (other.type !== dropped.type) {
               if (this.pureEquation || this.shadowEquation) {
+                commitDropOnce();
                 const eq = this.ensurePureEquation((dropped.x + other.x) * 0.5, (dropped.y + other.y) * 0.5);
                 other.inEquation = 'pure';
                 dropped.inEquation = 'pure';
@@ -4796,6 +5073,12 @@
         this.equationPointer = null;
         this.clearTrembleStates();
         GameHUD.playSfx('error');
+        this.deadEndAutoRewindPending = Boolean(
+          this.actionHistory &&
+          this.actionHistory.length > 0 &&
+          typeof GameHUD.canUseAbility === 'function' &&
+          GameHUD.canUseAbility(2)
+        );
         this.phase = 'defeat_pause';
         this.phaseTime = 0;
       }
@@ -7142,8 +7425,13 @@
 
         if (this.phase !== 'gameplay') return;
 
+        this._gestureSnapshot = this.captureStepSnapshot();
+        this._gestureCommitted = false;
+
         if (this.fractionPlatform?.glowing && !this.fractionPlatform.broken && this.isInsideFractionPlatform(x, y)) {
           this.triggerFractionDivide();
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
           return;
         }
 
@@ -7352,8 +7640,11 @@
             if (splittableInEq) {
               this.pureEquation.expanded = true;
               this.trySplitCrystalOnTap(splittableInEq);
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               return;
             }
+            this.commitActionSnapshot();
             this.pureEquation.expanded = !this.pureEquation.expanded;
             GameHUD.playSfx(this.pureEquation.expanded ? 'equationExpand' : 'equationCollapse');
             this.layoutEquationPieces(this.pureEquation, 'pure');
@@ -7370,9 +7661,12 @@
               }
             }
             if (!enteredShape) {
+              this.commitActionSnapshot();
               GameHUD.playSfx('quartzDrop');
             }
           }
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
           if (this.phase === 'gameplay') {
             this.checkEquationSolved();
             this.triggerDefeatIfImpossible();
@@ -7391,24 +7685,36 @@
             this.pureEquation.removeHover = false;
           }
           this.clearTrembleStates();
-          if (p.broken || p.value <= 0 || this.phase !== 'gameplay') return;
+          if (p.broken || p.value <= 0 || this.phase !== 'gameplay') {
+            this._gestureSnapshot = null;
+            this._gestureCommitted = false;
+            return;
+          }
 
           if (wasQuickTap) {
             if (p.inMoldId) {
               this.ejectCrystalFromMold(p);
               this.selectedPiece = null;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               return;
             }
             if (this.tryDisassembleShapeOnTap(p)) {
               this.selectedPiece = null;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               return;
             }
             if (this.trySplitCrystalOnTap(p)) {
               this.selectedPiece = null;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               return;
             }
             if (this.selectedPiece === p) {
               this.selectedPiece = null;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               GameHUD.playSfx('click');
               return;
             }
@@ -7416,6 +7722,8 @@
               const prev = this.selectedPiece;
               this.selectedPiece = null;
               if (prev.shape && p.shape && this.tryTessellateShapes(prev, p)) {
+                this._gestureSnapshot = null;
+                this._gestureCommitted = false;
                 if (this.phase === 'gameplay') {
                   this.checkEquationSolved();
                   this.triggerDefeatIfImpossible();
@@ -7424,6 +7732,8 @@
               }
               if (!prev.shape && !p.shape && prev.type === p.type && p.type !== 'opal' && (prev.value + p.value) <= 6) {
                 if (this._mergeSameColorPieces(p, prev)) {
+                  this._gestureSnapshot = null;
+                  this._gestureCommitted = false;
                   if (this.phase === 'gameplay') {
                     this.checkEquationSolved();
                     this.triggerDefeatIfImpossible();
@@ -7432,11 +7742,14 @@
                 }
               }
               if (this.pureEquation || this.shadowEquation) {
+                this.commitActionSnapshot();
                 const eq = this.ensurePureEquation((prev.x + p.x) * 0.5, (prev.y + p.y) * 0.5);
                 prev.inEquation = 'pure';
                 p.inEquation = 'pure';
                 GameHUD.playSfx('equationInsert');
                 this.layoutEquationPieces(eq, 'pure');
+                this._gestureSnapshot = null;
+                this._gestureCommitted = false;
                 if (this.phase === 'gameplay') {
                   this.checkEquationSolved();
                   this.triggerDefeatIfImpossible();
@@ -7445,6 +7758,8 @@
               }
             } else {
               this.selectedPiece = p;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
               GameHUD.playSfx('click');
               return;
             }
@@ -7453,6 +7768,8 @@
           this.selectedPiece = null;
           GameHUD.playSfx(p.type === 'opal' ? 'opalDrop' : (p.type === 'rose' ? 'roseDrop' : 'quartzDrop'));
           this.checkPieceDrop(p);
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
           if (this.phase === 'gameplay') {
             this.checkEquationSolved();
             this.triggerDefeatIfImpossible();
@@ -7591,6 +7908,12 @@
         this.ghostHandAnim.t += dt;
         if (this.ghostHandAnim.t >= (this.ghostHandAnim.duration || 2.2)) {
           this.ghostHandAnim = null;
+        }
+      }
+      if (this.rewindAnim) {
+        this.rewindAnim.t += dt;
+        if (this.rewindAnim.t >= (this.rewindAnim.duration || 0.75)) {
+          this.rewindAnim = null;
         }
       }
       if (this.regularAudio && !this.regularAudio.paused) {
@@ -7780,7 +8103,20 @@
         }
       } else if (this.phase === 'defeat_pause') {
         this.protag.state = 'shock';
-        if (this.phaseTime >= 0.65) {
+        if (
+          this.deadEndAutoRewindPending &&
+          this.actionHistory &&
+          this.actionHistory.length > 0 &&
+          typeof GameHUD.canUseAbility === 'function' &&
+          GameHUD.canUseAbility(2)
+        ) {
+          if (this.phaseTime >= (this.DEAD_END_REWIND_DELAY || 1.75)) {
+            this.deadEndAutoRewindPending = false;
+            if (!GameHUD.useAbility(2)) {
+              this.triggerTimeRewind(true);
+            }
+          }
+        } else if (this.phaseTime >= 0.65) {
           this.phase = 'game_over';
           this.phaseTime = 0;
           GameHUD.playSfx('gameOver');
@@ -8146,6 +8482,12 @@
       DialogueBox.render(ctx, tq);
       if (this.phase === 'gameplay' && this.ghostHandAnim && typeof E.drawGhostHandHint === 'function') {
         E.drawGhostHandHint(ctx, this.ghostHandAnim, tq);
+      }
+      if (this.rewindAnim && typeof E.drawTimeRewindEffect === 'function') {
+        E.drawTimeRewindEffect(ctx, this.rewindAnim, tq);
+      }
+      if (this.phase === 'defeat_pause' && typeof E.drawDeadEndAlert === 'function') {
+        E.drawDeadEndAlert(ctx, this.phaseTime, this.deadEndAutoRewindPending, tq, this.pieces);
       }
 
       TutorialModal.render(ctx, tq);

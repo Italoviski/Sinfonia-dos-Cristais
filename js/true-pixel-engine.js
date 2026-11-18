@@ -7265,6 +7265,132 @@
     }
   }
 
+  /** Renderiza o efeito temporal Esmeralda da Floresta ao Voltar no Tempo (Rebobinar). */
+  function drawTimeRewindEffect(ctx, anim, t = 0) {
+    if (!ctx || !anim) return;
+    const dur = Math.max(0.2, anim.duration || 0.75);
+    const p = clamp((anim.t || 0) / dur, 0, 1);
+    if (p >= 1) return;
+
+    const fade = (p < 0.15 ? p / 0.15 : 1) * (p > 0.8 ? (1 - p) / 0.2 : 1);
+    const trails = anim.trails || [];
+
+    ctx.save();
+    try {
+      // Sutil véu de distorção temporal esmeralda na área de jogo
+      ctx.globalAlpha = clamp(fade * 0.16, 0.02, 0.18);
+      ctx.fillStyle = '#166534';
+      ctx.fillRect(0, 36, W, H - 36);
+
+      // Anéis temporais contraindo-se no centro da cena
+      const cx = W / 2, cy = 96;
+      for (let k = 0; k < 3; k++) {
+        const rp = clamp((p + k * 0.18) % 1, 0, 1);
+        const radius = R(92 * (1 - rp) + 10);
+        ctx.globalAlpha = clamp(fade * (1 - rp) * 0.75, 0.04, 0.75);
+        drawRing(ctx, cx, cy, radius, k % 2 === 0 ? '#4ade80' : '#69f0ae');
+      }
+
+      // Trilhas e cópias translúcidas dos cristais retornando às posições anteriores
+      const u = easeInOut(p);
+      for (const tr of trails) {
+        const fx = tr.fromX ?? cx;
+        const fy = tr.fromY ?? cy;
+        const tx = tr.toX ?? fx;
+        const ty = tr.toY ?? fy;
+        const px = R(fx + (tx - fx) * u);
+        const py = R(fy + (ty - fy) * u);
+
+        ctx.globalAlpha = clamp(fade * 0.55, 0.04, 0.55);
+        for (let d = 1; d <= 5; d++) {
+          const du = d / 6;
+          const dx = R(fx + (tx - fx) * du);
+          const dy = R(fy + (ty - fy) * du);
+          ctx.fillStyle = (d & 1) ? '#4ade80' : '#69f0ae';
+          ctx.fillRect(dx, dy, 1, 1);
+        }
+
+        const style = GHOST_CRYSTAL_MAP[tr.pieceType] || GHOST_CRYSTAL_MAP.emerald;
+        ctx.globalAlpha = clamp(fade * 0.76, 0.05, 0.76);
+        ctx.drawImage(style.spr, px - 6, py - 7);
+        drawRing(ctx, px, py, 9 + Math.round((1 - u) * 5), '#69f0ae');
+        if (Math.floor(t * 12) % 2 === 0) {
+          drawStar(ctx, px + 7, py - 7, 2, '#ecfdf5', '#4ade80');
+        }
+      }
+
+      // Pílula Esmeralda indicando o retorno temporal sem obstruir a HUD superior
+      const label = anim.label || 'VOLTANDO NO TEMPO!';
+      const pillW = Math.min(220, Math.max(96, measurePixelText(label, 9) + 16));
+      const px = R(W / 2 - pillW / 2);
+      const py = 40;
+      ctx.globalAlpha = clamp(fade * 0.92, 0.08, 0.92);
+      ctx.fillStyle = '#062e1e';
+      ctx.fillRect(px, py, pillW, 13);
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(px, py, pillW, 1);
+      ctx.fillRect(px, py + 12, pillW, 1);
+      ctx.fillRect(px, py, 1, 13);
+      ctx.fillRect(px + pillW - 1, py, 1, 13);
+      drawPixelTextCentered(ctx, label, W / 2, py + 3, '#ecfdf5', '#062e1e', pillW - 6, 9);
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  /** Exibe o alerta visual de "Beco sem Saída" antes de acionar o Auto-Rewind ou Derrota. */
+  function drawDeadEndAlert(ctx, phaseTime = 0, willAutoRewind = false, t = 0, pieces = []) {
+    if (!ctx) return;
+    const blink = (Math.floor((t || phaseTime) * 8) & 1) === 0;
+    const active = (pieces || []).filter(p => p && !p.broken && (p.value || 0) > 0);
+
+    ctx.save();
+    try {
+      // Halo de alerta nos cristais restantes para a criança identificar o impasse
+      for (const p of active) {
+        ctx.globalAlpha = blink ? 0.85 : 0.45;
+        drawRing(ctx, R(p.x), R(p.y), 11 + (blink ? 1 : 0), blink ? '#ef4444' : '#f59e0b');
+      }
+
+      // Banner de alerta "BECO SEM SAÍDA!"
+      const alertText = 'BECO SEM SAÍDA!';
+      const bw = Math.min(180, Math.max(98, measurePixelText(alertText, 9) + 18));
+      const bx = R(W / 2 - bw / 2);
+      const by = 40;
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = '#3b0a0a';
+      ctx.fillRect(bx, by, bw, 13);
+      ctx.fillStyle = blink ? '#ef4444' : '#f87171';
+      ctx.fillRect(bx, by, bw, 1);
+      ctx.fillRect(bx, by + 12, bw, 1);
+      ctx.fillRect(bx, by, 1, 13);
+      ctx.fillRect(bx + bw - 1, by, 1, 13);
+      drawPixelTextCentered(ctx, alertText, W / 2, by + 3, '#fecaca', '#3b0a0a', bw - 6, 9);
+
+      if (willAutoRewind) {
+        const subText = 'Cristal da Floresta: Voltando...';
+        const sw = Math.min(220, Math.max(138, measurePixelText(subText, 9) + 14));
+        const sx = R(W / 2 - sw / 2);
+        const sy = 55;
+        const progress = clamp(phaseTime / 1.75, 0, 1);
+        ctx.fillStyle = '#062e1e';
+        ctx.fillRect(sx, sy, sw, 14);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(sx, sy, sw, 1);
+        ctx.fillRect(sx, sy + 13, sw, 1);
+        ctx.fillRect(sx, sy, 1, 14);
+        ctx.fillRect(sx + sw - 1, sy, 1, 14);
+        drawPixelTextCentered(ctx, subText, W / 2, sy + 2, '#ecfdf5', '#062e1e', sw - 6, 9);
+        ctx.fillStyle = '#14532d';
+        ctx.fillRect(sx + 6, sy + 10, sw - 12, 2);
+        ctx.fillStyle = '#69f0ae';
+        ctx.fillRect(sx + 6, sy + 10, R((sw - 12) * progress), 2);
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
   const TutorialModal = {
     isOpen: false,
     cards: [],
@@ -8385,6 +8511,9 @@
           global.CrystalAudio.setVolume?.(clamp(this.sfxVol / 100, 0, 1));
           if (typeof global.CrystalAudio[kind] === 'function') {
             global.CrystalAudio[kind](2);
+          } else if (kind === 'timeRewind') {
+            global.CrystalAudio.equationCollapse?.(2);
+            global.CrystalAudio.reward?.(2);
           }
         }
       } catch (_) {}
@@ -8475,6 +8604,11 @@
 
     getMaxAbilityCharges(idOrNum) {
       return this.getAbilityState(idOrNum).maxCharges || 0;
+    },
+
+    canUseAbility(idOrNum) {
+      const st = this.getAbilityState(idOrNum);
+      return Boolean(st && st.unlocked && (this.godMode || st.charges > 0));
     },
 
     resetAbilityCharges() {
@@ -9453,6 +9587,8 @@
     drawJustifiedPixelText,
     drawParchmentBox,
     drawGhostHandHint,
+    drawTimeRewindEffect,
+    drawDeadEndAlert,
     isMobileOrTouch,
     drawVirtualTouchButton,
     SpriteBank,
