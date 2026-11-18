@@ -2505,7 +2505,8 @@ test('Prompt #07: Correção pós-tutorial (Rio 1 e Caatinga 1), soma/divisão d
   assert.equal(Worlds.phase, 'tutorial', 'Após diálogo inicial da Caatinga Fase 1, deve abrir TutorialModal');
   assert.equal(TutorialModal.isOpen, true, 'TutorialModal deve estar aberto na Caatinga Fase 1');
 
-  // Fechar TutorialModal por clique no botão ("Começar!") com pequena tolerância
+  // Fechar TutorialModal por clique no botão ("Começar!") com pequena tolerância (após tempo de leitura)
+  TutorialModal.pageElapsed = TutorialModal.pageDuration + 0.1;
   Worlds.render();
   const btn = TutorialModal.btnRect;
   firePointer('pointerdown', btn.x + btn.w / 2, btn.y + btn.h / 2);
@@ -2548,10 +2549,12 @@ test('Prompt #07: Correção pós-tutorial (Rio 1 e Caatinga 1), soma/divisão d
   assert.equal(TutorialModal.isOpen, true);
   assert.equal(TutorialModal.cards.length, 2, 'Rio Fase 1 tem tutorial de 2 páginas');
 
-  // Página 1 -> Página 2 via Enter, Página 2 -> Começar via Space
+  // Página 1 -> Página 2 via Enter, Página 2 -> Começar via Space (após tempo de leitura de cada página)
+  TutorialModal.pageElapsed = TutorialModal.pageDuration + 0.1;
   fireKey('Enter', 'Enter');
   assert.equal(TutorialModal.isOpen, true, 'Após página 1 do tutorial do Rio Fase 1, deve ir à página 2');
   assert.equal(TutorialModal.currentIndex, 1);
+  TutorialModal.pageElapsed = TutorialModal.pageDuration + 0.1;
   fireKey('Space', ' ');
   assert.equal(TutorialModal.isOpen, false, 'Após página 2, TutorialModal do Rio Fase 1 deve fechar');
   assert.equal(Worlds.phase, 'gameplay', 'Rio Fase 1 deve entrar em gameplay imediatamente após fechar tutorial');

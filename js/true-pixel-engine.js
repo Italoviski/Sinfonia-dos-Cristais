@@ -463,6 +463,159 @@
   }
 
   // ============================================================================
+  // MOTOR DE TEXTO JUSTIFICADO E DESTAQUE DINÂMICO (Rich Tokens & Justified Wrapping)
+  // Permite marcação de cores vivas ({cyan:...}, {gold:...}, {green:...}, {pink:...}, **...**)
+  // e distribuição justificada de texto para ocupar harmoniosamente os cards de tutorial.
+  // ============================================================================
+  const RICH_COLOR_MAP = {
+    cyan: '#38bdf8',
+    blue: '#38bdf8',
+    light_blue: '#7aeaff',
+    gold: '#fbbf24',
+    yellow: '#ffe887',
+    green: '#4ade80',
+    emerald: '#8ed46a',
+    pink: '#f472b6',
+    rose: '#ff80bf',
+    orange: '#fb923c',
+    fire: '#f97316',
+    red: '#f87171',
+    white: '#ffffff',
+    purple: '#c084fc'
+  };
+
+  function parseRichTokens(rawText) {
+    if (!rawText) return [];
+    const str = String(rawText);
+    const regex = /\{([a-zA-Z0-9_#]+):([^}]+)\}|\*\*([^*]+)\*\*/g;
+    const tokens = [];
+    let lastIndex = 0;
+    let match;
+
+    const pushWords = (subText, color) => {
+      const parts = subText.split(/\s+/).filter(Boolean);
+      for (const w of parts) {
+        tokens.push({ text: w, color: color || null });
+      }
+    };
+
+    while ((match = regex.exec(str)) !== null) {
+      if (match.index > lastIndex) {
+        pushWords(str.slice(lastIndex, match.index), null);
+      }
+      if (match[1] && match[2] !== undefined) {
+        const colKey = match[1].toLowerCase();
+        const resolvedColor = RICH_COLOR_MAP[colKey] || (match[1].startsWith('#') ? match[1] : '#38bdf8');
+        pushWords(match[2], resolvedColor);
+      } else if (match[3] !== undefined) {
+        pushWords(match[3], '#fbbf24');
+      }
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < str.length) {
+      pushWords(str.slice(lastIndex), null);
+    }
+
+    return tokens;
+  }
+
+  function wrapJustifiedLines(text, maxWidth = 999) {
+    const rawParagraphs = String(text || '').split('\n');
+    const lines = [];
+
+    for (const para of rawParagraphs) {
+      const tokens = parseRichTokens(para);
+      if (!tokens.length) {
+        lines.push({ words: [], justify: false, gapWidth: 3, totalWidth: 0 });
+        continue;
+      }
+
+      // Pre-calcula larguras de cada palavra
+      const measuredTokens = tokens.map(t => ({
+        ...t,
+        width: measurePixelText(t.text)
+      }));
+
+      let curWords = [];
+      let curWordsWidth = 0;
+
+      for (let i = 0; i < measuredTokens.length; i++) {
+        const token = measuredTokens[i];
+        const nextWordsWidth = curWordsWidth + token.width;
+        const defaultSpace = (curWords.length > 0) ? curWords.length * 3 : 0;
+
+        if (curWords.length > 0 && (nextWordsWidth + defaultSpace > maxWidth)) {
+          const gaps = curWords.length - 1;
+          const extra = maxWidth - curWordsWidth;
+          const gapW = gaps > 0 ? (extra / gaps) : 3;
+          lines.push({
+            words: curWords,
+            justify: gaps > 0,
+            gapWidth: gaps > 0 ? Math.max(3, gapW) : 3,
+            totalWidth: curWordsWidth + gaps * (gaps > 0 ? Math.max(3, gapW) : 3)
+          });
+          curWords = [token];
+          curWordsWidth = token.width;
+        } else {
+          curWords.push(token);
+          curWordsWidth += token.width;
+        }
+      }
+
+      if (curWords.length > 0) {
+        // Última linha do parágrafo nunca é justificada em largura total
+        lines.push({
+          words: curWords,
+          justify: false,
+          gapWidth: 3,
+          totalWidth: curWordsWidth + (curWords.length - 1) * 3
+        });
+      }
+    }
+
+    return lines;
+  }
+
+  function drawJustifiedPixelText(ctx, text, x, y, maxWidth = 999, lineHeight = 11, defaultCol = '#ffea31', shadowCol = '#000000') {
+    x = R(x);
+    y = R(y);
+    const lines = wrapJustifiedLines(text, maxWidth);
+    let cy = y;
+
+    for (const line of lines) {
+      if (!line.words.length) {
+        cy += lineHeight;
+        continue;
+      }
+
+      let curX = x;
+      const gap = line.justify ? line.gapWidth : 3.5;
+
+      for (let i = 0; i < line.words.length; i++) {
+        const word = line.words[i];
+        const col = word.color || defaultCol;
+        const rx = R(curX);
+
+        if (!renderHDCanvasLine(ctx, word.text, rx, cy, col, shadowCol, word.width + 6, lineHeight, 'left')) {
+          let px = rx;
+          for (let c = 0; c < word.text.length; c++) {
+            const ch = word.text[c];
+            if (ch === ' ') px += 3;
+            else px += drawPixelChar(ctx, ch, px, cy, col, shadowCol);
+          }
+        }
+
+        curX += word.width + gap;
+      }
+
+      cy += lineHeight;
+    }
+
+    return lines.length * lineHeight;
+  }
+
+  // ============================================================================
   // MOLDURA DE PERGAMINHO / CAIXA DE ALTO CONTRASTE ESTILO OWLBOY (drawParchmentBox)
   // Fundo escuro profundo (#1e2236 / #282c44) para máximo contraste do texto
   // amarelo com borda preta (diálogos/tutoriais) e branco/azul (menus/HUD).
@@ -6948,6 +7101,23 @@
     onFinish: null,
     onDone: null,
     btnRect: { x: 194, y: 140, w: 78, h: 15 },
+    pageElapsed: 0,
+    pageDuration: 3.5,
+    lastRenderTime: null,
+
+    calculatePageDuration(card) {
+      if (!card) return 3.0;
+      const plainText = String(card.body || '')
+        .replace(/\{[a-zA-Z0-9_#]+:([^}]+)\}/g, '$1')
+        .replace(/\*\*([^*]+)\*\*/g, '$1');
+      const words = plainText.split(/\s+/).filter(Boolean).length;
+      return Math.max(3.0, Math.min(5.0, 1.8 + words * 0.16));
+    },
+
+    isPageLocked() {
+      if (GameHUD && GameHUD.godMode) return false;
+      return this.pageElapsed < this.pageDuration;
+    },
 
     open(cards, onFinish = null, onlyNew = false) {
       const list = (Array.isArray(cards) ? cards : [cards]).filter(c => {
@@ -6964,6 +7134,9 @@
       this.isOpen = true;
       this.onFinish = onFinish;
       this.onDone = onFinish;
+      this.pageElapsed = 0;
+      this.pageDuration = this.calculatePageDuration(list[0]);
+      this.lastRenderTime = null;
       if (list[0].id) this.seenKeys.add(list[0].id);
       GameHUD.playSfx('tutorialOpen');
     },
@@ -6972,6 +7145,8 @@
       this.isOpen = false;
       this.cards = [];
       this.currentIndex = 0;
+      this.pageElapsed = 0;
+      this.lastRenderTime = null;
       this.onFinish = null;
       this.onDone = null;
     },
@@ -6982,10 +7157,15 @@
       if (this.currentIndex < this.cards.length) {
         const cur = this.cards[this.currentIndex];
         if (cur && cur.id) this.seenKeys.add(cur.id);
+        this.pageElapsed = 0;
+        this.pageDuration = this.calculatePageDuration(cur);
+        this.lastRenderTime = null;
         GameHUD.playSfx('tutorialAdvance');
         return true;
       }
       this.isOpen = false;
+      this.pageElapsed = 0;
+      this.lastRenderTime = null;
       GameHUD.playSfx('tutorialClose');
       const cb = this.onFinish || this.onDone;
       this.onFinish = null;
@@ -6997,11 +7177,11 @@
     handleClick(lx, ly) {
       if (!this.isOpen) return false;
       const b = this.btnRect;
-      if (lx >= b.x - 8 && lx <= b.x + b.w + 8 && ly >= b.y - 6 && ly <= b.y + b.h + 6) {
-        return this.nextStep();
-      }
-      if (lx >= 32 && lx <= 288 && ly >= 24 && ly <= 162) {
-        return this.nextStep();
+      const onBtn = (lx >= b.x - 8 && lx <= b.x + b.w + 8 && ly >= b.y - 6 && ly <= b.y + b.h + 6);
+      const onCard = (lx >= 24 && lx <= 296 && ly >= 18 && ly <= 162);
+      if (onBtn || onCard) {
+        if (this.isPageLocked()) return false;
+        return this.nextStep(false);
       }
       return false;
     },
@@ -7252,39 +7432,96 @@
       const card = this.cards[this.currentIndex];
       if (!card) return;
 
+      // Atualiza o tempo decorrido na página atual com proteção contra saltos de clock
+      if (this.lastRenderTime != null && Number.isFinite(t)) {
+        let dt = t - this.lastRenderTime;
+        if (dt > 0 && dt < 0.5) {
+          this.pageElapsed += dt;
+        }
+      }
+      this.lastRenderTime = t;
+
       // Véu escuro suave sobre o fundo
-      ctx.fillStyle = 'rgba(10, 8, 6, 0.55)';
+      ctx.fillStyle = 'rgba(10, 8, 6, 0.65)';
       ctx.fillRect(0, 20, W, H - 20);
 
-      const cx = 32, cy = 24, cw = 256, ch = 138;
-      this.btnRect = { x: cx + cw - 86, y: cy + ch - 21, w: 76, h: 15 };
+      // Card com enquadramento ampliado e harmonioso para preenchimento de texto
+      const cx = 24, cy = 18, cw = 272, ch = 144;
+      this.btnRect = { x: cx + cw - 88, y: cy + ch - 20, w: 78, h: 15 };
 
       drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#3d2b24' });
 
       // Cabeçalho + paginação bem enquadrados (amarelo com bordas pretas)
       const stepLabel = `Página ${this.currentIndex + 1}/${this.cards.length}`;
-      drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 7, '#ffea31', '#000000', 168, 9);
-      drawPixelText(ctx, stepLabel, cx + 10, cy + 7, '#fff66b', '#000000', cw - 20, 9, 'right');
+      drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 6, '#ffea31', '#000000', 168, 9);
+      drawPixelText(ctx, stepLabel, cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
 
       // Vinheta animada demonstrativa
-      this.drawVignette(ctx, card.vignette || 'drag_and_shadow', cx + 10, cy + 23, cw - 20, 36, t);
+      this.drawVignette(ctx, card.vignette || 'drag_and_shadow', cx + 10, cy + 21, cw - 20, 36, t);
 
-      // Texto explicativo em amarelo com borda preta
-      drawPixelText(ctx, card.body || '', cx + 12, cy + 65, '#ffea31', '#000000', cw - 24, 10);
+      // Texto explicativo justificado e com palavras-chave em cores de alto contraste
+      drawJustifiedPixelText(ctx, card.body || '', cx + 12, cy + 62, cw - 24, 11, '#ffea31', '#000000');
+
+      // Barra de progresso de leitura infantil na base inferior esquerda
+      const barX = cx + 12;
+      const barY = cy + ch - 15;
+      const barW = cw - 108;
+      const barH = 5;
+      const duration = Math.max(0.1, this.pageDuration || 3.0);
+      const ratio = Math.max(0, Math.min(1, this.pageElapsed / duration));
+      const isLocked = this.isPageLocked();
+
+      // Trilho da barra
+      ctx.fillStyle = '#0f1422';
+      ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+      ctx.fillStyle = '#1c2438';
+      ctx.fillRect(barX, barY, barW, barH);
+
+      // Preenchimento animado suave
+      const fillW = Math.round(barW * ratio);
+      if (fillW > 0) {
+        ctx.fillStyle = ratio >= 1 ? '#fbbf24' : '#38bdf8';
+        ctx.fillRect(barX, barY, fillW, barH);
+        ctx.fillStyle = ratio >= 1 ? '#fff6a0' : '#a5f3fc';
+        ctx.fillRect(barX, barY, fillW, 1);
+        if (ratio < 1) {
+          // Centelha luminosa na ponta da barra
+          P1(ctx, barX + fillW - 1, barY + 1, '#ffffff');
+          P1(ctx, barX + fillW - 1, barY + 2, '#ffffff');
+          P1(ctx, barX + fillW - 1, barY + 3, '#ffffff');
+        } else {
+          // Brilho estelar de leitura concluída
+          drawStar(ctx, barX + fillW - 2, barY + 2, 2, '#ffffff', '#fbbf24');
+        }
+      }
 
       // Botão para avançar/concluir no canto inferior direito
       const b = this.btnRect;
       const isLast = this.currentIndex >= this.cards.length - 1;
-      ctx.fillStyle = '#14111c';
-      ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = isLast ? '#2b689c' : '#324b81';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#92e8ff';
-      ctx.fillRect(b.x, b.y, b.w, 1);
-      ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-
       const btnText = isLast ? 'Começar!' : 'Avançar >';
-      drawPixelTextCentered(ctx, btnText, b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 9);
+
+      if (isLocked) {
+        // Estado bloqueado/em leitura: cores escuras e sem destaque
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+        ctx.fillStyle = '#1b2334';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = '#2d3b54';
+        ctx.fillRect(b.x, b.y, b.w, 1);
+        ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+        drawPixelTextCentered(ctx, btnText, b.x + b.w / 2, b.y + 4, '#6b7d9b', '#000000', b.w - 4, 9);
+      } else {
+        // Estado liberado: destaque vibrante com pulso sutil
+        const pulse = (Math.floor(t * 4) & 1) ? 1 : 0;
+        ctx.fillStyle = '#14111c';
+        ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+        ctx.fillStyle = isLast ? '#2b689c' : '#324b81';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = pulse ? '#ffe887' : '#92e8ff';
+        ctx.fillRect(b.x, b.y, b.w, 1);
+        ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+        drawPixelTextCentered(ctx, btnText, b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 9);
+      }
     }
   };
 
@@ -8037,20 +8274,20 @@
     }
   };
 
-  // Cards padrões de Tutorial do Jogo em Pergaminho Estilo Owlboy (com acentuação completa)
+  // Cards padrões de Tutorial do Jogo em Pergaminho Estilo Owlboy (com acentuação completa e destaques dinâmicos)
   const StandardTutorialCards = {
     FASE1_INTRO: [
       {
         id: 'tut_drag_and_shadow_once',
         title: 'Cristais e Sombras',
         vignette: 'drag_and_shadow',
-        body: 'Arraste os cristais pelo campo. As bolinhas luminosas acima do cristal mostram seu valor: una cristais puros aos sombrios equivalentes para anulá-los!'
+        body: '{cyan:Arraste os cristais} pelo campo. As {gold:bolinhas luminosas} indicam seu valor: una {cyan:cristais puros} aos {orange:sombrios equivalentes} para {green:anulá-los}!'
       },
       {
         id: 'tut_obstacle_decay',
         title: 'Caminho Bloqueado',
         vignette: 'obstacle_decay',
-        body: 'Cada etapa concluída enfraquece a barreira de pedra do cenário até liberar a passagem!'
+        body: 'Cada etapa resolvida {cyan:enfraquece a barreira de pedra} do cenário até {green:liberar a passagem} para a próxima área!'
       }
     ],
     FASE2_OPAL: [
@@ -8058,7 +8295,7 @@
         id: 'tut_fire_opal',
         title: 'Opala de Fogo',
         vignette: 'fire_opal',
-        body: 'Ao aproximar a Opala de Fogo de um cristal, ambos tremem e subtraem 1 bolinha por vez. Afaste para parar!'
+        body: 'Ao aproximar a {gold:Opala de Fogo} de um cristal, ambos {orange:tremem} e {orange:subtraem 1 bolinha} por vez. {cyan:Afaste para parar}!'
       }
     ],
     FASE3_ROSE_AND_AURA: [
@@ -8066,7 +8303,7 @@
         id: 'tut_rose_quartz',
         title: 'Quartzo Rosa',
         vignette: 'rose_quartz',
-        body: 'Soma igual ao Quartzo Branco, mas cristais de cores diferentes não podem se fundir!'
+        body: 'O {pink:Quartzo Rosa} {cyan:soma igual} ao Quartzo Branco, mas {orange:cristais de cores diferentes não podem se fundir}!'
       }
     ],
     FASE3_EQUATION_AURA: [
@@ -8074,7 +8311,7 @@
         id: 'tut_aura_equation',
         title: 'Equação Cristalina',
         vignette: 'aura_equation',
-        body: 'Arraste cristais até a Equação Cristalina para adicioná-los, ou toque nela para expandir e organizar seu interior!'
+        body: '{cyan:Arraste cristais} para dentro da {pink:Equação Cristalina} para somá-los, ou {gold:toque nela para expandir} e {green:organizar seu interior}!'
       }
     ],
     FOREST_EMERALD: [
@@ -8082,7 +8319,7 @@
         id: 'tut_emerald_altar',
         title: 'Altar de Esmeralda',
         vignette: 'emerald_altar',
-        body: 'Aproxime um cristal puro do Altar de Esmeralda para duplicar suas bolinhas de energia uma única vez!'
+        body: 'Aproxime um {cyan:cristal puro} do {green:Altar de Esmeralda} para {gold:duplicar suas bolinhas} de energia {orange:uma única vez}!'
       }
     ],
     FOREST_CITRINE: [
@@ -8090,7 +8327,7 @@
         id: 'tut_citrine_split',
         title: 'Citrino Solar',
         vignette: 'citrine_split',
-        body: 'Toque rápido em um Citrino Solar com número par de bolinhas para dividi-lo em dois cristais iguais!'
+        body: '{gold:Toque rápido} em um {gold:Citrino Solar} com {cyan:número par} de bolinhas para {green:dividi-lo em dois} cristais iguais!'
       }
     ],
     FOREST_SLICING_NINJA: [
@@ -8098,7 +8335,7 @@
         id: 'tut_forest_ninja',
         title: 'Corte Cristalino da Floresta',
         vignette: 'forest_ninja_slice',
-        body: 'Deslize o dedo ou mouse para cortar os cristais puros no ar! Faça combos cortando múltiplos de uma vez. Cortar sombras desconta 2s do tempo!'
+        body: '{cyan:Deslize o dedo ou mouse} para {green:cortar cristais puros} no ar! Faça {gold:combos cortando múltiplos}. Cortar sombras {orange:desconta 2s}!'
       }
     ],
     RIVER_AQUA: [
@@ -8106,7 +8343,7 @@
         id: 'tut_aqua_drop',
         title: 'Água-Marinha',
         vignette: 'aqua_drop',
-        body: 'Toque rápido em uma Água-Marinha par para reparti-la ao meio, ou arraste gotas iguais para somá-las!'
+        body: '{cyan:Toque rápido} em uma {cyan:Água-Marinha par} para {green:reparti-la ao meio}, ou {gold:arraste gotas iguais} para {gold:somá-las}!'
       }
     ],
     RIVER_FRACTION_PLATFORM: [
@@ -8114,13 +8351,13 @@
         id: 'tut_river_fraction',
         title: 'Plataforma de Frações',
         vignette: 'river_fraction',
-        body: 'Arraste cristais para dentro da plataforma. Depois que entram, não podem mais sair! Iguale os valores de cima e de baixo.'
+        body: '{cyan:Arraste cristais} para dentro da plataforma. Depois que entram, {orange:não podem mais sair}! {gold:Iguale os valores} de cima e de baixo.'
       },
       {
         id: 'tut_river_divide',
         title: 'Divisão Cristalina',
         vignette: 'river_divide',
-        body: 'Quando os valores se igualarem, a fração brilhará em rosa! Clique nela para quebrar e realizar a divisão de tudo!'
+        body: 'Quando os valores se igualarem, a fração {pink:brilhará em rosa}! {green:Clique nela para quebrar} e realizar a {gold:divisão de tudo}!'
       }
     ],
     RIVER_MELODY_SIMON: [
@@ -8128,7 +8365,7 @@
         id: 'tut_river_melody',
         title: 'Sinfonia das Águas',
         vignette: 'river_melody',
-        body: 'Observe o cristal de referência por 1 segundo e acompanhe os 5 cristais flutuando na melodia. Depois, toque-os na ordem exata para harmonizar o rio!'
+        body: '{gold:Observe o cristal de referência por 1s} e acompanhe os {cyan:5 cristais flutuando}. Depois, {green:toque na ordem exata} para {green:harmonizar o rio}!'
       }
     ],
     CAATINGA_CIRCLE: [
@@ -8136,7 +8373,7 @@
         id: 'tut_caatinga_circle',
         title: 'O Círculo Elétrico',
         vignette: 'caatinga_circle',
-        body: 'Arraste 1 único cristal até o Círculo Elétrico amarelo para criar um Círculo Cristalino de pontos orbitais e anular a sombra circular!'
+        body: '{cyan:Arraste 1 único cristal} até o {gold:Círculo Elétrico} amarelo para criar uma {green:matriz circular} e {green:anular a sombra circular}!'
       }
     ],
     CAATINGA_SQUARE: [
@@ -8144,13 +8381,13 @@
         id: 'tut_caatinga_square',
         title: 'O Quadrado Elétrico',
         vignette: 'caatinga_square',
-        body: 'Todas as formas (exceto o círculo) exigem 2 cristais! Arraste os cristais diretamente para o Quadrado Elétrico — eles precisam ter o mesmo valor matemático.'
+        body: 'Todas as formas exigem {gold:2 cristais}! Arraste diretamente para o {cyan:Quadrado Elétrico} — eles precisam ter o {green:mesmo valor matemático}.'
       },
       {
         id: 'tut_caatinga_order',
         title: 'A Ordem dos Fatores',
         vignette: 'caatinga_order',
-        body: 'A ordem importa! O 1º cristal colocado no molde define a cor da borda externa e o 2º cristal define a cor do núcleo interno da forma.'
+        body: '{orange:A ordem importa}! O {cyan:1º cristal define a cor da borda externa} e o {pink:2º cristal define o núcleo interno} da forma.'
       }
     ],
     CAATINGA_RECTANGLE: [
@@ -8158,7 +8395,7 @@
         id: 'tut_caatinga_rectangle',
         title: 'O Retângulo Elétrico',
         vignette: 'caatinga_rectangle',
-        body: 'Arraste diretamente 2 cristais com quantidades diferentes para dentro do Retângulo Elétrico (1º = borda, 2º = interior)!'
+        body: 'Arraste diretamente {gold:2 cristais com quantidades diferentes} para dentro do {cyan:Retângulo Elétrico} ({cyan:1º = borda}, {pink:2º = interior})!'
       }
     ],
     CAATINGA_TRAPEZOID: [
@@ -8166,7 +8403,7 @@
         id: 'tut_caatinga_trapezoid',
         title: 'O Trapézio Elétrico',
         vignette: 'caatinga_trapezoid',
-        body: 'Arraste diretamente 2 cristais para dentro do Trapézio Elétrico (1º = borda, 2º = interior) para moldar uma matriz trapezoidal!'
+        body: 'Arraste diretamente {gold:2 cristais} para dentro do {cyan:Trapézio Elétrico} ({cyan:1º = borda}, {pink:2º = interior}) para moldar a {green:matriz trapezoidal}!'
       }
     ],
     CAATINGA_TESSELLATION: [
@@ -8174,7 +8411,7 @@
         id: 'tut_caatinga_tessellation',
         title: 'A Arte do Encaixe',
         vignette: 'caatinga_tessellation',
-        body: 'Conecte duas formas prontas para criar polígonos maiores (2 Quadrados = Retângulo, Trapézio + Triângulo = Pentágono). Arraste para desmontar!'
+        body: '{green:Conecte duas formas prontas} para criar {gold:polígonos maiores} (Quadrados = Retângulo, Trapézio + Triângulo = Pentágono). {cyan:Arraste para desmontar}!'
       }
     ],
     CAATINGA_NESTED: [
@@ -8182,7 +8419,7 @@
         id: 'tut_caatinga_nested',
         title: 'Geometria Avançada',
         vignette: 'caatinga_nested',
-        body: 'Una Triângulos em Losangos ou Hexágonos e encaixe formas dentro de Equações Cristalinas para anular sombras compostas em cascata!'
+        body: '{green:Una Triângulos em Losangos} e {cyan:encaixe formas dentro de Equações} para anular {gold:sombras compostas em cascata}!'
       }
     ],
     CAATINGA_SHELL_GAME: [
@@ -8190,7 +8427,7 @@
         id: 'tut_caatinga_shell_game',
         title: 'O Desafio das Areias',
         vignette: 'caatinga_shell_game',
-        body: 'Observe a Opala de Fogo revelada por 1 segundo sob a cúpula antes do embaralhamento! Acompanhe as trocas e toque na cúpula correta nas 6 rodadas!'
+        body: '{gold:Observe a Opala revelada por 1s} sob a cúpula antes do embaralhamento! Acompanhe as trocas e {green:toque na cúpula correta} nas {green:6 rodadas}!'
       }
     ]
   };
@@ -8216,6 +8453,10 @@
     drawPixelChar,
     drawPixelText,
     drawPixelTextCentered,
+    RICH_COLOR_MAP,
+    parseRichTokens,
+    wrapJustifiedLines,
+    drawJustifiedPixelText,
     drawParchmentBox,
     isMobileOrTouch,
     drawVirtualTouchButton,

@@ -30,7 +30,7 @@
       steps++;
     }
     while (E?.TutorialModal?.isOpen && steps < 40) {
-      E.TutorialModal.nextStep();
+      E.TutorialModal.nextStep(true);
       steps++;
     }
     return steps > 0;

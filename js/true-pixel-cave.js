@@ -3208,6 +3208,7 @@
           }
           if (TutorialModal.isOpen) {
             e.preventDefault();
+            if (typeof TutorialModal.isPageLocked === 'function' && TutorialModal.isPageLocked()) return;
             TutorialModal.nextStep();
             return;
           }
@@ -3230,6 +3231,7 @@
           if (this.phase === 'musical_vignette') {
             e.preventDefault();
             if (this.vignetteCard === 1) {
+              if (!GameHUD.godMode && this.phaseTime < 3.6) return;
               this.vignetteCard = 2;
               this.vignettePracticeTime = 0;
               CaveRhythmKaraoke.resetPractice();
@@ -3733,8 +3735,10 @@
     handleVignetteClick(x, y) {
       const cx = 24, cy = 18, cw = 272, ch = 152;
       if (this.vignetteCard === 1) {
+        const isLocked = !GameHUD.godMode && (this.phaseTime < 3.6);
         const b = { x: cx + cw - 92, y: cy + ch - 20, w: 82, h: 15 };
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          if (isLocked) return;
           GameHUD.playSfx('click');
           this.vignetteCard = 2;
           this.vignettePracticeTime = 0;
@@ -3790,21 +3794,62 @@
         const ringR = Math.round(18 * (1 - demT) + 5 * demT);
         drawRing(ctx, prevBox.x + 196, prevBox.y + 10, ringR, '#7aeaff');
 
-        let ty = cy + 68;
-        ty += drawPixelText(ctx, 'A Fada das Gemas canta o renascimento da Caverna!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 4;
-        ty += drawPixelText(ctx, '• A bolinha salta de palavra em palavra no compasso.', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
-        ty += drawPixelText(ctx, '• No fechamento do círculo, aperte ESPAÇO ou TOQUE!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
-        ty += drawPixelText(ctx, '• Em notas longas, SEGURE para sustentar!', cx + 12, ty, '#ffea31', '#000000', cw - 24, 9) + 3;
+        const vText = '{cyan:A Fada das Gemas} canta a {gold:harmonia da Caverna}!\n' +
+          '• A bolinha {green:salta de palavra em palavra} no compasso musical.\n' +
+          '• No {gold:fechamento do círculo}, aperte {cyan:ESPAÇO} ou {cyan:TOQUE}!\n' +
+          '• Em notas longas, {pink:SEGURE} para sustentar a melodia!';
+        drawJustifiedPixelText(ctx, vText, cx + 12, cy + 66, cw - 24, 11, '#ffea31', '#000000');
+
+        // Barra de progresso de leitura infantil no card 1
+        const barX = cx + 12;
+        const barY = cy + ch - 15;
+        const barW = cw - 114;
+        const barH = 5;
+        const vDuration = 3.6;
+        const ratio = Math.max(0, Math.min(1, (this.phaseTime || 0) / vDuration));
+        const isLocked = !GameHUD.godMode && ratio < 1;
+
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+        ctx.fillStyle = '#1c2438';
+        ctx.fillRect(barX, barY, barW, barH);
+
+        const fillW = Math.round(barW * ratio);
+        if (fillW > 0) {
+          ctx.fillStyle = ratio >= 1 ? '#fbbf24' : '#38bdf8';
+          ctx.fillRect(barX, barY, fillW, barH);
+          ctx.fillStyle = ratio >= 1 ? '#fff6a0' : '#a5f3fc';
+          ctx.fillRect(barX, barY, fillW, 1);
+          if (ratio < 1) {
+            P1(ctx, barX + fillW - 1, barY + 1, '#ffffff');
+            P1(ctx, barX + fillW - 1, barY + 2, '#ffffff');
+            P1(ctx, barX + fillW - 1, barY + 3, '#ffffff');
+          } else {
+            drawStar(ctx, barX + fillW - 2, barY + 2, 2, '#ffffff', '#fbbf24');
+          }
+        }
 
         const b = { x: cx + cw - 92, y: cy + ch - 20, w: 82, h: 15 };
-        ctx.fillStyle = '#14111c';
-        ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-        ctx.fillStyle = '#2b689c';
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.fillStyle = '#92e8ff';
-        ctx.fillRect(b.x, b.y, b.w, 1);
-        ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-        drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 3, '#ffffff', '#000000', b.w - 4, 8);
+        if (isLocked) {
+          ctx.fillStyle = '#0f1422';
+          ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+          ctx.fillStyle = '#1b2334';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = '#2d3b54';
+          ctx.fillRect(b.x, b.y, b.w, 1);
+          ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+          drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 4, '#6b7d9b', '#000000', b.w - 4, 8);
+        } else {
+          const pulse = (Math.floor(tq * 4) & 1) ? 1 : 0;
+          ctx.fillStyle = '#14111c';
+          ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+          ctx.fillStyle = '#2b689c';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = pulse ? '#ffe887' : '#92e8ff';
+          ctx.fillRect(b.x, b.y, b.w, 1);
+          ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+          drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 8);
+        }
       } else {
         drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#ffea31', '#000000', 160, 9);
         drawPixelText(ctx, 'Página 2/2 • Sem penalidade', cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');

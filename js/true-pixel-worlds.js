@@ -7261,6 +7261,7 @@
           }
           if (TutorialModal.isOpen) {
             e.preventDefault();
+            if (typeof TutorialModal.isPageLocked === 'function' && TutorialModal.isPageLocked()) return;
             TutorialModal.nextStep();
             return;
           }

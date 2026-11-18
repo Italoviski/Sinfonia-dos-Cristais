@@ -236,7 +236,8 @@ test('CaveChapter1: vinheta da Fase 5 (Cards 1 e 2), transição para música e 
   assert.equal(Cave.vignetteCard, 1, 'Deve abrir no Card 1 (Apresentação)');
 
   // 2. Avança Card 1 para Card 2 (Modo Prática Interativa)
-  // Clica no botão central inferior do Card 1 (x: 240, y: 155)
+  // Clica no botão central inferior do Card 1 (x: 240, y: 155) após tempo de leitura
+  Cave.phaseTime = 4.0;
   Cave.handleVignetteClick(240, 155);
   assert.equal(Cave.vignetteCard, 2, 'Deve avançar para Card 2 (Treino Interativo)');
   assert.equal(Cave.vignettePracticeTime, 0, 'Tempo de treino deve iniciar em 0');
@@ -288,7 +289,8 @@ test('CaveChapter1: vinheta Card 1 e Card 2 com zero sobreposição de texto e b
   Cave.startFase5();
   assert.equal(Cave.vignetteCard, 1);
 
-  // Card 1 -> Card 2
+  // Card 1 -> Card 2 após tempo de leitura
+  Cave.phaseTime = 4.0;
   Cave.handleVignetteClick(240, 155);
   assert.equal(Cave.vignetteCard, 2);
 
