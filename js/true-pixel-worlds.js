@@ -2341,6 +2341,7 @@
     equationPointer: null,
     magneticAnim: null,
     equationShockEffect: null,
+    ghostHandAnim: null,
     opalDrainTimer: 0,
     opalStepInterval: 0.42,
     shards: [],
@@ -2540,6 +2541,7 @@
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
       GameHUD.guideOpen = false;
+      GameHUD.onUseAbility1 = () => this.triggerGhostHandHint();
       if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
@@ -2604,6 +2606,7 @@
       this.forestNinja = null;
       this.fractionPlatform = null;
       this.equationShockEffect = null;
+      this.ghostHandAnim = null;
       this.camPanY = (this.worldKey === 'caatinga' && this.currentLevel === 1) ? -14 : 0;
       this.emeraldAltar = null;
       this.pureEquation = null;
@@ -2664,6 +2667,7 @@
       this.equationPointer = null;
       this.magneticAnim = null;
       this.equationShockEffect = null;
+      this.ghostHandAnim = null;
       this.clearTrembleStates();
       this.shards = [];
       this.waveActive = false;
@@ -2750,6 +2754,7 @@
       this.opalDrainTimer = 0;
       this.magneticAnim = null;
       this.equationShockEffect = null;
+      this.ghostHandAnim = null;
       this.selectedPiece = null;
       this.tessellationPreview = null;
       this.tutorialHighlightId = stepDef.tutorialHighlightId || null;
@@ -4107,6 +4112,211 @@
           p.inEquation = null;
         }
       }
+    },
+
+    /** Calcula o próximo passo válido na fase atual dos Mundos 2–5 sem alterar nenhum cristal real. */
+    computeNextGhostStep() {
+      const active = (this.pieces || []).filter((p) => !p.broken && p.value > 0);
+      if (active.length === 0 && !(this.fractionPlatform && !this.fractionPlatform.broken)) return null;
+
+      const visType = (p) => (p.type === 'opal' ? 'opal' : (p.shadow ? 'shadow' : (p.type === 'white' ? 'pure' : p.type)));
+      const dragHint = (src, tx, ty, label) => ({
+        kind: 'drag',
+        fromX: src.x,
+        fromY: src.y,
+        toX: tx,
+        toY: ty,
+        pieceId: src.id,
+        pieceType: visType(src),
+        pieceValue: src.value,
+        pieceShape: src.shape || null,
+        label
+      });
+      const tapHint = (x, y, pieceId, pieceType, pieceValue, label) => ({
+        kind: 'tap',
+        fromX: x,
+        fromY: y,
+        toX: x,
+        toY: y,
+        pieceId: pieceId || null,
+        pieceType: pieceType || 'pure',
+        pieceValue: pieceValue || 1,
+        label
+      });
+
+      // 1. Plataforma de Fração pronta para dividir ao meio
+      const fp = this.fractionPlatform;
+      if (fp && !fp.broken && fp.glowing) {
+        return tapHint(fp.x, fp.y, null, 'aqua', fp.resultValue || 1, 'Toque para dividir!');
+      }
+
+      const canManipulatePure = (p) => (
+        !p.shadow &&
+        !p.inFraction &&
+        !p.inMoldId &&
+        (!p.inEquation || !this.pureEquation || this.pureEquation.expanded)
+      );
+      const freePure = active.filter((p) => !p.shadow && !p.inEquation && !p.inFraction && !p.inMoldId);
+      const freeShadow = active.filter((p) => p.shadow && !p.inEquation);
+
+      // 2. Anulação direta entre cristal puro manipulável e sombrio livre compatível
+      for (const p of active) {
+        if (!canManipulatePure(p)) continue;
+        for (const s of freeShadow) {
+          if (this.isCompatibleShadowTarget(p, s, s.x, s.y)) {
+            return dragHint(p, s.x, s.y, 'Anular cristais!');
+          }
+        }
+      }
+
+      // 3. Preencher Plataforma de Fração ainda não equilibrada
+      if (fp && !fp.broken && !fp.glowing) {
+        const fracCandidate = freePure.find((p) => !p.shape && p.type !== 'opal');
+        if (fracCandidate) {
+          const destY = (fp.topSum === 0 || fp.topSum < fp.bottomSum) ? fp.topY : fp.bottomY;
+          return dragHint(fracCandidate, fp.x, destY, 'Preencher fração!');
+        }
+      }
+
+      // 4. Tesselação entre formas geométricas já esculpidas
+      const shapedPure = freePure.filter((p) => Boolean(p.shape));
+      for (let i = 0; i < shapedPure.length; i++) {
+        for (let j = i + 1; j < shapedPure.length; j++) {
+          if (typeof this.getTessellationMatch === 'function' && this.getTessellationMatch(shapedPure[i], shapedPure[j])) {
+            return dragHint(shapedPure[j], shapedPure[i].x, shapedPure[i].y, 'Unir formas!');
+          }
+        }
+      }
+
+      // 5. Moldes Elétricos da Caatinga
+      const openMolds = (this.electricShapes || []).filter((es) => !es.used);
+      if (openMolds.length > 0) {
+        const unshapedFree = freePure.filter((p) => !p.shape);
+        for (const es of openMolds) {
+          let candidate = null;
+          if (es.firstPieceId) {
+            if (es.shape === 'square') {
+              candidate = unshapedFree.find((p) => p.value === es.firstValue);
+            } else if (es.shape === 'rectangle') {
+              candidate = unshapedFree.find((p) => p.value !== es.firstValue);
+            } else {
+              candidate = unshapedFree[0];
+            }
+          } else {
+            // Prioriza cristal que já casa diretamente com um sombrio dessa forma ou valor
+            candidate = unshapedFree.find((p) => freeShadow.some((s) => s.shape === es.shape && s.value === p.value)) || unshapedFree[0];
+          }
+          if (candidate) {
+            return dragHint(candidate, es.x, es.y, 'Encaixar no molde!');
+          }
+        }
+      }
+
+      // 6. Citrino / Água-Marinha par divisível por toque
+      const splitCandidate = freePure.find((p) => (
+        !p.shape &&
+        (p.type === 'citrine' || p.type === 'aqua') &&
+        p.value >= 2 &&
+        p.value % 2 === 0 &&
+        !freeShadow.some((s) => !s.shape && s.type === p.type && s.value === p.value)
+      ));
+      if (splitCandidate) {
+        return tapHint(splitCandidate.x, splitCandidate.y, splitCandidate.id, visType(splitCandidate), splitCandidate.value, 'Toque para dividir!');
+      }
+
+      // 7. Altar Esmeralda (multiplicação x2)
+      if (this.emeraldAltar) {
+        const freeQuartz = freePure.filter((p) => !p.shape && p.type !== 'opal' && !p.boosted);
+        const altarTarget = freeQuartz.find((p) => freeShadow.some((s) => s.type === p.type && s.value === p.value * 2)) || freeQuartz[0];
+        if (altarTarget) {
+          return dragHint(altarTarget, this.emeraldAltar.x, this.emeraldAltar.y, 'Multiplicar no altar!');
+        }
+      }
+
+      // 8. Opala livre subtraindo cristal livre
+      const freeOpals = freePure.filter((p) => !p.shape && p.type === 'opal');
+      const freeNonOpals = freePure.filter((p) => !p.shape && p.type !== 'opal');
+      if (freeOpals.length > 0 && freeNonOpals.length > 0) {
+        const target = freeNonOpals.find((q) => freeShadow.some((s) => s.type === q.type && q.value > s.value)) ||
+          freeNonOpals.find((q) => q.value >= 2) ||
+          freeNonOpals[0];
+        return dragHint(freeOpals[0], target.x, target.y, 'Subtrair com Opala!');
+      }
+
+      // 9. Equação Cristalina
+      if (this.pureEquation && !this.pureEquation.broken && this.shadowEquation && !this.shadowEquation.broken) {
+        const pureEq = active.filter((p) => !p.shadow && p.inEquation === 'pure');
+        const shadowEq = active.filter((p) => p.shadow && p.inEquation === 'shadow');
+        const sumByType = (arr, t) => arr.filter((p) => p.type === t).reduce((s, p) => s + p.value, 0);
+
+        const freeForEq = freePure.find((p) => {
+          if (p.shape) return false;
+          if (p.type === 'opal') return freeShadow.length === 0;
+          return !freeShadow.some((s) => s.type === p.type) && sumByType(pureEq, p.type) < sumByType(shadowEq, p.type);
+        });
+        if (freeForEq) {
+          return dragHint(freeForEq, this.pureEquation.x, this.pureEquation.y, 'Colocar na equação!');
+        }
+
+        if (!this.pureEquation.expanded) {
+          return tapHint(this.pureEquation.x, this.pureEquation.y, null, 'pure', 1, 'Toque para expandir!');
+        }
+
+        const eqOpals = pureEq.filter((p) => p.type === 'opal');
+        const eqQuartz = pureEq.filter((p) => p.type !== 'opal');
+        if (eqOpals.length > 0 && eqQuartz.length > 0) {
+          const target = eqQuartz.find((q) => sumByType(pureEq, q.type) > sumByType(shadowEq, q.type)) || eqQuartz[0];
+          return dragHint(eqOpals[0], target.x, target.y, 'Subtrair na equação!');
+        }
+        for (let i = 0; i < eqQuartz.length; i++) {
+          for (let j = i + 1; j < eqQuartz.length; j++) {
+            if (eqQuartz[i].type === eqQuartz[j].type && (eqQuartz[i].value + eqQuartz[j].value) <= 6) {
+              return dragHint(eqQuartz[i], eqQuartz[j].x, eqQuartz[j].y, 'Somar na equação!');
+            }
+          }
+        }
+      }
+
+      // 10. Fusão de puros da mesma cor ou fallback para Citrino/Água par restante
+      for (let i = 0; i < freeNonOpals.length; i++) {
+        for (let j = i + 1; j < freeNonOpals.length; j++) {
+          const a = freeNonOpals[i], b = freeNonOpals[j];
+          if (a.type === b.type && (a.value + b.value) <= 6) {
+            return dragHint(a, b.x, b.y, 'Fundir cristais!');
+          }
+        }
+      }
+      const anySplit = freePure.find((p) => !p.shape && (p.type === 'citrine' || p.type === 'aqua') && p.value >= 2 && p.value % 2 === 0);
+      if (anySplit) {
+        return tapHint(anySplit.x, anySplit.y, anySplit.id, visType(anySplit), anySplit.value, 'Toque para dividir!');
+      }
+      if (freePure.length > 0 && freeShadow.length > 0) {
+        return dragHint(freePure[0], freeShadow[0].x, freeShadow[0].y, 'Mover cristal!');
+      }
+      return null;
+    },
+
+    /** Dispara a animação fantasma de dica do próximo passo nos Mundos 2–5 sem mutar peças reais. */
+    triggerGhostHandHint() {
+      if (
+        this.phase !== 'gameplay' ||
+        TutorialModal.isOpen ||
+        DialogueBox.isOpen ||
+        this.forestNinja ||
+        this.riverMelody ||
+        this.shellGame
+      ) {
+        return false;
+      }
+      const step = this.computeNextGhostStep();
+      if (!step) return false;
+      this.ghostHandAnim = {
+        ...step,
+        t: 0,
+        duration: step.kind === 'tap' ? 1.8 : 2.2
+      };
+      GameHUD.playSfx('Select');
+      return true;
     },
 
     updateFractionPlatformState() {
@@ -7377,6 +7587,12 @@
           this.equationShockEffect = null;
         }
       }
+      if (this.ghostHandAnim) {
+        this.ghostHandAnim.t += dt;
+        if (this.ghostHandAnim.t >= (this.ghostHandAnim.duration || 2.2)) {
+          this.ghostHandAnim = null;
+        }
+      }
       if (this.regularAudio && !this.regularAudio.paused) {
         global.CrystalAudio?.checkSeamlessLoop?.(this.regularAudio);
       }
@@ -7928,6 +8144,10 @@
       }
 
       DialogueBox.render(ctx, tq);
+      if (this.phase === 'gameplay' && this.ghostHandAnim && typeof E.drawGhostHandHint === 'function') {
+        E.drawGhostHandHint(ctx, this.ghostHandAnim, tq);
+      }
+
       TutorialModal.render(ctx, tq);
 
       if (this.phase === 'celebrate_complete') {

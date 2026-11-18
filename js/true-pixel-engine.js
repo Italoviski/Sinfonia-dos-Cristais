@@ -7096,6 +7096,175 @@
     P1(ctx, x - 1, y - 1, '#ffffff');
   }
 
+  const GHOST_CRYSTAL_MAP = {
+    pure:    { spr: SPR_PURE,    orb: '#a8d8e6', rim: '#294c66' },
+    white:   { spr: SPR_PURE,    orb: '#a8d8e6', rim: '#294c66' },
+    shadow:  { spr: SPR_SHADOW,  orb: '#b8a6d9', rim: '#1a122b' },
+    dark:    { spr: SPR_SHADOW,  orb: '#b8a6d9', rim: '#1a122b' },
+    opal:    { spr: SPR_OPAL,    orb: '#f7c97e', rim: '#541812' },
+    rose:    { spr: SPR_ROSE,    orb: '#fff2f5', rim: '#59223b' },
+    pink:    { spr: SPR_ROSE,    orb: '#fff2f5', rim: '#59223b' },
+    emerald: { spr: SPR_EMERALD, orb: '#8ed46a', rim: '#193d20' },
+    citrine: { spr: SPR_CITRINE, orb: '#f7dc7e', rim: '#52300a' },
+    aqua:    { spr: SPR_AQUA,    orb: '#a8f0f0', rim: '#123b45' }
+  };
+
+  const SPR_GHOST_HAND_OPEN = fromMap([
+    '..oo.......',
+    '.oWLo......',
+    '.oLMo.oo...',
+    '.oLMooLLo..',
+    '..oLLLMMo..',
+    'ooLLLLMMDo.',
+    'oWLLLMMMMo.',
+    'oLLLMMMMDo.',
+    '.oLLMMMMDo.',
+    '..oMMMMDo..',
+    '...oMDDo...',
+    '....ooo....'
+  ], { o: '#3b0764', W: '#ffffff', L: '#f3e8ff', M: '#c084fc', D: '#a855f7' });
+
+  const SPR_GHOST_HAND_PRESS = fromMap([
+    '...........',
+    '..oo.......',
+    '.oWLo.oo...',
+    '.oLMooLLo..',
+    '.oLLLMMMo..',
+    '.oWLLLMMDo.',
+    '.oLLLMMMMo.',
+    '..oLLMMMDo.',
+    '...oMMMDo..',
+    '...oMMDo...',
+    '....ooo....',
+    '...........'
+  ], { o: '#3b0764', W: '#ffffff', L: '#f3e8ff', M: '#c084fc', D: '#a855f7' });
+
+  /** Renderiza a dica visual translúcida da Mão Fantasma (Visão do Próximo Passo). */
+  function drawGhostHandHint(ctx, anim, t = 0) {
+    if (!ctx || !anim) return;
+    const dur = Math.max(0.2, anim.duration || (anim.kind === 'tap' ? 1.8 : 2.2));
+    const p = clamp((anim.t || 0) / dur, 0, 1);
+    if (p >= 1) return;
+
+    const fadeIn = p < 0.14 ? p / 0.14 : 1;
+    const fadeOut = p > 0.84 ? (1 - p) / 0.16 : 1;
+    const masterAlpha = clamp(fadeIn * fadeOut * 0.78, 0.05, 0.78);
+
+    const fromX = anim.fromX ?? 160;
+    const fromY = anim.fromY ?? 100;
+    const toX = anim.toX ?? fromX;
+    const toY = anim.toY ?? fromY;
+
+    ctx.save();
+    try {
+      if (anim.kind === 'tap') {
+        const tap1 = p >= 0.24 && p <= 0.44;
+        const tap2 = p >= 0.54 && p <= 0.74;
+        const pressing = tap1 || tap2;
+        const bob = pressing ? 1 : Math.round(Math.sin(t * 7) * 1.5);
+
+        ctx.globalAlpha = masterAlpha * 0.72;
+        const pulseR = 9 + Math.round(((p * 3) % 1) * 9);
+        drawRing(ctx, R(fromX), R(fromY), pulseR, '#e040fb');
+        if (pressing) {
+          drawRing(ctx, R(fromX), R(fromY), 6, '#f3e8ff');
+          drawStar(ctx, R(fromX + 9), R(fromY - 8), 2, '#ffffff', '#e040fb');
+        }
+
+        ctx.globalAlpha = masterAlpha * 0.92;
+        const handSpr = pressing ? SPR_GHOST_HAND_PRESS : SPR_GHOST_HAND_OPEN;
+        ctx.drawImage(handSpr, R(fromX - 2), R(fromY - 1 + bob));
+      } else {
+        // Animação de arrasto fantasma: aproximar -> segurar -> arco até destino -> soltar
+        const dots = 9;
+        ctx.globalAlpha = masterAlpha * 0.65;
+        for (let i = 1; i < dots; i++) {
+          const u = i / dots;
+          const arcY = -Math.sin(u * Math.PI) * 14;
+          const dx = R(fromX + (toX - fromX) * u);
+          const dy = R(fromY + (toY - fromY) * u + arcY);
+          ctx.fillStyle = (i % 2 === 0) ? '#f3e8ff' : '#c084fc';
+          ctx.fillRect(dx, dy, 1, 1);
+        }
+
+        const targetPulse = 8 + Math.round(Math.sin(t * 8) * 1.5);
+        drawRing(ctx, R(toX), R(toY), targetPulse, '#e040fb');
+
+        let cx = fromX, cy = fromY;
+        let hx = fromX, hy = fromY;
+        let pressing = false;
+        let showGhostCrystal = false;
+
+        if (p < 0.22) {
+          const u = easeInOut(p / 0.22);
+          hx = fromX + (1 - u) * 10;
+          hy = fromY + (1 - u) * 10;
+        } else if (p < 0.34) {
+          pressing = true;
+          showGhostCrystal = true;
+          ctx.globalAlpha = masterAlpha * 0.8;
+          drawRing(ctx, R(fromX), R(fromY), 9, '#f3e8ff');
+        } else if (p < 0.82) {
+          pressing = true;
+          showGhostCrystal = true;
+          const u = easeInOut((p - 0.34) / 0.48);
+          const arcY = -Math.sin(u * Math.PI) * 14;
+          cx = fromX + (toX - fromX) * u;
+          cy = fromY + (toY - fromY) * u + arcY;
+          hx = cx;
+          hy = cy;
+        } else {
+          showGhostCrystal = true;
+          cx = toX;
+          cy = toY;
+          hx = toX + 3;
+          hy = toY + 3;
+          ctx.globalAlpha = masterAlpha * 0.85;
+          drawRing(ctx, R(toX), R(toY), 11, '#fbbf24');
+          drawStar(ctx, R(toX + 8), R(toY - 8), 3, '#ffffff', '#e040fb');
+        }
+
+        if (showGhostCrystal && anim.pieceType) {
+          const style = GHOST_CRYSTAL_MAP[anim.pieceType] || GHOST_CRYSTAL_MAP.pure;
+          ctx.globalAlpha = masterAlpha * 0.72;
+          ctx.drawImage(style.spr, R(cx - 6), R(cy - 7));
+          const valCount = clamp(Math.abs(Math.round(anim.pieceValue || 1)), 1, 6);
+          const spacing = valCount > 3 ? 4 : 5;
+          const startOx = -((valCount - 1) * spacing) / 2;
+          for (let i = 0; i < valCount; i++) {
+            drawMiniOrb(ctx, R(cx + startOx + i * spacing), R(cy - 10), style.orb, style.rim);
+          }
+        }
+
+        ctx.globalAlpha = masterAlpha * 0.92;
+        const handSpr = pressing ? SPR_GHOST_HAND_PRESS : SPR_GHOST_HAND_OPEN;
+        ctx.drawImage(handSpr, R(hx - 2), R(hy - 1));
+      }
+
+      if (anim.label) {
+        const textW = measurePixelText(anim.label, 9);
+        const pillW = Math.min(200, Math.max(48, textW + 14));
+        const midX = R(clamp((fromX + toX) * 0.5, pillW * 0.5 + 8, W - pillW * 0.5 - 8));
+        const topCandidate = Math.min(fromY, toY) - 24;
+        const rawY = topCandidate >= 42 ? topCandidate : Math.max(fromY, toY) + 15;
+        const pillY = R(clamp(rawY, 42, H - 20));
+        const px = R(midX - pillW / 2);
+
+        ctx.globalAlpha = masterAlpha * 0.88;
+        ctx.fillStyle = '#1e1133';
+        ctx.fillRect(px, pillY, pillW, 13);
+        ctx.fillStyle = '#c084fc';
+        ctx.fillRect(px, pillY, pillW, 1);
+        ctx.fillRect(px, pillY + 12, pillW, 1);
+        ctx.fillRect(px, pillY, 1, 13);
+        ctx.fillRect(px + pillW - 1, pillY, 1, 13);
+        drawPixelTextCentered(ctx, anim.label, midX, pillY + 3, '#f3e8ff', '#1e1133', pillW - 6, 9);
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
   const TutorialModal = {
     isOpen: false,
     cards: [],
@@ -9283,6 +9452,7 @@
     wrapJustifiedLines,
     drawJustifiedPixelText,
     drawParchmentBox,
+    drawGhostHandHint,
     isMobileOrTouch,
     drawVirtualTouchButton,
     SpriteBank,

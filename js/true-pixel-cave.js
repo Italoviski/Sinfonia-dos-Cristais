@@ -2663,6 +2663,7 @@
     equationPointer: null,
     magneticAnim: null,
     equationShockEffect: null,
+    ghostHandAnim: null,
 
     opalDrainTimer: 0,
     opalStepInterval: 0.55,
@@ -2846,6 +2847,7 @@
       GameHUD.paused = false;
       GameHUD.settingsOpen = false;
       GameHUD.guideOpen = false;
+      GameHUD.onUseAbility1 = () => this.triggerGhostHandHint();
       if (typeof GameHUD.resetAbilityCharges === 'function') GameHUD.resetAbilityCharges();
       GameHUD.syncAudio();
     },
@@ -2862,6 +2864,7 @@
       this.equationPointer = null;
       this.magneticAnim = null;
       this.equationShockEffect = null;
+      this.ghostHandAnim = null;
       this.clearTrembleStates();
       this.shards = [];
       this.cushionAlpha = 0;
@@ -4292,6 +4295,7 @@
       this.shadowEquation = null;
       this.magneticAnim = null;
       this.equationShockEffect = null;
+      this.ghostHandAnim = null;
 
       if (level === 1) {
         this.totalSteps = 1;
@@ -4399,6 +4403,136 @@
           this.layoutEquationPieces(this.shadowEquation, 'shadow');
         }
       }
+    },
+
+    /** Calcula o próximo passo válido da fase atual sem alterar nenhum cristal real. */
+    computeNextGhostStep() {
+      const active = (this.pieces || []).filter(p => !p.broken && p.value > 0);
+      if (active.length === 0) return null;
+
+      const visType = (p) => (p.type === 'opal' ? 'opal' : (p.shadow ? 'shadow' : (p.type === 'white' ? 'pure' : p.type)));
+      const dragHint = (src, dst, label) => ({
+        kind: 'drag',
+        fromX: src.x,
+        fromY: src.y,
+        toX: dst.x,
+        toY: dst.y,
+        pieceId: src.id,
+        pieceType: visType(src),
+        pieceValue: src.value,
+        label
+      });
+
+      const freePure = active.filter(p => !p.shadow && !p.inEquation);
+      const freeShadow = active.filter(p => p.shadow && !p.inEquation);
+      const freeQuartz = freePure.filter(p => p.type !== 'opal');
+      const freeOpals = freePure.filter(p => p.type === 'opal');
+
+      // 1. Anulação direta: puro livre + sombrio livre compatível
+      for (const p of freeQuartz) {
+        const match = freeShadow.find(s => s.type === p.type && s.value === p.value);
+        if (match) return dragHint(p, match, 'Anular cristais!');
+      }
+
+      // 2. Soma de dois puros livres da mesma cor que já iguala um sombrio livre
+      for (let i = 0; i < freeQuartz.length; i++) {
+        for (let j = i + 1; j < freeQuartz.length; j++) {
+          const a = freeQuartz[i], b = freeQuartz[j];
+          if (a.type === b.type && freeShadow.some(s => s.type === a.type && s.value === a.value + b.value)) {
+            return dragHint(a, b, 'Fundir cristais!');
+          }
+        }
+      }
+
+      // 3. Opala livre subtraindo cristal livre
+      if (freeOpals.length > 0 && freeQuartz.length > 0) {
+        const opal = freeOpals[0];
+        let target = freeQuartz.find(q => freeShadow.some(s => s.type === q.type && q.value > s.value));
+        if (!target) target = freeQuartz.find(q => q.value >= 2) || freeQuartz[0];
+        if (target) return dragHint(opal, target, 'Subtrair com Opala!');
+      }
+
+      // 4. Equação Cristalina (Fases 3 e 4)
+      if (this.pureEquation && !this.pureEquation.broken && this.shadowEquation && !this.shadowEquation.broken) {
+        const pureEq = active.filter(p => !p.shadow && p.inEquation === 'pure');
+        const shadowEq = active.filter(p => p.shadow && p.inEquation === 'shadow');
+        const sumByType = (arr, t) => arr.filter(p => p.type === t).reduce((s, p) => s + p.value, 0);
+
+        const freeExtra = freePure.find(p => {
+          if (p.type === 'opal') return freeShadow.length === 0 || pureEq.length > 0;
+          return !freeShadow.some(s => s.type === p.type) && sumByType(pureEq, p.type) < sumByType(shadowEq, p.type);
+        });
+        if (freeExtra && (freeShadow.length === 0 || !freeQuartz.some(q => freeShadow.some(s => s.type === q.type)))) {
+          return {
+            kind: 'drag',
+            fromX: freeExtra.x,
+            fromY: freeExtra.y,
+            toX: this.pureEquation.x,
+            toY: this.pureEquation.y,
+            pieceId: freeExtra.id,
+            pieceType: visType(freeExtra),
+            pieceValue: freeExtra.value,
+            label: 'Colocar na equação!'
+          };
+        }
+
+        if (!this.pureEquation.expanded) {
+          return {
+            kind: 'tap',
+            fromX: this.pureEquation.x,
+            fromY: this.pureEquation.y,
+            toX: this.pureEquation.x,
+            toY: this.pureEquation.y,
+            pieceId: null,
+            pieceType: 'pure',
+            pieceValue: 1,
+            label: 'Toque para expandir!'
+          };
+        }
+
+        const eqOpals = pureEq.filter(p => p.type === 'opal');
+        const eqQuartz = pureEq.filter(p => p.type !== 'opal');
+        if (eqOpals.length > 0 && eqQuartz.length > 0) {
+          const opal = eqOpals[0];
+          const target = eqQuartz.find(q => sumByType(pureEq, q.type) > sumByType(shadowEq, q.type)) || eqQuartz[0];
+          return dragHint(opal, target, 'Subtrair na equação!');
+        }
+
+        for (let i = 0; i < eqQuartz.length; i++) {
+          for (let j = i + 1; j < eqQuartz.length; j++) {
+            if (eqQuartz[i].type === eqQuartz[j].type) {
+              return dragHint(eqQuartz[i], eqQuartz[j], 'Somar na equação!');
+            }
+          }
+        }
+      }
+
+      // 5. Fallback: fundir dois puros livres da mesma cor ou mover puro até sombrio
+      for (let i = 0; i < freeQuartz.length; i++) {
+        for (let j = i + 1; j < freeQuartz.length; j++) {
+          if (freeQuartz[i].type === freeQuartz[j].type) {
+            return dragHint(freeQuartz[i], freeQuartz[j], 'Fundir cristais!');
+          }
+        }
+      }
+      if (freePure.length > 0 && freeShadow.length > 0) {
+        return dragHint(freePure[0], freeShadow[0], 'Mover cristal!');
+      }
+      return null;
+    },
+
+    /** Dispara a animação fantasma de dica do próximo passo sem mutar peças reais. */
+    triggerGhostHandHint() {
+      if (this.phase !== 'gameplay' || TutorialModal.isOpen || DialogueBox.isOpen) return false;
+      const step = this.computeNextGhostStep();
+      if (!step) return false;
+      this.ghostHandAnim = {
+        ...step,
+        t: 0,
+        duration: step.kind === 'tap' ? 1.8 : 2.2
+      };
+      GameHUD.playSfx('Select');
+      return true;
     },
 
     spawnShatter(cx, cy, setKey, count = 12) {
@@ -4893,6 +5027,12 @@
         this.equationShockEffect.elapsed += dt;
         if (this.equationShockEffect.elapsed >= this.equationShockEffect.duration) {
           this.equationShockEffect = null;
+        }
+      }
+      if (this.ghostHandAnim) {
+        this.ghostHandAnim.t += dt;
+        if (this.ghostHandAnim.t >= (this.ghostHandAnim.duration || 2.2)) {
+          this.ghostHandAnim = null;
         }
       }
       if (this.regularAudio && !this.regularAudio.paused) {
@@ -5581,6 +5721,10 @@
 
       if (this.phase === 'musical_vignette') {
         this.renderMusicalVignette(ctx, tq);
+      }
+
+      if (this.phase === 'gameplay' && this.ghostHandAnim && typeof E.drawGhostHandHint === 'function') {
+        E.drawGhostHandHint(ctx, this.ghostHandAnim, tq);
       }
 
       DialogueBox.render(ctx, tq);
