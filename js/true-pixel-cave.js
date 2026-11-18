@@ -3109,6 +3109,11 @@
         if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
 
+        if (TutorialModal.isOpen && typeof TutorialModal.handlePointerMove === 'function') {
+          TutorialModal.handlePointerMove(x, y);
+          return;
+        }
+
         if (this.draggedPiece) {
           if (this.phase !== 'gameplay' || this.draggedPiece.broken || this.draggedPiece.value <= 0) {
             this.draggedPiece.dragging = false;
@@ -3144,6 +3149,11 @@
 
       const onUp = () => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
+
+        if (TutorialModal.isOpen && typeof TutorialModal.handlePointerUp === 'function') {
+          TutorialModal.handlePointerUp(0, 0);
+          return;
+        }
 
         if (this.isHoldingSpace) {
           this.isHoldingSpace = false;
@@ -3764,6 +3774,25 @@
       }
     },
 
+    getRhythmDemoInputState(pt) {
+      const words = CaveRhythmKaraoke.practicePhrase?.words || [
+        { t: 0.8 },
+        { t: 1.8 },
+        { t: 2.8 },
+        { t: 3.8, holdDuration: 1.4 }
+      ];
+      const holdWord = words[3];
+      const holdStart = holdWord ? (holdWord.t - 0.08) : 3.72;
+      const holdEnd = holdWord ? (holdWord.t + (holdWord.holdDuration || 1.4)) : 5.2;
+      const isHold = pt >= holdStart && pt <= holdEnd;
+      const isBeat = !isHold && words.some((w, idx) => idx < 3 && Math.abs(pt - w.t) <= 0.22);
+      const pressed = isBeat || isHold;
+      const label = isHold
+        ? 'SEGURE AGORA!'
+        : (isBeat ? 'APERTE AGORA!' : 'Observe o círculo fechar...');
+      return { isBeat, isHold, pressed, label };
+    },
+
     renderMusicalVignette(ctx, tq) {
       ctx.fillStyle = 'rgba(10, 8, 6, 0.65)';
       ctx.fillRect(0, 20, W, H - 20);
@@ -3863,15 +3892,65 @@
           ctx,
           'Aperte ESPAÇO / Botão ao fechar o círculo e SEGURE em "harmonia!"',
           cx + cw / 2,
-          cy + 78,
+          cy + 75,
           '#ffea31',
           '#000000',
           cw - 20,
           9
         );
 
-        if (typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch() && typeof E.drawVirtualTouchButton === 'function') {
-          E.drawVirtualTouchButton(ctx, { x: cx + R((cw - 108) / 2), y: cy + 94, w: 108, h: 18 }, '⎵ ESPAÇO / SEGURAR', Boolean(this.isHoldingSpace));
+        const demo = this.getRhythmDemoInputState(this.vignettePracticeTime);
+        const activeCol = demo.isHold ? '#fbbf24' : (demo.isBeat ? '#4ade80' : '#92e8ff');
+        const isMob = typeof E.isMobileOrTouch === 'function' && E.isMobileOrTouch();
+
+        if (isMob && typeof E.drawVirtualTouchButton === 'function') {
+          const btnRect = { x: cx + R((cw - 116) / 2) - 18, y: cy + 92, w: 116, h: 18 };
+          const btnText = demo.isHold ? '⎵ SEGURE!' : (demo.isBeat ? '⎵ APERTE!' : '⎵ ESPAÇO / SEGURAR');
+          E.drawVirtualTouchButton(ctx, btnRect, btnText, Boolean(this.isHoldingSpace || demo.pressed));
+
+          // Mãozinha pixel art animada pressionando o botão no tempo certo
+          const hx = btnRect.x + btnRect.w - 18;
+          const hy = btnRect.y + (demo.pressed ? 8 : 3);
+          if (demo.pressed) {
+            drawRing(ctx, hx + 2, btnRect.y + 9, demo.isHold ? 11 : 8, activeCol);
+          }
+          ctx.fillStyle = '#241510';
+          ctx.fillRect(hx - 1, hy - 1, 9, 10);
+          ctx.fillStyle = '#ffdbac';
+          ctx.fillRect(hx, hy, 7, 8);
+          ctx.fillRect(hx + 2, hy - 3, 2, 3); // dedo indicador pressionando
+          drawPixelText(ctx, demo.isHold ? 'SEGURE!' : (demo.isBeat ? 'TOQUE!' : 'NO RITMO'), btnRect.x + btnRect.w + 6, cy + 97, activeCol, '#000000', 54, 8);
+        } else {
+          // Demonstração no PC: Tecla [ ESPAÇO ] + Mouse sendo pressionados em sincronia
+          const kx = cx + 16;
+          const ky = cy + 91 + (demo.pressed ? 2 : 0);
+          const kw = 66, kh = 15;
+          // Base 3D da tecla
+          ctx.fillStyle = '#0f1422';
+          ctx.fillRect(kx - 1, cy + 91, kw + 2, kh + 3);
+          ctx.fillStyle = demo.pressed ? (demo.isHold ? '#b45309' : '#15803d') : '#2a3654';
+          ctx.fillRect(kx, ky, kw, kh);
+          ctx.fillStyle = demo.pressed ? activeCol : '#92e8ff';
+          ctx.fillRect(kx, ky, kw, 1);
+          ctx.fillRect(kx, ky + kh - 1, kw, 1);
+          drawPixelTextCentered(ctx, 'ESPAÇO', kx + kw / 2, ky + 4, '#ffffff', '#000000', kw - 4, 8);
+
+          // Ícone do Mouse com botão esquerdo destacando no clique/hold
+          const mx = cx + 90;
+          const my = cy + 89 + (demo.pressed ? 1 : 0);
+          ctx.fillStyle = '#14192b';
+          ctx.fillRect(mx - 1, my - 1, 16, 20);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(mx, my, 14, 18);
+          ctx.fillStyle = demo.pressed ? activeCol : '#64748b';
+          ctx.fillRect(mx + 1, my + 1, 5, 7); // botão esquerdo
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(mx + 8, my + 1, 5, 7); // botão direito
+          if (demo.pressed) {
+            drawRing(ctx, mx + 3, my + 4, demo.isHold ? 9 : 7, activeCol);
+          }
+
+          drawPixelText(ctx, demo.label, cx + 114, cy + 95, activeCol, '#000000', cw - 126, 9);
         }
 
         const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
@@ -4237,6 +4316,7 @@
             { id: 'f2_e3_op3', type: 'opal', value: 3, shadow: false, x: 116, y: 118 },
             { id: 'f2_e3_s2', type: 'white', value: 2, shadow: true, x: 212, y: 96 }
           ];
+          TutorialModal.open(StandardTutorialCards.FASE2_LEFTOVER);
         }
       } else if (level === 3) {
         this.totalSteps = 3;
@@ -4778,7 +4858,7 @@
     },
 
     update(dt) {
-      if (GameHUD.paused || GameHUD.settingsOpen) {
+      if (GameHUD.paused || GameHUD.settingsOpen || GameHUD.guideOpen) {
         if (this.musicAudio && !this.musicAudio.paused) {
           try { this.musicAudio.pause(); } catch (_) {}
         }
@@ -5510,8 +5590,8 @@
         this.drawGameOverOverlay(ctx);
       }
 
-      // Modais interativos de Pause e Configurações sobre a cena
-      GameHUD.renderModals(ctx);
+      // Modais interativos de Pause, Guia e Configurações sobre a cena
+      GameHUD.renderModals(ctx, tq);
 
       IrisTransition.render(ctx);
     },

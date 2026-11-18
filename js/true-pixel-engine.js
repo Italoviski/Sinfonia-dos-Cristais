@@ -7104,6 +7104,182 @@
     pageElapsed: 0,
     pageDuration: 3.5,
     lastRenderTime: null,
+    practiceState: null,
+
+    initPracticeState() {
+      const pr = { x: 34, y: 38, w: 252, h: 66 };
+      this.practiceState = {
+        practiceRect: pr,
+        resetBtnRect: { x: pr.x + 4, y: pr.y + 4, w: 48, h: 12 },
+        eq: { x: 204, y: pr.y + 34, expanded: false },
+        pieces: [
+          { id: 'p1', type: 'rose', value: 2, x: 76, y: pr.y + 30, inEq: false },
+          { id: 'p2', type: 'white', value: 1, x: 112, y: pr.y + 42, inEq: false },
+          { id: 'p3', type: 'rose', value: 1, x: 204, y: pr.y + 34, inEq: true }
+        ],
+        dragPiece: null,
+        eqTapStart: null,
+        statusText: 'Arraste um cristal para a Equação ou toque nela!'
+      };
+      this.layoutPracticeEquation();
+    },
+
+    layoutPracticeEquation() {
+      const ps = this.practiceState;
+      if (!ps || !ps.eq) return;
+      const inList = ps.pieces.filter(p => p.inEq);
+      if (!inList.length) return;
+      const eq = ps.eq;
+      const step = eq.expanded ? 18 : 11;
+      const startX = eq.x - ((inList.length - 1) * step) / 2;
+      inList.forEach((p, idx) => {
+        if (ps.dragPiece !== p) {
+          p.x = R(startX + idx * step);
+          p.y = R(eq.y);
+        }
+      });
+    },
+
+    handlePracticePointerDown(lx, ly) {
+      const ps = this.practiceState;
+      if (!ps) return false;
+      const rb = ps.resetBtnRect;
+      if (lx >= rb.x && lx <= rb.x + rb.w && ly >= rb.y && ly <= rb.y + rb.h) {
+        GameHUD.playSfx('click');
+        this.initPracticeState();
+        return true;
+      }
+      for (let i = ps.pieces.length - 1; i >= 0; i--) {
+        const p = ps.pieces[i];
+        if (p.inEq && !ps.eq.expanded) continue;
+        if (Math.hypot(lx - p.x, ly - p.y) <= 13) {
+          ps.dragPiece = p;
+          GameHUD.playSfx(p.type === 'rose' ? 'roseGrab' : 'quartzGrab');
+          return true;
+        }
+      }
+      const rad = ps.eq.expanded ? 34 : 20;
+      if (Math.hypot(lx - ps.eq.x, ly - ps.eq.y) <= rad) {
+        ps.eqTapStart = { x: lx, y: ly, origX: ps.eq.x, origY: ps.eq.y, moved: false };
+        return true;
+      }
+      return true;
+    },
+
+    handlePointerMove(lx, ly) {
+      const ps = this.practiceState;
+      if (!this.isOpen || !ps) return false;
+      const pr = ps.practiceRect;
+      if (ps.dragPiece) {
+        ps.dragPiece.x = clamp(lx, pr.x + 12, pr.x + pr.w - 12);
+        ps.dragPiece.y = clamp(ly, pr.y + 18, pr.y + pr.h - 10);
+        return true;
+      }
+      if (ps.eqTapStart) {
+        if (Math.hypot(lx - ps.eqTapStart.x, ly - ps.eqTapStart.y) >= 4) {
+          ps.eqTapStart.moved = true;
+          ps.eq.x = clamp(ps.eqTapStart.origX + (lx - ps.eqTapStart.x), pr.x + 64, pr.x + pr.w - 28);
+          ps.eq.y = clamp(ps.eqTapStart.origY + (ly - ps.eqTapStart.y), pr.y + 24, pr.y + pr.h - 18);
+          this.layoutPracticeEquation();
+        }
+        return true;
+      }
+      return false;
+    },
+
+    handlePointerUp(lx, ly) {
+      const ps = this.practiceState;
+      if (!this.isOpen || !ps) return false;
+      if (ps.eqTapStart) {
+        const wasTap = !ps.eqTapStart.moved;
+        ps.eqTapStart = null;
+        if (wasTap) {
+          ps.eq.expanded = !ps.eq.expanded;
+          GameHUD.playSfx(ps.eq.expanded ? 'equationExpand' : 'equationCollapse');
+          this.layoutPracticeEquation();
+          ps.statusText = ps.eq.expanded
+            ? 'Expandida! Arraste p/ organizar ou remover!'
+            : 'Fechada! Toque para expandir novamente.';
+        } else {
+          GameHUD.playSfx('quartzDrop');
+        }
+        return true;
+      }
+      if (ps.dragPiece) {
+        const p = ps.dragPiece;
+        ps.dragPiece = null;
+        const dropRad = ps.eq.expanded ? 34 : 22;
+        const overEq = Math.hypot(p.x - ps.eq.x, p.y - ps.eq.y) <= dropRad;
+        if (overEq && !p.inEq) {
+          p.inEq = true;
+          GameHUD.playSfx('equationExpand');
+          ps.statusText = 'Cristal adicionado! Toque na Equação p/ expandir!';
+        } else if (!overEq && p.inEq) {
+          p.inEq = false;
+          GameHUD.playSfx('quartzDrop');
+          ps.statusText = 'Cristal removido da Equação!';
+        } else if (overEq && p.inEq) {
+          ps.pieces.sort((a, b) => a.x - b.x);
+          GameHUD.playSfx('quartzDrop');
+          ps.statusText = 'Ordem atualizada dentro da Equação!';
+        } else {
+          GameHUD.playSfx('quartzDrop');
+        }
+        this.layoutPracticeEquation();
+        return true;
+      }
+      return false;
+    },
+
+    renderEquationPractice(ctx, vx, vy, vw, vh, t) {
+      ctx.fillStyle = '#181c2b';
+      ctx.fillRect(vx, vy, vw, vh);
+      ctx.fillStyle = '#57688a';
+      ctx.fillRect(vx, vy, vw, 1);
+      ctx.fillRect(vx, vy + vh - 1, vw, 1);
+      ctx.fillRect(vx, vy, 1, vh);
+      ctx.fillRect(vx + vw - 1, vy, 1, vh);
+
+      const ps = this.practiceState;
+      if (!ps) return;
+      ps.practiceRect = { x: vx, y: vy, w: vw, h: vh };
+      ps.resetBtnRect = { x: vx + 4, y: vy + 4, w: 48, h: 12 };
+
+      // Botão Limpar / Reiniciar Treino
+      const rb = ps.resetBtnRect;
+      ctx.fillStyle = '#14111c';
+      ctx.fillRect(rb.x - 1, rb.y - 1, rb.w + 2, rb.h + 2);
+      ctx.fillStyle = '#2b436e';
+      ctx.fillRect(rb.x, rb.y, rb.w, rb.h);
+      ctx.fillStyle = '#92e8ff';
+      ctx.fillRect(rb.x, rb.y, rb.w, 1);
+      drawPixelTextCentered(ctx, '↺ Reset', rb.x + rb.w / 2, rb.y + 2, '#ffffff', '#000000', rb.w - 4, 8);
+
+      drawPixelText(ctx, ps.statusText, vx + 58, vy + 6, '#92e8ff', '#000000', vw - 64, 8);
+
+      // Aura da Equação Prática
+      const eq = ps.eq;
+      const auraR = eq.expanded ? 30 : 18;
+      drawRing(ctx, R(eq.x), R(eq.y), auraR, eq.expanded ? '#f472b6' : '#cfa3c4');
+      if (eq.expanded) {
+        drawRing(ctx, R(eq.x), R(eq.y), auraR + 2, 'rgba(244, 114, 182, 0.4)');
+      }
+      const eqTag = eq.expanded ? 'ABERTA (arraste)' : 'TOQUE P/ ABRIR';
+      drawPixelTextCentered(ctx, eqTag, R(eq.x), R(eq.y + auraR - 1), eq.expanded ? '#4ade80' : '#fbbf24', '#000000', 110, 7);
+
+      // Cristais do treino
+      for (const p of ps.pieces) {
+        const spr = p.type === 'rose' ? SPR_ROSE : SPR_PURE;
+        const orbCol = p.type === 'rose' ? '#ff99cc' : '#a8d8e6';
+        const rimCol = p.type === 'rose' ? '#59223b' : '#294c66';
+        const px = R(p.x), py = R(p.y);
+        ctx.drawImage(spr, px - 6, py - 7);
+        for (let k = 0; k < p.value; k++) {
+          const dx = (k - (p.value - 1) / 2) * 5;
+          drawMiniOrb(ctx, R(px + dx), py - 11, orbCol, rimCol);
+        }
+      }
+    },
 
     calculatePageDuration(card) {
       if (!card) return 3.0;
@@ -7137,6 +7313,11 @@
       this.pageElapsed = 0;
       this.pageDuration = this.calculatePageDuration(list[0]);
       this.lastRenderTime = null;
+      if (list[0].interactivePractice === 'equation_practice') {
+        this.initPracticeState();
+      } else {
+        this.practiceState = null;
+      }
       if (list[0].id) this.seenKeys.add(list[0].id);
       GameHUD.playSfx('tutorialOpen');
     },
@@ -7147,6 +7328,7 @@
       this.currentIndex = 0;
       this.pageElapsed = 0;
       this.lastRenderTime = null;
+      this.practiceState = null;
       this.onFinish = null;
       this.onDone = null;
     },
@@ -7160,12 +7342,18 @@
         this.pageElapsed = 0;
         this.pageDuration = this.calculatePageDuration(cur);
         this.lastRenderTime = null;
+        if (cur && cur.interactivePractice === 'equation_practice') {
+          this.initPracticeState();
+        } else {
+          this.practiceState = null;
+        }
         GameHUD.playSfx('tutorialAdvance');
         return true;
       }
       this.isOpen = false;
       this.pageElapsed = 0;
       this.lastRenderTime = null;
+      this.practiceState = null;
       GameHUD.playSfx('tutorialClose');
       const cb = this.onFinish || this.onDone;
       this.onFinish = null;
@@ -7176,12 +7364,20 @@
 
     handleClick(lx, ly) {
       if (!this.isOpen) return false;
+      const card = this.cards[this.currentIndex];
+      if (card && card.interactivePractice === 'equation_practice' && this.practiceState) {
+        const pr = this.practiceState.practiceRect;
+        if (lx >= pr.x && lx <= pr.x + pr.w && ly >= pr.y && ly <= pr.y + pr.h) {
+          return this.handlePracticePointerDown(lx, ly);
+        }
+      }
       const b = this.btnRect;
       const onBtn = (lx >= b.x - 8 && lx <= b.x + b.w + 8 && ly >= b.y - 6 && ly <= b.y + b.h + 6);
       const onCard = (lx >= 24 && lx <= 296 && ly >= 18 && ly <= 162);
-      if (onBtn || onCard) {
+      const allowCardTap = !(card && card.interactivePractice);
+      if (onBtn || (allowCardTap && onCard)) {
         if (this.isPageLocked()) return false;
-        return this.nextStep(false);
+        return this.nextStep();
       }
       return false;
     },
@@ -7395,19 +7591,117 @@
         if (phase < 0.25 || phase > 0.8) {
           drawStar(ctx, cups[0], cy - 11, 3, '#ffffff', '#FBBF24');
         }
-      } else if (type === 'river_fraction' || type === 'river_divide') {
-        const mx = R(vx + vw / 2);
+      } else if (type === 'leftover_crystals') {
+        const sx = vx + vw - 44;
+        const leftX = vx + 42;
+        const px = phase < 0.55
+          ? R(vx + 92 + easeInOut(phase / 0.55) * (sx - (vx + 92)))
+          : sx;
+
+        // Cristal que sobra em segurança à esquerda
+        ctx.drawImage(SPR_PURE, leftX - 6, cy - 7);
+        for (const dx of [-5, 0, 5]) drawMiniOrb(ctx, leftX + dx, cy - 11, '#a8d8e6', '#294c66');
+
+        if (phase < 0.6) {
+          ctx.drawImage(SPR_SHADOW, sx - 6, cy - 7);
+          drawMiniOrb(ctx, sx - 3, cy - 11, '#b8a6d9', '#1a122b');
+          drawMiniOrb(ctx, sx + 3, cy - 11, '#b8a6d9', '#1a122b');
+          ctx.drawImage(SPR_PURE, px - 6, cy - 7);
+          drawMiniOrb(ctx, px - 3, cy - 11, '#a8d8e6', '#294c66');
+          drawMiniOrb(ctx, px + 3, cy - 11, '#a8d8e6', '#294c66');
+        } else {
+          drawRing(ctx, sx, cy, R((phase - 0.6) * 42), '#a8d8e6');
+          drawStar(ctx, sx, cy, 4, '#ffffff', '#f2cc6b');
+        }
+
+        if (phase >= 0.52) {
+          drawRing(ctx, leftX, cy, 13, '#4ade80');
+          drawStar(ctx, leftX - 10, cy - 8, 2, '#ffffff', '#4ade80');
+          drawPixelTextCentered(ctx, 'SOBROU = OK!', leftX + 26, cy - 4, '#4ade80', '#000000', 84, 8);
+        }
+      } else if (type === 'aura_equation_practice') {
+        const expanded = phase > 0.35 && phase < 0.85;
+        const r = expanded ? 16 : 11;
+        drawRing(ctx, R(vx + vw / 2 + 18), cy, r, '#f472b6');
+        ctx.drawImage(SPR_ROSE, R(vx + vw / 2 + 12), cy - 7);
+        const px = phase < 0.35
+          ? R(vx + 36 + easeInOut(phase / 0.35) * ((vx + vw / 2 - 4) - (vx + 36)))
+          : R(vx + vw / 2 + 24);
+        ctx.drawImage(SPR_PURE, px, cy - 7);
+        drawPixelText(ctx, expanded ? 'ORGANIZAR!' : 'ARRASTE + TOQUE!', vx + 12, cy - 12, '#38bdf8', '#000000', 96, 8);
+      } else if (type === 'river_fraction') {
+        const mx = R(vx + vw / 2 + 8);
+        const pfW = 74, pfH = Math.max(32, vh - 8);
+        const pTop = R(vy + (vh - pfH) / 2);
+        const barY = R(pTop + pfH / 2);
+        const matched = phase >= 0.52;
         const glow = Math.sin(t * 8) * 0.5 + 0.5;
-        ctx.fillStyle = '#1c2c3d';
-        ctx.fillRect(mx - 24, cy - 14, 48, 28);
-        ctx.fillStyle = type === 'river_divide' || phase > 0.4 ? '#ff69b4' : '#57d1de';
-        ctx.fillRect(mx - 22, cy - 1, 44, 2);
-        ctx.drawImage(SPR_PURE, mx - 6, cy - 13);
-        ctx.drawImage(SPR_PURE, mx - 6, cy + 3);
-        if (type === 'river_divide' || phase > 0.4) {
-          drawRing(ctx, mx, cy, 18 + glow * 4, '#ff69b4');
-          drawStar(ctx, mx - 18, cy - 8, 2, '#ffffff', '#ff69b4');
-          drawStar(ctx, mx + 18, cy + 6, 2, '#ffffff', '#ffaae5');
+
+        // Plataforma de Fração ampliada (TOPO e BASE claramente separados)
+        ctx.fillStyle = '#101724';
+        ctx.fillRect(mx - pfW / 2 - 1, pTop - 1, pfW + 2, pfH + 2);
+        ctx.fillStyle = matched ? '#24142a' : '#182436';
+        ctx.fillRect(mx - pfW / 2, pTop, pfW, pfH);
+        ctx.fillStyle = matched ? '#ff69b4' : '#57d1de';
+        ctx.fillRect(mx - pfW / 2 + 4, barY - 1, pfW - 8, 2);
+
+        // Rótulos TOPO e BASE na lateral esquerda da plataforma
+        drawPixelText(ctx, 'TOPO', mx - pfW / 2 - 32, pTop + 4, '#38bdf8', '#000000', 32, 8);
+        drawPixelText(ctx, 'BASE', mx - pfW / 2 - 32, barY + 5, '#fbbf24', '#000000', 32, 8);
+
+        // Cristal no TOPO (valor 4)
+        ctx.drawImage(SPR_AQUA, mx - 6, pTop + 4);
+        for (const dx of [-7, -2, 3, 8]) drawMiniOrb(ctx, mx + dx, pTop + 2, '#a8f0f0', '#123b45');
+
+        // Cristais indo para a BASE (dois cristais 2 = 4)
+        const slide = clamp(phase / 0.52, 0, 1);
+        const srcX1 = R(vx + 22 + easeInOut(slide) * ((mx - 14) - (vx + 22)));
+        const srcX2 = R(vx + 40 + easeInOut(slide) * ((mx + 6) - (vx + 40)));
+        const botY = barY + 5;
+        ctx.drawImage(SPR_AQUA, srcX1 - 3, botY);
+        drawMiniOrb(ctx, srcX1 + 1, botY - 2, '#a8f0f0', '#123b45');
+        drawMiniOrb(ctx, srcX1 + 6, botY - 2, '#a8f0f0', '#123b45');
+        ctx.drawImage(SPR_AQUA, srcX2 - 3, botY);
+        drawMiniOrb(ctx, srcX2 + 1, botY - 2, '#a8f0f0', '#123b45');
+        drawMiniOrb(ctx, srcX2 + 6, botY - 2, '#a8f0f0', '#123b45');
+
+        if (matched) {
+          drawRing(ctx, mx, barY, 22 + glow * 3, '#ff69b4');
+          drawPixelText(ctx, 'IGUAIS!', mx + pfW / 2 + 6, barY - 4, '#4ade80', '#000000', 54, 8);
+        } else {
+          drawPixelText(ctx, 'ARRASTE!', vx + 10, pTop + 3, '#fbbf24', '#000000', 48, 8);
+        }
+      } else if (type === 'river_divide') {
+        const mx = R(vx + vw / 2 - 34);
+        const pfW = 66, pfH = Math.max(32, vh - 8);
+        const pTop = R(vy + (vh - pfH) / 2);
+        const barY = R(pTop + pfH / 2);
+        const glow = Math.sin(t * 8) * 0.5 + 0.5;
+        const divided = phase >= 0.48;
+
+        if (!divided) {
+          ctx.fillStyle = '#24142a';
+          ctx.fillRect(mx - pfW / 2, pTop, pfW, pfH);
+          ctx.fillStyle = '#ff69b4';
+          ctx.fillRect(mx - pfW / 2 + 4, barY - 1, pfW - 8, 2);
+          ctx.drawImage(SPR_AQUA, mx - 6, pTop + 4);
+          ctx.drawImage(SPR_AQUA, mx - 6, barY + 4);
+          drawRing(ctx, mx, barY, 19 + glow * 4, '#ff69b4');
+        } else {
+          drawStar(ctx, mx, barY, 5, '#ffffff', '#ff69b4');
+          drawRing(ctx, mx, barY, R((phase - 0.48) * 52), '#ff85c8');
+        }
+
+        // Botão demonstrativo de DIVIDIR e cristal resultante = 1
+        drawPixelText(ctx, 'CLIQUE DIVIDIR!', mx + pfW / 2 + 8, pTop + 4, divided ? '#4ade80' : '#ff85c8', '#000000', 96, 8);
+
+        const outX = divided
+          ? R(mx + pfW / 2 + 18 + easeInOut((phase - 0.48) / 0.52) * 34)
+          : mx + pfW / 2 + 18;
+        if (divided) {
+          ctx.drawImage(SPR_AQUA, outX, barY);
+          drawMiniOrb(ctx, outX + 6, barY - 3, '#a8f0f0', '#123b45');
+          drawPixelText(ctx, '= 1', outX + 16, barY + 2, '#92e8ff', '#000000', 26, 8);
         }
       } else if (type === 'river_melody') {
         const mx = R(vx + vw / 2);
@@ -7456,11 +7750,18 @@
       drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 6, '#ffea31', '#000000', 168, 9);
       drawPixelText(ctx, stepLabel, cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
 
-      // Vinheta animada demonstrativa
-      this.drawVignette(ctx, card.vignette || 'drag_and_shadow', cx + 10, cy + 21, cw - 20, 36, t);
-
-      // Texto explicativo justificado e com palavras-chave em cores de alto contraste
-      drawJustifiedPixelText(ctx, card.body || '', cx + 12, cy + 62, cw - 24, 11, '#ffea31', '#000000');
+      // Suporte à etapa interativa de treino (Equação Cristalina) ou vinheta ampliada (Fração Cristalina)
+      if (card.interactivePractice === 'equation_practice') {
+        if (!this.practiceState) this.initPracticeState();
+        this.renderEquationPractice(ctx, cx + 10, cy + 20, cw - 20, 66, t);
+        drawJustifiedPixelText(ctx, card.body || '', cx + 12, cy + 90, cw - 24, 10, '#ffea31', '#000000');
+      } else {
+        const vigH = card.largeVignette ? 54 : 36;
+        const bodyY = card.largeVignette ? (cy + 78) : (cy + 62);
+        const bodyLH = card.largeVignette ? 10 : 11;
+        this.drawVignette(ctx, card.vignette || 'drag_and_shadow', cx + 10, cy + 21, cw - 20, vigH, t);
+        drawJustifiedPixelText(ctx, card.body || '', cx + 12, bodyY, cw - 24, bodyLH, '#ffea31', '#000000');
+      }
 
       // Barra de progresso de leitura infantil na base inferior esquerda
       const barX = cx + 12;
@@ -7575,6 +7876,11 @@
     worldLabel: 'Caverna',
     paused: false,
     settingsOpen: false,
+    guideOpen: false,
+    guideWorld: 'caverna',
+    guideItemIndex: 0,
+    guideCardPage: 0,
+    guideLayout: null,
     muted: false,
     musicVol: 50,
     sfxVol: 50,
@@ -7584,12 +7890,96 @@
 
     // Botões na barra superior (320x20):
     buttons: {
+      guide:      { x: 120, y: 2, w: 32, h: 16 },
       map:        { x: 154, y: 2, w: 32, h: 16 },
       pause:      { x: 188, y: 2, w: 20, h: 16 },
       restart:    { x: 210, y: 2, w: 44, h: 16 },
       fullscreen: { x: 256, y: 2, w: 18, h: 16 },
       mute:       { x: 276, y: 2, w: 20, h: 16 },
       settings:   { x: 298, y: 2, w: 20, h: 16 }
+    },
+
+    get guideCatalog() {
+      return this.getGuideCatalog();
+    },
+
+    getGuideCatalog() {
+      return {
+        caverna: {
+          label: 'Caverna',
+          items: [
+            { key: 'FASE1_INTRO', title: 'Cristais/Sombras', cards: StandardTutorialCards.FASE1_INTRO },
+            { key: 'FASE2_OPAL', title: 'Opala de Fogo', cards: StandardTutorialCards.FASE2_OPAL },
+            { key: 'FASE2_LEFTOVER', title: 'Sobras Cristais', cards: StandardTutorialCards.FASE2_LEFTOVER },
+            { key: 'FASE3_ROSE_AND_AURA', title: 'Quartzo Rosa', cards: StandardTutorialCards.FASE3_ROSE_AND_AURA },
+            { key: 'FASE3_EQUATION_AURA', title: 'Equação Crist.', cards: StandardTutorialCards.FASE3_EQUATION_AURA }
+          ]
+        },
+        floresta: {
+          label: 'Floresta',
+          items: [
+            { key: 'FOREST_EMERALD', title: 'Altar Esmeralda', cards: StandardTutorialCards.FOREST_EMERALD },
+            { key: 'FOREST_CITRINE', title: 'Citrino Solar', cards: StandardTutorialCards.FOREST_CITRINE },
+            { key: 'FOREST_SLICING_NINJA', title: 'Corte Cristalino', cards: StandardTutorialCards.FOREST_SLICING_NINJA }
+          ]
+        },
+        rio: {
+          label: 'Rio',
+          items: [
+            { key: 'RIVER_FRACTION_PLATFORM', title: 'Fração Cristalina', cards: StandardTutorialCards.RIVER_FRACTION_PLATFORM },
+            { key: 'RIVER_AQUA', title: 'Água-Marinha', cards: StandardTutorialCards.RIVER_AQUA },
+            { key: 'RIVER_MELODY_SIMON', title: 'Sinfonia Águas', cards: StandardTutorialCards.RIVER_MELODY_SIMON }
+          ]
+        },
+        caatinga: {
+          label: 'Caatinga',
+          items: [
+            { key: 'CAATINGA_CIRCLE', title: 'Círculo Elétr.', cards: StandardTutorialCards.CAATINGA_CIRCLE },
+            { key: 'CAATINGA_SQUARE', title: 'Quadrado/Ordem', cards: StandardTutorialCards.CAATINGA_SQUARE },
+            { key: 'CAATINGA_RECTANGLE', title: 'Retângulo El.', cards: StandardTutorialCards.CAATINGA_RECTANGLE },
+            { key: 'CAATINGA_TRAPEZOID', title: 'Trapézio El.', cards: StandardTutorialCards.CAATINGA_TRAPEZOID },
+            { key: 'CAATINGA_TESSELLATION', title: 'Arte Encaixe', cards: StandardTutorialCards.CAATINGA_TESSELLATION },
+            { key: 'CAATINGA_NESTED', title: 'Geom. Avançada', cards: StandardTutorialCards.CAATINGA_NESTED },
+            { key: 'CAATINGA_SHELL_GAME', title: 'Desafio Areias', cards: StandardTutorialCards.CAATINGA_SHELL_GAME }
+          ]
+        }
+      };
+    },
+
+    ensureGuideLayout() {
+      const cx = 6, cy = 21, cw = 308, ch = 156;
+      const lx = cx + 5, ly = cy + 19, lw = 108;
+      const rx = cx + 117, ry = cy + 19, rw = 186;
+      const worldTabRects = {
+        caverna:  { x: lx,      y: ly,      w: 53, h: 12 },
+        floresta: { x: lx + 55, y: ly,      w: 53, h: 12 },
+        rio:      { x: lx,      y: ly + 14, w: 53, h: 12 },
+        caatinga: { x: lx + 55, y: ly + 14, w: 53, h: 12 }
+      };
+      const cat = this.getGuideCatalog();
+      const worldData = cat[this.guideWorld] || cat.caverna;
+      const items = worldData.items || [];
+      const rowH = 13;
+      const listStartY = ly + 29;
+      const itemRects = items.map((item, idx) => ({
+        index: idx,
+        item,
+        x: lx,
+        y: listStartY + idx * (rowH + 1),
+        w: lw,
+        h: rowH
+      }));
+      this.guideLayout = {
+        modalRect: { x: cx, y: cy, w: cw, h: ch },
+        leftRect: { x: lx, y: ly, w: lw, h: ch - 23 },
+        rightRect: { x: rx, y: ry, w: rw, h: ch - 23 },
+        closeBtn: { x: cx + cw - 48, y: cy + 2, w: 42, h: 12 },
+        worldTabRects,
+        itemRects,
+        prevPageRect: { x: rx + rw - 44, y: ry + 2, w: 12, h: 11 },
+        nextPageRect: { x: rx + rw - 14, y: ry + 2, w: 12, h: 11 }
+      };
+      return this.guideLayout;
     },
 
     // Botões do Modal de Pause (centralizados na caixa 184px)
@@ -7843,6 +8233,7 @@
         }
         this.paused = false;
         this.settingsOpen = false;
+        this.guideOpen = false;
         this.playSfx('click');
         if (typeof this.onGoMap === 'function') {
           this.onGoMap();
@@ -7853,12 +8244,14 @@
       }
       if (this.inRect(x, y, this.buttons.pause, 2)) {
         this.settingsOpen = false;
+        this.guideOpen = false;
         this.paused = !this.paused;
         this.playSfx('click');
         this.syncAudio();
         return true;
       }
       if (this.inRect(x, y, this.buttons.restart, 2)) {
+        this.guideOpen = false;
         this.triggerRestart();
         return true;
       }
@@ -7872,9 +8265,74 @@
         return true;
       }
       if (this.inRect(x, y, this.buttons.settings, 2)) {
+        this.guideOpen = false;
         this.settingsOpen = !this.settingsOpen;
         this.playSfx('click');
         this.syncAudio();
+        return true;
+      }
+      if (this.inRect(x, y, this.buttons.guide, 1)) {
+        this.settingsOpen = false;
+        this.paused = false;
+        this.guideOpen = !this.guideOpen;
+        if (this.guideOpen) {
+          const wl = String(this.worldLabel || '').toLowerCase();
+          if (wl.includes('flor')) this.guideWorld = 'floresta';
+          else if (wl.includes('rio')) this.guideWorld = 'rio';
+          else if (wl.includes('caat')) this.guideWorld = 'caatinga';
+          else this.guideWorld = 'caverna';
+          this.guideItemIndex = 0;
+          this.guideCardPage = 0;
+          this.ensureGuideLayout();
+        }
+        this.playSfx('click');
+        this.syncAudio();
+        return true;
+      }
+
+      if (this.guideOpen) {
+        const gl = this.ensureGuideLayout();
+        if (this.inRect(x, y, gl.closeBtn, 2)) {
+          this.guideOpen = false;
+          this.playSfx('click');
+          this.syncAudio();
+          return true;
+        }
+        for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+          const tr = gl.worldTabRects[wKey];
+          if (tr && this.inRect(x, y, tr, 1)) {
+            this.guideWorld = wKey;
+            this.guideItemIndex = 0;
+            this.guideCardPage = 0;
+            this.ensureGuideLayout();
+            this.playSfx('click');
+            return true;
+          }
+        }
+        for (const ir of gl.itemRects) {
+          if (this.inRect(x, y, ir, 1)) {
+            this.guideItemIndex = ir.index;
+            this.guideCardPage = 0;
+            this.playSfx('click');
+            return true;
+          }
+        }
+        const cat = this.getGuideCatalog();
+        const curWorld = cat[this.guideWorld] || cat.caverna;
+        const curItem = (curWorld.items || [])[this.guideItemIndex] || curWorld.items[0];
+        const totalPages = (curItem && Array.isArray(curItem.cards)) ? curItem.cards.length : 1;
+        if (totalPages > 1) {
+          if (this.inRect(x, y, gl.prevPageRect, 2)) {
+            this.guideCardPage = (this.guideCardPage - 1 + totalPages) % totalPages;
+            this.playSfx('click');
+            return true;
+          }
+          if (this.inRect(x, y, gl.nextPageRect, 2)) {
+            this.guideCardPage = (this.guideCardPage + 1) % totalPages;
+            this.playSfx('click');
+            return true;
+          }
+        }
         return true;
       }
 
@@ -8052,24 +8510,24 @@
 
       const labelPrefix = this.worldLabel || 'Caverna';
       const titleStr = customTitle || `${labelPrefix} - Fase ${levelNum}`;
-      const rightLimit = hideSteps ? 96 : (this.buttons.map.x - 4);
+      const rightLimit = hideSteps ? 96 : (this.buttons.guide.x - 4);
 
       if (!hideSteps) {
         const safeSteps = Math.max(1, Number(totalSteps) || 1);
         const safeCur = clamp(Number(currentStep) || 1, 1, safeSteps);
         const stepStr = `Etapa ${safeCur}/${safeSteps}`;
-        const dotStep = safeSteps > 5 ? 3 : 5;
-        const dotsTotalW = Math.min(28, Math.max(4, (safeSteps - 1) * dotStep + 4));
+        const dotStep = safeSteps > 5 ? 3 : 4;
+        const dotsTotalW = Math.min(20, Math.max(4, (safeSteps - 1) * dotStep + 3));
         const dotsStartX = rightLimit - dotsTotalW;
-        const stepTextW = Math.min(44, Math.max(32, measurePixelText(stepStr)));
-        const stepX = Math.max(76, dotsStartX - stepTextW - 3);
-        const titleMaxW = Math.max(66, stepX - 8);
+        const stepTextW = Math.min(38, Math.max(30, measurePixelText(stepStr)));
+        const stepX = Math.max(54, dotsStartX - stepTextW - 2);
+        const titleMaxW = Math.max(46, stepX - 6);
 
-        this.renderSingleLineHudText(ctx, titleStr, 5, 6, titleMaxW, '#ffffff', '#000000', 6.5);
-        this.renderSingleLineHudText(ctx, stepStr, stepX, 6, stepTextW + 2, '#92e8ff', '#000000', 6.0);
+        this.renderSingleLineHudText(ctx, titleStr, 4, 6, titleMaxW, '#ffffff', '#000000', 6.0);
+        this.renderSingleLineHudText(ctx, stepStr, stepX, 6, stepTextW + 2, '#92e8ff', '#000000', 5.8);
 
         for (let s = 1; s <= safeSteps; s++) {
-          const dx = R(dotsStartX + (s - 1) * (( dotsTotalW - 4) / Math.max(1, safeSteps - 1))), dy = 10;
+          const dx = R(dotsStartX + (s - 1) * ((dotsTotalW - 3) / Math.max(1, safeSteps - 1))), dy = 10;
           const done = s < safeCur;
           const cur = s === safeCur;
           ctx.fillStyle = done ? '#52e697' : cur ? '#92e8ff' : '#2a3556';
@@ -8080,8 +8538,20 @@
           }
         }
       } else {
-        this.renderSingleLineHudText(ctx, titleStr, 5, 6, rightLimit - 6, '#ffffff', '#000000', 6.6);
+        this.renderSingleLineHudText(ctx, titleStr, 5, 6, rightLimit - 6, '#ffffff', '#000000', 6.4);
       }
+
+      // Botão GUIA DE TUTORIAIS (Livro + Rótulo "Guia")
+      const bguide = this.buttons.guide;
+      this.drawButtonBox(ctx, bguide, this.guideOpen);
+      // Mini livro aberto pixel art (esquerda)
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(bguide.x + 2, bguide.y + 5, 3, 6);
+      ctx.fillRect(bguide.x + 6, bguide.y + 5, 3, 6);
+      ctx.fillStyle = '#fff6cc';
+      ctx.fillRect(bguide.x + 3, bguide.y + 6, 2, 4);
+      ctx.fillRect(bguide.x + 6, bguide.y + 6, 2, 4);
+      drawPixelTextCentered(ctx, 'Guia', bguide.x + 9 + (bguide.w - 9) / 2, bguide.y + 4, this.guideOpen ? '#ffea31' : '#ffe887', '#000000', bguide.w - 8, 8);
 
       // 0. Botão MAPA (Bloqueado dentro da Caverna até concluí-la, salvo God Mode)
       const bmap = this.buttons.map;
@@ -8210,11 +8680,84 @@
       }
     },
 
-    renderModals(ctx) {
-      if (!this.paused && !this.settingsOpen) return;
+    renderGuideModal(ctx, t = 0) {
+      const gl = this.ensureGuideLayout();
+      const { modalRect: m, leftRect: lr, rightRect: rr, closeBtn, worldTabRects, itemRects, prevPageRect, nextPageRect } = gl;
+
+      drawParchmentBox(ctx, m.x, m.y, m.w, m.h, { headerH: 15, headerBg: '#163b6c' });
+      drawPixelText(ctx, 'Guia de Tutoriais', m.x + 8, m.y + 4, '#ffe887', '#000000', 180, 9);
+
+      // Botão Fechar no cabeçalho
+      this.drawButtonBox(ctx, closeBtn, true);
+      drawPixelTextCentered(ctx, 'Fechar', closeBtn.x + closeBtn.w / 2, closeBtn.y + 3, '#ffffff', '#000000', closeBtn.w - 4, 8);
+
+      // Fundo da Coluna Esquerda (Mundos + Lista de Títulos)
+      ctx.fillStyle = '#141826';
+      ctx.fillRect(lr.x - 1, lr.y - 1, lr.w + 2, lr.h + 2);
+
+      // Abas de Mundo 2x2
+      const cat = this.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        const tr = worldTabRects[wKey];
+        const active = this.guideWorld === wKey;
+        this.drawButtonBox(ctx, tr, active);
+        drawPixelTextCentered(ctx, cat[wKey].label, tr.x + tr.w / 2, tr.y + 3, active ? '#ffea31' : '#ffffff', '#000000', tr.w - 4, 8);
+      }
+
+      // Lista de tutoriais separados por mundo na coluna esquerda
+      for (const ir of itemRects) {
+        const selected = this.guideItemIndex === ir.index;
+        ctx.fillStyle = selected ? '#2b4a7a' : '#1d2438';
+        ctx.fillRect(ir.x, ir.y, ir.w, ir.h);
+        if (selected) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(ir.x, ir.y, 2, ir.h);
+        }
+        drawPixelText(ctx, ir.item.title, ir.x + 5, ir.y + 3, selected ? '#ffe887' : '#d6e4ff', '#000000', ir.w - 7, 8);
+      }
+
+      // Fundo da Coluna Direita (Card Completo do Tutorial Selecionado)
+      ctx.fillStyle = '#181c2b';
+      ctx.fillRect(rr.x, rr.y, rr.w, rr.h);
+      ctx.fillStyle = '#5577b2';
+      ctx.fillRect(rr.x, rr.y, rr.w, 1);
+      ctx.fillRect(rr.x, rr.y + rr.h - 1, rr.w, 1);
+      ctx.fillRect(rr.x, rr.y, 1, rr.h);
+      ctx.fillRect(rr.x + rr.w - 1, rr.y, 1, rr.h);
+
+      const worldData = cat[this.guideWorld] || cat.caverna;
+      const items = worldData.items || [];
+      const curItem = items[this.guideItemIndex] || items[0];
+      const cards = (curItem && Array.isArray(curItem.cards) && curItem.cards.length) ? curItem.cards : [];
+      if (!cards.length) return;
+
+      const pageIdx = clamp(this.guideCardPage, 0, cards.length - 1);
+      const card = cards[pageIdx];
+
+      drawPixelText(ctx, card.title || curItem.title, rr.x + 5, rr.y + 4, '#ffea31', '#000000', cards.length > 1 ? rr.w - 54 : rr.w - 10, 9);
+
+      if (cards.length > 1) {
+        this.drawButtonBox(ctx, prevPageRect, false);
+        drawPixelTextCentered(ctx, '<', prevPageRect.x + prevPageRect.w / 2, prevPageRect.y + 2, '#ffffff', '#000000', 10, 8);
+        drawPixelTextCentered(ctx, `${pageIdx + 1}/${cards.length}`, rr.x + rr.w - 23, rr.y + 4, '#fff66b', '#000000', 22, 8);
+        this.drawButtonBox(ctx, nextPageRect, false);
+        drawPixelTextCentered(ctx, '>', nextPageRect.x + nextPageRect.w / 2, nextPageRect.y + 2, '#ffffff', '#000000', 10, 8);
+      }
+
+      TutorialModal.drawVignette(ctx, card.vignette || 'drag_and_shadow', rr.x + 5, rr.y + 16, rr.w - 10, 44, t);
+      drawJustifiedPixelText(ctx, card.body || '', rr.x + 6, rr.y + 64, rr.w - 12, 10, '#ffea31', '#000000');
+    },
+
+    renderModals(ctx, t = 0) {
+      if (!this.paused && !this.settingsOpen && !this.guideOpen) return;
 
       ctx.fillStyle = 'rgba(10, 8, 6, 0.55)';
       ctx.fillRect(0, 20, W, H - 20);
+
+      if (this.guideOpen) {
+        this.renderGuideModal(ctx, t);
+        return;
+      }
 
       if (this.settingsOpen) {
         const cx = 32, cy = 24, cw = 256, ch = 136;
@@ -8298,6 +8841,14 @@
         body: 'Ao aproximar a {gold:Opala de Fogo} de um cristal, ambos {orange:tremem} e {orange:subtraem 1 bolinha} por vez. {cyan:Afaste para parar}!'
       }
     ],
+    FASE2_LEFTOVER: [
+      {
+        id: 'tut_leftover_crystals',
+        title: 'Podem Sobrar Cristais!',
+        vignette: 'leftover_crystals',
+        body: '{gold:Nem todos os cristais} da tela precisam ser usados! {green:Podem sobrar cristais} puros ou opalas no campo após você {cyan:anular todas as sombras}!'
+      }
+    ],
     FASE3_ROSE_AND_AURA: [
       {
         id: 'tut_rose_quartz',
@@ -8312,6 +8863,13 @@
         title: 'Equação Cristalina',
         vignette: 'aura_equation',
         body: '{cyan:Arraste cristais} para dentro da {pink:Equação Cristalina} para somá-los, ou {gold:toque nela para expandir} e {green:organizar seu interior}!'
+      },
+      {
+        id: 'tut_aura_equation_practice',
+        title: 'Treino: Equação Cristalina',
+        vignette: 'aura_equation_practice',
+        interactivePractice: 'equation_practice',
+        body: '{cyan:Arraste cristais} para a {pink:Equação} e {gold:toque nela} para expandir e organizar a ordem sem penalidade!'
       }
     ],
     FOREST_EMERALD: [
@@ -8349,15 +8907,17 @@
     RIVER_FRACTION_PLATFORM: [
       {
         id: 'tut_river_fraction',
-        title: 'Plataforma de Frações',
+        title: 'Fração Cristalina: Passo 1',
         vignette: 'river_fraction',
-        body: '{cyan:Arraste cristais} para dentro da plataforma. Depois que entram, {orange:não podem mais sair}! {gold:Iguale os valores} de cima e de baixo.'
+        largeVignette: true,
+        body: 'Coloque cristais no {cyan:TOPO} e na {gold:BASE} da plataforma. Arraste cristais da mesma cor até {green:igualar os valores de cima e de baixo}!'
       },
       {
         id: 'tut_river_divide',
-        title: 'Divisão Cristalina',
+        title: 'Fração Cristalina: Passo 2',
         vignette: 'river_divide',
-        body: 'Quando os valores se igualarem, a fração {pink:brilhará em rosa}! {green:Clique nela para quebrar} e realizar a {gold:divisão de tudo}!'
+        largeVignette: true,
+        body: 'Quando {green:TOPO e BASE têm valores iguais}, a barra {pink:brilha em rosa}! {gold:Clique em Dividir} na plataforma para repartir e gerar o {cyan:cristal resultante}!'
       }
     ],
     RIVER_MELODY_SIMON: [

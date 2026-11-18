@@ -59,6 +59,7 @@
     if (E?.GameHUD) {
       E.GameHUD.paused = false;
       E.GameHUD.settingsOpen = false;
+      E.GameHUD.guideOpen = false;
     }
   }
 

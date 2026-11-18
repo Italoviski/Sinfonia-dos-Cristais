@@ -7004,10 +7004,15 @@
 
       const onMove = (e) => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
-        if (GameHUD.paused || GameHUD.settingsOpen) return;
+        if (GameHUD.paused || GameHUD.settingsOpen || GameHUD.guideOpen) return;
         const pt = e.touches ? e.touches[0] : e;
         if (!pt) return;
         const { x, y } = this.toLogicalCoords(pt.clientX, pt.clientY);
+
+        if (TutorialModal.isOpen && typeof TutorialModal.handlePointerMove === 'function') {
+          TutorialModal.handlePointerMove(x, y);
+          return;
+        }
 
         if (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2) {
           this.handleForestNinjaPointerMove(x, y);
@@ -7081,6 +7086,11 @@
 
       const onUp = () => {
         if (!this.running || this.phase === 'map_iris_in' || this.phase === 'map_active') return;
+
+        if (TutorialModal.isOpen && typeof TutorialModal.handlePointerUp === 'function') {
+          TutorialModal.handlePointerUp(0, 0);
+          return;
+        }
 
         if (this.phase === 'forest_ninja_vignette' && this.forestNinja?.vignetteCard === 2) {
           this.handleForestNinjaPointerUp();
@@ -7317,7 +7327,7 @@
     // UPDATE & RENDER LOOP
     // ==========================================================================
     update(dt) {
-      if (GameHUD.paused || GameHUD.settingsOpen) {
+      if (GameHUD.paused || GameHUD.settingsOpen || GameHUD.guideOpen) {
         if (this.musicAudio && !this.musicAudio.paused) {
           try { this.musicAudio.pause(); } catch (_) {}
         }
@@ -7922,7 +7932,7 @@
         this.drawGameOverOverlay(ctx);
       }
 
-      GameHUD.renderModals(ctx);
+      GameHUD.renderModals(ctx, tq);
       IrisTransition.render(ctx);
     },
 
