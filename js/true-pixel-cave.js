@@ -13,7 +13,7 @@
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
     P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, measurePixelText, drawJustifiedPixelText, drawParchmentBox,
     TextOverlay,
-    ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
+    ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, VictoryChoreography, StandardTutorialCards
   } = E;
   const R = Math.round;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -2700,7 +2700,7 @@
     STAGE_MIN_Y: 38,          // abaixo do HUD superior (0..20), mantendo as bolinhas externas visíveis
     STAGE_MAX_Y: 128,         // acima do piso de pedra/musgo (y >= 138)
 
-    completeBtnRect: { x: 112, y: 112, w: 96, h: 16 },
+    completeBtnRect: { x: 102, y: 114, w: 116, h: 18 },
     gameOverBtnRect: { x: 96, y: 120, w: 128, h: 16 },
     onChapterFinish: null,
 
@@ -4255,6 +4255,7 @@
         this.phaseTime = 0;
         this.protag.state = 'celebrate';
         this.ordemActor.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -5113,6 +5114,9 @@
         this.waveRadius = 1;
         this.phase = 'step_resolving';
         this.phaseTime = 0;
+        this.protag.state = 'celebrate';
+        if (this.ordemActor?.visible) this.ordemActor.state = 'celebrate';
+        GameHUD.playSfx('victoryFanfare');
       }
     },
 
@@ -5205,6 +5209,7 @@
           this.phase = 'celebrate_complete';
           this.phaseTime = 0;
           this.protag.state = 'celebrate';
+          VictoryChoreography?.resetAudioState?.(this);
         });
       } else if (this.currentLevel === 2) {
         global.CrystalApp?.syncProgress?.([1, 2], 3);
@@ -5219,6 +5224,7 @@
           this.phase = 'celebrate_complete';
           this.phaseTime = 0;
           this.protag.state = 'celebrate';
+          VictoryChoreography?.resetAudioState?.(this);
         });
       } else if (this.currentLevel === 3) {
         global.CrystalApp?.syncProgress?.([1, 2, 3], 4);
@@ -5238,6 +5244,7 @@
           this.phase = 'celebrate_complete';
           this.phaseTime = 0;
           this.protag.state = 'celebrate';
+          VictoryChoreography?.resetAudioState?.(this);
         });
       }
     },
@@ -5646,10 +5653,22 @@
           this.setupLevelStep(this.currentLevel, this.currentStep + 1);
         }
       } else if (this.phase === 'step_resolving') {
-        if (this.phaseTime >= 1.35) {
+        this.protag.state = 'celebrate';
+        if (this.ordemActor?.visible) this.ordemActor.state = 'celebrate';
+        const resolveDur = GameHUD.reducedMotion ? 0.95 : 1.50;
+        if (this.phaseTime >= resolveDur) {
           this.obstacleDecay = 1;
           this.openPostLevelDialogue();
         }
+      } else if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+        this.protag.state = 'celebrate';
+        if (this.ordemActor?.visible) this.ordemActor.state = 'celebrate';
+        VictoryChoreography?.updateCompletionAudio?.(
+          this,
+          this.phaseTime,
+          this.phase === 'world_celebrate_complete',
+          Boolean(GameHUD.reducedMotion)
+        );
       } else if (this.phase === 'defeat_pause') {
         this.protag.state = 'shock';
         if (
@@ -5725,39 +5744,18 @@
     },
 
     drawCompletionOverlay(ctx, isWorldFinale = false) {
-      // Card de conclusão em Pergaminho Estilo Owlboy, perfeitamente centralizado e enquadrado
-      const bx = 42, by = 28, bw = 236, bh = 108;
-      drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#163b6c' });
-
-      if (isWorldFinale) {
-        const f12 = Math.floor(this.t * SPRITE_FPS);
-        for (let k = 0; k < 8; k++) {
-          const fx = 24 + ((k * 37) % 272);
-          const fy = 24 + ((f12 * 3 + k * 19) % 110);
-          drawStar(ctx, fx, fy, (k & 1) ? 3 : 2, '#ffffff', (k % 3 === 0) ? '#f2cc6b' : (k % 3 === 1 ? '#68b8c4' : '#e396b1'));
-        }
-        drawPixelTextCentered(ctx, 'Mundo 1 Restaurado!', bx + bw / 2, by + 8, '#ffffff', '#000000', bw - 16, 9);
-        drawPixelTextCentered(ctx, 'A Ordem despertou a Caverna!', bx + bw / 2, by + 28, '#ffea31', '#000000', bw - 20, 10);
-        drawPixelTextCentered(ctx, 'Rumo ao Mundo da Floresta!', bx + bw / 2, by + 41, '#92e8ff', '#000000', bw - 20, 10);
-      } else {
-        drawPixelTextCentered(ctx, `Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#ffffff', '#000000', bw - 16, 9);
-        drawPixelTextCentered(ctx, 'O caminho da Caverna se abriu!', bx + bw / 2, by + 32, '#ffea31', '#000000', bw - 20, 10);
-      }
-
-      const starY = by + 62;
-      for (let i = 0; i < 3; i++) {
-        drawStar(ctx, bx + bw / 2 - 20 + i * 20, starY, 4, '#ffffff', '#e3b454');
-      }
-
-      const b = this.completeBtnRect;
-      ctx.fillStyle = '#14111c';
-      ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = '#2b689c';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#92e8ff';
-      ctx.fillRect(b.x, b.y, b.w, 1);
-      ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, isWorldFinale ? 'Ir à Floresta >' : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 6, 9);
+      VictoryChoreography.renderCompletionOverlay(ctx, {
+        worldKey: 'cave',
+        isWorldFinale,
+        title: isWorldFinale ? 'Mundo 1 Restaurado!' : `Fase ${this.currentLevel} Concluída!`,
+        line1: isWorldFinale ? 'A Ordem despertou a Caverna!' : 'O caminho da Caverna se abriu!',
+        line2: isWorldFinale ? 'Rumo ao Mundo da Floresta!' : '',
+        buttonLabel: isWorldFinale ? 'Ir à Floresta >' : 'Continuar >',
+        buttonRect: this.completeBtnRect,
+        phaseTime: this.phaseTime,
+        t: this.t,
+        reducedMotion: Boolean(GameHUD.reducedMotion)
+      });
     },
 
     drawGameOverOverlay(ctx) {
@@ -5947,6 +5945,17 @@
         this.renderMusicalElements(ctx, tq);
       }
 
+      const isCelebrating =
+        this.phase === 'step_resolving' ||
+        this.phase === 'celebrate_complete' ||
+        this.phase === 'world_celebrate_complete';
+      const protagJumpY = isCelebrating
+        ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0)
+        : 0;
+      const ordemJumpY = isCelebrating
+        ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.12)
+        : 0;
+
       // Protagonista Hi-Bit (40x54 pixels físicos)
       if (this.phase === 'cutscene_fall' && this.protag.state === 'recover_stand') {
         const recElapsed = Math.max(0, this.phaseTime - 1.1);
@@ -5956,14 +5965,45 @@
         const sw = spr.width * scale, sh = spr.height * scale;
         ctx.drawImage(spr, RH(this.protag.x - sw / 2), RH(this.protag.y - sh), sw, sh);
       } else {
-        ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y, tq);
+        ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y + protagJumpY, tq);
       }
 
       // Personagem liberta ("Ordem") usando os estados em loop do SpriteBank e flipX coreografado
       if (this.ordemActor.visible) {
-        ActorAnimator.drawActor(ctx, 'ordem', this.ordemActor.state, this.ordemActor.x, this.ordemActor.y, tq, {
+        ActorAnimator.drawActor(ctx, 'ordem', this.ordemActor.state, this.ordemActor.x, this.ordemActor.y + ordemJumpY, tq, {
           flipX: Boolean(this.ordemActor.flipX)
         });
+      }
+
+      if (this.phase === 'step_resolving') {
+        const celebActors = [{ x: this.protag.x, y: this.protag.y + protagJumpY }];
+        if (this.ordemActor.visible) celebActors.push({ x: this.ordemActor.x, y: this.ordemActor.y + ordemJumpY });
+        VictoryChoreography.renderStepResolvingFX(ctx, {
+          worldKey: 'cave',
+          phaseTime: this.phaseTime,
+          tq,
+          waveOrigin: this.waveOrigin,
+          waveRadius: this.waveRadius,
+          barrierX: this.currentLevel === 4 ? 176 : 264,
+          barrierY: this.currentLevel === 4 ? 32 : 110,
+          actors: celebActors,
+          reducedMotion: Boolean(GameHUD.reducedMotion)
+        });
+      } else if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+        ActorAnimator.drawMusicNotesLoop(ctx, this.protag.x, this.protag.y + protagJumpY - 26, tq, {
+          count: GameHUD.reducedMotion ? 1 : 3,
+          dirX: 10,
+          dirY: -18,
+          period: 1.5
+        });
+        if (this.ordemActor.visible) {
+          ActorAnimator.drawMusicNotesLoop(ctx, this.ordemActor.x, this.ordemActor.y + ordemJumpY - 26, tq, {
+            count: GameHUD.reducedMotion ? 1 : 3,
+            dirX: -10,
+            dirY: -18,
+            period: 1.4
+          });
+        }
       }
 
       if (

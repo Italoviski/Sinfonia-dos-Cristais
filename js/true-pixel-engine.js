@@ -9217,7 +9217,14 @@
           global.CrystalAudio.unlock?.();
           global.CrystalAudio.setEnabled?.(true);
           global.CrystalAudio.setVolume?.(clamp(this.sfxVol / 100, 0, 1));
-          if (typeof global.CrystalAudio[kind] === 'function') {
+          if (kind === 'starChime1' || kind === 'starChime2' || kind === 'starChime3') {
+            const starIdx = Number(kind.slice(-1)) || 1;
+            if (typeof global.CrystalAudio.starChime === 'function') {
+              global.CrystalAudio.starChime(starIdx);
+            } else {
+              global.CrystalAudio.reward?.(starIdx + 1);
+            }
+          } else if (typeof global.CrystalAudio[kind] === 'function') {
             global.CrystalAudio[kind](2);
           } else if (kind === 'timeRewind') {
             global.CrystalAudio.equationCollapse?.(2);
@@ -10322,6 +10329,930 @@
     ]
   };
 
+  // ============================================================================
+  // COREOGRAFIA DE VITÓRIA E MENU DE CONCLUSÃO TEMÁTICO POR BIOMA (TRUE PIXEL ART)
+  // Reutilizado por CaveChapter1 (Caverna) e TruePixelWorlds (Floresta, Rio,
+  // Caatinga e Santuário Final). Respeita GameHUD.reducedMotion.
+  // ============================================================================
+  const SIDE_STAR_MAP = [
+    '.........O.........',
+    '........OLO........',
+    '.......OLWLO.......',
+    '.......OLWMO.......',
+    '......OLLWMLO......',
+    '......OLLWMMO......',
+    'OOOOOOLLLWMMMOOOOOO',
+    '.OLLLLWWLMMMMMMMLO.',
+    '..OLLWWLMMMMMMMMO..',
+    '...OLLWLMMMMMMDO...',
+    '....OLLMMMMMMDO....',
+    '....OLMMMMMMMDO....',
+    '...OLMMMMOMMMMDO...',
+    '...OLMMDO.ODMMDO...',
+    '..OLMMDO...ODMMDO..',
+    '..OLMDO.....ODMDO..',
+    '.OLMDO.......ODMDO.',
+    '.OODO.........ODDO.',
+    '.OO.............OO.'
+  ];
+
+  const CENTER_STAR_MAP = [
+    '...........O...........',
+    '..........OLO..........',
+    '.........OLWLO.........',
+    '.........OLWMO.........',
+    '........OLLWMLO........',
+    '........OLLWMMO........',
+    '.......OLLLWMMMO.......',
+    'OOOOOOOLLLWMMMMMOOOOOOO',
+    '.OLLLLLWWLMMMMMMMMMMMO.',
+    '..OLLLWWLMMMMMMMMMMDO..',
+    '...OLLWWLMMMMMMMMMDO...',
+    '....OLLWLMMMMMMMMDO....',
+    '.....OLLMMMMMMMMDO.....',
+    '.....OLMMMMMMMMMDO.....',
+    '....OLMMMMMOMMMMMDO....',
+    '....OLMMMMO.OMMMMDO....',
+    '...OLMMMDO...ODMMMDO...',
+    '...OLMMDO.....ODMMDO...',
+    '..OLMMDO.......ODMMDO..',
+    '..OLMDO.........ODMDO..',
+    '.OLMDO...........ODMDO.',
+    '.OODO.............ODDO.',
+    '.OO.................OO.'
+  ];
+
+  function extractStarInterior(rows) {
+    const pts = [];
+    for (let y = 0; y < rows.length; y++) {
+      const row = rows[y];
+      for (let x = 0; x < row.length; x++) {
+        const ch = row[x];
+        if (ch !== '.' && ch !== 'O') pts.push([x, y]);
+      }
+    }
+    return pts;
+  }
+
+  let _starSpriteCache = null;
+  function getStarSprites() {
+    if (_starSpriteCache) return _starSpriteCache;
+    const goldPal = { O: '#2b1606', D: '#b56510', M: '#eab308', L: '#fde047', W: '#ffffff' };
+    const socketPal = { O: '#120f1c', D: '#221d33', M: '#2f2945', L: '#423a5e', W: '#554b75' };
+    const flashPal = { O: '#fde047', D: '#fef08a', M: '#ffffff', L: '#ffffff', W: '#ffffff' };
+    _starSpriteCache = {
+      side: {
+        lit: fromMap(SIDE_STAR_MAP, goldPal),
+        socket: fromMap(SIDE_STAR_MAP, socketPal),
+        flash: fromMap(SIDE_STAR_MAP, flashPal),
+        w: SIDE_STAR_MAP[0].length,
+        h: SIDE_STAR_MAP.length,
+        interior: extractStarInterior(SIDE_STAR_MAP)
+      },
+      center: {
+        lit: fromMap(CENTER_STAR_MAP, goldPal),
+        socket: fromMap(CENTER_STAR_MAP, socketPal),
+        flash: fromMap(CENTER_STAR_MAP, flashPal),
+        w: CENTER_STAR_MAP[0].length,
+        h: CENTER_STAR_MAP.length,
+        interior: extractStarInterior(CENTER_STAR_MAP)
+      }
+    };
+    return _starSpriteCache;
+  }
+
+  const VICTORY_BIOME_THEMES = {
+    cave: {
+      dimColor: 'rgba(8, 10, 26, 0.36)',
+      outline: '#080917',
+      frameOuter: '#1c244c',
+      frameMid: '#131836',
+      frameInner: '#0d1129',
+      borderPrimary: '#5ce1f6',
+      borderSecondary: '#a96ef5',
+      borderHighlight: '#dffbff',
+      headerBg: '#162f61',
+      headerTrim: '#7cd8f5',
+      titleColor: '#ffffff',
+      line1Color: '#ffea31',
+      line2Color: '#92e8ff',
+      btnOutline: '#080917',
+      btnFill: '#1e508a',
+      btnFillHover: '#2c6eb8',
+      btnTop: '#8aeaff',
+      btnBottom: '#102a4d',
+      btnSheen: '#e6fcff',
+      waveColors: ['#5ce1f6', '#a96ef5', '#ffffff'],
+      particleColors: ['#92e8ff', '#c084fc', '#ffffff', '#67e8f9'],
+      starAccent: '#67e8f9'
+    },
+    forest: {
+      dimColor: 'rgba(8, 20, 12, 0.36)',
+      outline: '#120d08',
+      frameOuter: '#5e3a22',
+      frameMid: '#422817',
+      frameInner: '#13261a',
+      borderPrimary: '#34d399',
+      borderSecondary: '#16a34a',
+      borderHighlight: '#bbf7d0',
+      headerBg: '#1a4227',
+      headerTrim: '#6ee7b7',
+      titleColor: '#fef08a',
+      line1Color: '#ffffff',
+      line2Color: '#86efac',
+      btnOutline: '#0f1f14',
+      btnFill: '#1f6e3c',
+      btnFillHover: '#2b8f50',
+      btnTop: '#86efac',
+      btnBottom: '#134224',
+      btnSheen: '#fef9c3',
+      waveColors: ['#34d399', '#fde047', '#ffffff'],
+      particleColors: ['#fde047', '#86efac', '#34d399', '#fef9c3'],
+      starAccent: '#86efac'
+    },
+    river: {
+      dimColor: 'rgba(5, 22, 34, 0.36)',
+      outline: '#061722',
+      frameOuter: '#155e75',
+      frameMid: '#0e4257',
+      frameInner: '#0a2336',
+      borderPrimary: '#22d3ee',
+      borderSecondary: '#38bdf8',
+      borderHighlight: '#e0faff',
+      headerBg: '#104a63',
+      headerTrim: '#67e8f9',
+      titleColor: '#e0faff',
+      line1Color: '#fef08a',
+      line2Color: '#67e8f9',
+      btnOutline: '#061722',
+      btnFill: '#0e7490',
+      btnFillHover: '#0891b2',
+      btnTop: '#a5f3fc',
+      btnBottom: '#083344',
+      btnSheen: '#ecfeff',
+      waveColors: ['#22d3ee', '#7dd3fc', '#ffffff'],
+      particleColors: ['#67e8f9', '#bae6fd', '#ffffff', '#22d3ee'],
+      starAccent: '#67e8f9'
+    },
+    caatinga: {
+      dimColor: 'rgba(28, 12, 6, 0.36)',
+      outline: '#1f0d05',
+      frameOuter: '#b85c28',
+      frameMid: '#8a3d18',
+      frameInner: '#2b150c',
+      borderPrimary: '#fbbf24',
+      borderSecondary: '#f97316',
+      borderHighlight: '#fef08a',
+      headerBg: '#7a2b10',
+      headerTrim: '#fbbf24',
+      titleColor: '#fef08a',
+      line1Color: '#ffffff',
+      line2Color: '#fdba74',
+      btnOutline: '#1f0d05',
+      btnFill: '#c2410c',
+      btnFillHover: '#ea580c',
+      btnTop: '#fde047',
+      btnBottom: '#7c2d12',
+      btnSheen: '#fef9c3',
+      waveColors: ['#fbbf24', '#fb923c', '#ffffff'],
+      particleColors: ['#fbbf24', '#fb923c', '#fef08a', '#f97316'],
+      starAccent: '#fb923c'
+    },
+    sanctuary: {
+      dimColor: 'rgba(18, 12, 28, 0.38)',
+      outline: '#1a1004',
+      frameOuter: '#d99b26',
+      frameMid: '#9a6514',
+      frameInner: '#1e1430',
+      borderPrimary: '#fde047',
+      borderSecondary: '#c084fc',
+      borderHighlight: '#ffffff',
+      headerBg: '#4a2b0a',
+      headerTrim: '#fde047',
+      titleColor: '#fff7b2',
+      line1Color: '#ffffff',
+      line2Color: '#a5f3fc',
+      btnOutline: '#1a1004',
+      btnFill: '#b45309',
+      btnFillHover: '#d97706',
+      btnTop: '#fef08a',
+      btnBottom: '#78350f',
+      btnSheen: '#ffffff',
+      waveColors: ['#fde047', '#c084fc', '#67e8f9'],
+      particleColors: ['#fde047', '#c084fc', '#34d399', '#22d3ee', '#fb923c', '#ffffff'],
+      starAccent: '#fef08a'
+    }
+  };
+
+  function getVictoryTheme(worldKey) {
+    return VICTORY_BIOME_THEMES[worldKey] || VICTORY_BIOME_THEMES.cave;
+  }
+
+  function easeOutBack(p) {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+  }
+
+  function drawCornerCrystal(ctx, x, y, flipX, flipY, colDark, colMid, colLight, colSpec) {
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    const plot = (dx, dy, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(R(x + dx * sx), R(y + dy * sy), 1, 1);
+    };
+    // Pequeno aglomerado de cristal lapidado 7x7 nos cantos da Caverna
+    const pts = [
+      [0, 0, colSpec], [1, 0, colLight], [2, 0, colMid], [3, 0, colDark],
+      [0, 1, colLight], [1, 1, colSpec], [2, 1, colLight], [3, 1, colMid], [4, 1, colDark],
+      [0, 2, colMid], [1, 2, colLight], [2, 2, colMid], [3, 2, colDark],
+      [0, 3, colDark], [1, 3, colMid], [2, 3, colDark],
+      [1, 4, colDark],
+      [4, 0, colLight], [5, 0, colMid], [5, 1, colDark]
+    ];
+    for (let i = 0; i < pts.length; i++) {
+      plot(pts[i][0], pts[i][1], pts[i][2]);
+    }
+  }
+
+  function drawCornerLeaf(ctx, x, y, flipX, flipY) {
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    const plot = (dx, dy, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(R(x + dx * sx), R(y + dy * sy), 1, 1);
+    };
+    // Folhas esmeralda esculpidas com gota de orvalho especular
+    const pts = [
+      [0, 0, '#14532d'], [1, 0, '#16a34a'], [2, 0, '#34d399'], [3, 0, '#86efac'], [4, 0, '#16a34a'],
+      [0, 1, '#16a34a'], [1, 1, '#34d399'], [2, 1, '#bbf7d0'], [3, 1, '#34d399'], [4, 1, '#15803d'], [5, 1, '#14532d'],
+      [0, 2, '#34d399'], [1, 2, '#86efac'], [2, 2, '#16a34a'], [3, 2, '#14532d'],
+      [0, 3, '#16a34a'], [1, 3, '#34d399'], [2, 3, '#15803d'],
+      [1, 4, '#14532d'], [0, 4, '#14532d'],
+      [2, 2, '#fef08a'] // micro gota/luz dourada
+    ];
+    for (let i = 0; i < pts.length; i++) {
+      plot(pts[i][0], pts[i][1], pts[i][2]);
+    }
+  }
+
+  function drawCornerAquaDroplet(ctx, x, y, flipX, flipY, t) {
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    const plot = (dx, dy, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(R(x + dx * sx), R(y + dy * sy), 1, 1);
+    };
+    const glint = (Math.floor(t * 6) & 1) === 0 ? '#ffffff' : '#a5f3fc';
+    const pts = [
+      [0, 0, '#0e7490'], [1, 0, '#22d3ee'], [2, 0, '#67e8f9'], [3, 0, '#0e7490'],
+      [0, 1, '#22d3ee'], [1, 1, glint], [2, 1, '#a5f3fc'], [3, 1, '#22d3ee'], [4, 1, '#0891b2'],
+      [0, 2, '#67e8f9'], [1, 2, '#a5f3fc'], [2, 2, '#22d3ee'], [3, 2, '#0e7490'],
+      [0, 3, '#0e7490'], [1, 3, '#22d3ee'], [2, 3, '#0e7490'],
+      [1, 4, '#0891b2']
+    ];
+    for (let i = 0; i < pts.length; i++) {
+      plot(pts[i][0], pts[i][1], pts[i][2]);
+    }
+  }
+
+  function drawCornerSolarOpal(ctx, x, y, t) {
+    const cx = R(x), cy = R(y);
+    const pulse = (Math.floor(t * 8) & 1) === 0;
+    // Medalhão solar de opala de fogo 7x7
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(cx - 3, cy - 2, 7, 5);
+    ctx.fillRect(cx - 2, cy - 3, 5, 7);
+    ctx.fillStyle = '#ea580c';
+    ctx.fillRect(cx - 2, cy - 2, 5, 5);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(cx - 1, cy - 1, 3, 3);
+    ctx.fillStyle = pulse ? '#ffffff' : '#fef08a';
+    ctx.fillRect(cx, cy, 1, 1);
+    // Raios cardeais solares
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx, cy - 4, 1, 1);
+    ctx.fillRect(cx, cy + 4, 1, 1);
+    ctx.fillRect(cx - 4, cy, 1, 1);
+    ctx.fillRect(cx + 4, cy, 1, 1);
+  }
+
+  function drawCornerPrimordialGem(ctx, x, y, mainCol, lightCol, specCol, t) {
+    const cx = R(x), cy = R(y);
+    const shine = (Math.floor(t * 6) & 1) === 0;
+    // Engaste dourado + gema primordial losangular
+    ctx.fillStyle = '#2b1606';
+    ctx.fillRect(cx - 3, cy - 3, 7, 7);
+    ctx.fillStyle = '#f5c84c';
+    ctx.fillRect(cx - 2, cy - 2, 5, 5);
+    ctx.fillStyle = mainCol;
+    ctx.fillRect(cx - 1, cy - 2, 3, 5);
+    ctx.fillRect(cx - 2, cy - 1, 5, 3);
+    ctx.fillStyle = lightCol;
+    ctx.fillRect(cx - 1, cy - 1, 2, 2);
+    ctx.fillStyle = shine ? '#ffffff' : specCol;
+    ctx.fillRect(cx - 1, cy - 1, 1, 1);
+  }
+
+  function drawThemedCompletionFrame(ctx, bx, by, bw, bh, worldKey, t, phaseTime, reducedMotion) {
+    bx = R(bx); by = R(by); bw = R(bw); bh = R(bh);
+    const theme = getVictoryTheme(worldKey);
+    TextOverlay.clearLogicalRect(ctx, bx, by, bw, bh);
+
+    // Sombra projetada profunda sob o card
+    ctx.fillStyle = 'rgba(4, 3, 10, 0.62)';
+    ctx.fillRect(bx + 3, by + 4, bw, bh);
+
+    // Contorno externo chanfrado
+    ctx.fillStyle = theme.outline;
+    ctx.fillRect(bx + 2, by, bw - 4, bh);
+    ctx.fillRect(bx + 1, by + 1, bw - 2, bh - 2);
+    ctx.fillRect(bx, by + 2, bw, bh - 4);
+
+    // Corpo da moldura do bioma
+    ctx.fillStyle = theme.frameOuter;
+    ctx.fillRect(bx + 2, by + 1, bw - 4, bh - 2);
+    ctx.fillRect(bx + 1, by + 2, bw - 2, bh - 4);
+
+    // Chanfro intermediário e miolo escuro contrastado
+    ctx.fillStyle = theme.frameMid;
+    ctx.fillRect(bx + 3, by + 3, bw - 6, bh - 6);
+    ctx.fillStyle = theme.frameInner;
+    ctx.fillRect(bx + 5, by + 5, bw - 10, bh - 10);
+
+    // Borda luminosa temática ao redor do miolo
+    ctx.fillStyle = theme.borderPrimary;
+    ctx.fillRect(bx + 4, by + 4, bw - 8, 1);
+    ctx.fillRect(bx + 4, by + bh - 5, bw - 8, 1);
+    ctx.fillRect(bx + 4, by + 4, 1, bh - 8);
+    ctx.fillRect(bx + bw - 5, by + 4, 1, bh - 8);
+
+    // Detalhes específicos na moldura por bioma
+    const f12 = Math.floor(t * SPRITE_FPS);
+    if (worldKey === 'cave') {
+      // Facetas alternadas ciano/ametista nas bordas + brilho especular
+      for (let x = bx + 12; x < bx + bw - 12; x += 10) {
+        ctx.fillStyle = ((x >> 1) & 1) ? theme.borderSecondary : theme.borderHighlight;
+        ctx.fillRect(x, by + 4, 4, 1);
+        ctx.fillRect(x, by + bh - 5, 4, 1);
+      }
+      for (let y = by + 12; y < by + bh - 12; y += 10) {
+        ctx.fillStyle = theme.borderSecondary;
+        ctx.fillRect(bx + 4, y, 1, 4);
+        ctx.fillRect(bx + bw - 5, y, 1, 4);
+      }
+      // Pequenos cristais lapidados nos 4 cantos
+      drawCornerCrystal(ctx, bx + 2, by + 2, false, false, '#2e1065', '#9333ea', '#5ce1f6', '#ffffff');
+      drawCornerCrystal(ctx, bx + bw - 3, by + 2, true, false, '#2e1065', '#9333ea', '#5ce1f6', '#ffffff');
+      drawCornerCrystal(ctx, bx + 2, by + bh - 3, false, true, '#164e63', '#0891b2', '#a855f7', '#e0faff');
+      drawCornerCrystal(ctx, bx + bw - 3, by + bh - 3, true, true, '#164e63', '#0891b2', '#a855f7', '#e0faff');
+    } else if (worldKey === 'forest') {
+      // Veios de madeira antiga na moldura externa
+      ctx.fillStyle = '#784c2c';
+      for (let x = bx + 10; x < bx + bw - 10; x += 14) {
+        ctx.fillRect(x, by + 2, 7, 1);
+        ctx.fillRect(x + 3, by + bh - 3, 6, 1);
+      }
+      // Vinhas verdes entrelaçando as laterais
+      for (let y = by + 14; y < by + bh - 14; y += 6) {
+        const off = ((y >> 2) & 1) ? 0 : 1;
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(bx + 2 + off, y, 2, 3);
+        ctx.fillRect(bx + bw - 4 - off, y, 2, 3);
+        ctx.fillStyle = '#86efac';
+        ctx.fillRect(bx + 2 + off, y, 1, 1);
+        ctx.fillRect(bx + bw - 3 - off, y, 1, 1);
+      }
+      // Folhas esmeralda nos 4 cantos
+      drawCornerLeaf(ctx, bx + 1, by + 1, false, false);
+      drawCornerLeaf(ctx, bx + bw - 2, by + 1, true, false);
+      drawCornerLeaf(ctx, bx + 1, by + bh - 2, false, true);
+      drawCornerLeaf(ctx, bx + bw - 2, by + bh - 2, true, true);
+    } else if (worldKey === 'river') {
+      // Filetes d'água e ondulações cintilantes nas bordas superior e inferior
+      const waveShift = reducedMotion ? 0 : f12;
+      for (let x = bx + 10; x < bx + bw - 10; x += 2) {
+        const wv = ((x + waveShift * 2) % 12) < 5;
+        ctx.fillStyle = wv ? '#a5f3fc' : '#0891b2';
+        ctx.fillRect(x, by + 2, 2, 1);
+        ctx.fillRect(x, by + bh - 3, 2, 1);
+        if (((x + waveShift * 3) % 18) === 0) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x, by + 4, 2, 1);
+          ctx.fillRect(x, by + bh - 5, 2, 1);
+        }
+      }
+      // Gotículas/conchas polidas nos 4 cantos
+      drawCornerAquaDroplet(ctx, bx + 2, by + 2, false, false, t);
+      drawCornerAquaDroplet(ctx, bx + bw - 3, by + 2, true, false, t);
+      drawCornerAquaDroplet(ctx, bx + 2, by + bh - 3, false, true, t);
+      drawCornerAquaDroplet(ctx, bx + bw - 3, by + bh - 3, true, true, t);
+    } else if (worldKey === 'caatinga') {
+      // Entalhes geométricos de arenito esculpido na moldura
+      for (let x = bx + 12; x < bx + bw - 12; x += 8) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(x, by + 2, 4, 1);
+        ctx.fillRect(x, by + bh - 3, 4, 1);
+        ctx.fillStyle = '#6b2d14';
+        ctx.fillRect(x + 4, by + 2, 2, 1);
+        ctx.fillRect(x + 4, by + bh - 3, 2, 1);
+      }
+      // Medalhões solares de opala de fogo nos 4 cantos
+      drawCornerSolarOpal(ctx, bx + 4, by + 4, t);
+      drawCornerSolarOpal(ctx, bx + bw - 5, by + 4, t + 0.25);
+      drawCornerSolarOpal(ctx, bx + 4, by + bh - 5, t + 0.5);
+      drawCornerSolarOpal(ctx, bx + bw - 5, by + bh - 5, t + 0.75);
+    } else if (worldKey === 'sanctuary') {
+      // Borda prismática dourada celebrando as 4 Gemas Primordiais
+      const prismCols = ['#fde047', '#c084fc', '#34d399', '#22d3ee', '#fb923c', '#ffffff'];
+      const shift = reducedMotion ? 0 : Math.floor(t * 8);
+      for (let x = bx + 12; x < bx + bw - 12; x += 6) {
+        const col = prismCols[(Math.floor((x - bx) / 6) + shift) % prismCols.length];
+        ctx.fillStyle = col;
+        ctx.fillRect(x, by + 4, 4, 1);
+        ctx.fillRect(x, by + bh - 5, 4, 1);
+      }
+      // As 4 Gemas Primordiais engastadas nos 4 cantos!
+      drawCornerPrimordialGem(ctx, bx + 5, by + 5, '#9333ea', '#c084fc', '#e0faff', t);
+      drawCornerPrimordialGem(ctx, bx + bw - 6, by + 5, '#16a34a', '#4ade80', '#dcfce7', t + 0.2);
+      drawCornerPrimordialGem(ctx, bx + 5, by + bh - 6, '#0891b2', '#22d3ee', '#ecfeff', t + 0.4);
+      drawCornerPrimordialGem(ctx, bx + bw - 6, by + bh - 6, '#ea580c', '#fb923c', '#fef08a', t + 0.6);
+    }
+
+    // Faixa de cabeçalho temática
+    const headerH = 18;
+    ctx.fillStyle = theme.headerBg;
+    ctx.fillRect(bx + 5, by + 5, bw - 10, headerH);
+    ctx.fillStyle = theme.headerTrim;
+    ctx.fillRect(bx + 5, by + 5 + headerH, bw - 10, 1);
+    // Detalhe sutil no divisor do cabeçalho
+    ctx.fillStyle = theme.borderHighlight;
+    ctx.fillRect(bx + R(bw / 2) - 24, by + 5 + headerH, 48, 1);
+
+    // Brilho de varredura na moldura na entrada do card (e pulso suave contínuo)
+    if (!reducedMotion && phaseTime >= 0.12 && phaseTime <= 0.95) {
+      const sp = clamp((phaseTime - 0.12) / 0.72, 0, 1);
+      const sx = bx + 6 + R(sp * (bw - 24));
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx, by + 4, 14, 1);
+      ctx.fillRect(bx + bw - 6 - R(sp * (bw - 24)) - 14, by + bh - 5, 14, 1);
+    }
+  }
+
+  function drawBiomeAmbientParticles(ctx, bx, by, bw, bh, worldKey, t, reducedMotion) {
+    const theme = getVictoryTheme(worldKey);
+    const cols = theme.particleColors;
+    const count = reducedMotion ? 6 : 16;
+    const f12 = reducedMotion ? 0 : t * 12;
+
+    for (let k = 0; k < count; k++) {
+      const seed = k * 73 + 19;
+      const speed = 0.55 + (k % 4) * 0.25;
+      const spanW = bw + 44;
+      const spanH = bh + 28;
+      const baseX = (bx - 22) + ((seed * 17) % spanW);
+      const driftX = reducedMotion ? 0 : Math.sin(t * (1.2 + (k % 3) * 0.5) + k) * 4;
+      const px = R(baseX + driftX);
+      const py = R((by + bh + 12) - (((seed * 11 + f12 * speed * 1.4) % spanH)));
+      const col = cols[k % cols.length];
+
+      if (worldKey === 'river' && (k % 3 === 0)) {
+        // Bolha pixelada luminosa
+        drawRing(ctx, px, py, 2, col);
+        P1(ctx, px - 1, py - 1, '#ffffff');
+      } else if (worldKey === 'forest' && (k % 2 === 0)) {
+        // Vaga-lume dourado/verde com micro halo
+        const blink = reducedMotion || ((Math.floor(t * 6 + k) % 4) !== 0);
+        if (blink) {
+          P1(ctx, px, py, '#ffffff');
+          P1(ctx, px - 1, py, col);
+          P1(ctx, px + 1, py, col);
+          P1(ctx, px, py - 1, col);
+          P1(ctx, px, py + 1, col);
+        }
+      } else if (worldKey === 'caatinga') {
+        // Brasa dourada/laranja ascendente
+        P1(ctx, px, py, col);
+        if ((k & 1) === 0) P1(ctx, px, py + 1, '#ea580c');
+      } else if (worldKey === 'sanctuary' && (k % 3 === 0)) {
+        drawStar(ctx, px, py, 2, '#ffffff', col);
+      } else {
+        // Poeira cristalina luminescente (Caverna e demais partículas)
+        P1(ctx, px, py, col);
+        if (!reducedMotion && ((Math.floor(t * 8 + k) & 3) === 0)) {
+          P1(ctx, px, py - 1, '#ffffff');
+        }
+      }
+    }
+  }
+
+  function drawSculptedStar(ctx, cx, cy, isCenter, age, t, starIndex, reducedMotion, accentCol) {
+    const sprites = getStarSprites();
+    const spec = isCenter ? sprites.center : sprites.side;
+    cx = R(cx);
+    cy = R(cy);
+
+    // Estado ainda apagado (encaixe esculpido aguardando acender na sequência)
+    if (age < 0) {
+      const dx = R(cx - spec.w / 2);
+      const dy = R(cy - spec.h / 2);
+      if (typeof ctx.drawImage === 'function') {
+        ctx.drawImage(spec.socket, dx, dy);
+      }
+      return;
+    }
+
+    // Escala com overshoot de impacto (0 -> 1.36 -> 0.93 -> 1.0)
+    let scale = 1.0;
+    if (!reducedMotion && age < 0.28) {
+      if (age < 0.11) {
+        const u = age / 0.11;
+        scale = 0.25 + (1.36 - 0.25) * (1 - Math.pow(1 - u, 2));
+      } else if (age < 0.20) {
+        const u = (age - 0.11) / 0.09;
+        scale = 1.36 + (0.93 - 1.36) * u;
+      } else {
+        const u = (age - 0.20) / 0.08;
+        scale = 0.93 + (1.0 - 0.93) * u;
+      }
+    }
+
+    // Aura luminosa dourada pulsante atrás da estrela (anéis concêntricos suaves em pixel art)
+    const auraPulse = reducedMotion ? 0 : Math.sin(t * 4.5 + starIndex * 1.4) * 1.2;
+    const auraR = R((isCenter ? 13 : 10) + auraPulse);
+    if (typeof ctx.save === 'function') ctx.save();
+    ctx.globalAlpha = 0.24;
+    drawRing(ctx, cx, cy, auraR, '#fde047');
+    ctx.globalAlpha = 0.16;
+    drawRing(ctx, cx, cy, Math.max(3, auraR - 2), '#fef08a');
+    ctx.globalAlpha = 0.14;
+    drawRing(ctx, cx, cy, auraR + 2, accentCol || '#fde047');
+    if (typeof ctx.restore === 'function') ctx.restore();
+
+    // Anel de choque dourado e partículas de faísca no impacto de acendimento
+    if (!reducedMotion && age < 0.42) {
+      const p = age / 0.42;
+      const ringR = R(5 + p * (isCenter ? 20 : 16));
+      drawRing(ctx, cx, cy, ringR, p < 0.4 ? '#ffffff' : (p < 0.75 ? '#fde047' : '#f59e0b'));
+      if (p < 0.65) {
+        drawRing(ctx, cx, cy, Math.max(2, ringR - 3), '#fef08a');
+      }
+      const sparkCount = isCenter ? 10 : 8;
+      for (let s = 0; s < sparkCount; s++) {
+        const ang = (s / sparkCount) * Math.PI * 2 + starIndex * 0.35;
+        const dist = 5 + p * (isCenter ? 22 : 17);
+        const sx = R(cx + Math.cos(ang) * dist);
+        const sy = R(cy + Math.sin(ang) * dist);
+        P1(ctx, sx, sy, (s & 1) ? '#ffffff' : (s % 3 === 0 ? accentCol : '#fde047'));
+        if (p < 0.5) {
+          P1(ctx, R(cx + Math.cos(ang) * (dist - 2)), R(cy + Math.sin(ang) * (dist - 2)), '#fef08a');
+        }
+      }
+    }
+
+    // Desenho da estrela esculpida em pixel art (snapped integer pixels)
+    const dw = Math.max(3, R(spec.w * scale));
+    const dh = Math.max(3, R(spec.h * scale));
+    const dx = R(cx - dw / 2);
+    const dy = R(cy - dh / 2);
+    if (typeof ctx.drawImage === 'function') {
+      ctx.drawImage(spec.lit, dx, dy, dw, dh);
+      // Clarão especular breve no pico do impacto
+      if (!reducedMotion && age < 0.11) {
+        if (typeof ctx.save === 'function') ctx.save();
+        ctx.globalAlpha = clamp(1 - age / 0.11, 0, 1) * 0.85;
+        ctx.drawImage(spec.flash, dx, dy, dw, dh);
+        if (typeof ctx.restore === 'function') ctx.restore();
+      }
+    }
+
+    // Varredura luminosa (shimmer) diagonal contínua recortada no interior da estrela
+    if (!reducedMotion && age >= 0.25) {
+      const cycle = (t * 1.15 - starIndex * 0.28) % 2.4;
+      if (cycle >= 0 && cycle < 0.72) {
+        const u = cycle / 0.72;
+        const diagMin = -spec.h;
+        const diagMax = spec.w;
+        const sweep = diagMin + u * (diagMax - diagMin);
+        const pts = spec.interior;
+        for (let i = 0; i < pts.length; i++) {
+          const px = pts[i][0];
+          const py = pts[i][1];
+          const d = Math.abs((px - py) - sweep);
+          if (d <= 1.25) {
+            ctx.fillStyle = d <= 0.6 ? '#ffffff' : '#fef9c3';
+            ctx.fillRect(dx + px, dy + py, 1, 1);
+          }
+        }
+      }
+    }
+
+    // Cintilação contínua de microestrelas ao redor da estrela acesa
+    if (age >= 0.22) {
+      const microSpots = isCenter
+        ? [[-12, -8], [12, -9], [-13, 6], [13, 5], [0, -14]]
+        : [[-10, -7], [10, -6], [0, 11]];
+      const phaseTick = reducedMotion ? 0 : Math.floor(t * 7 + starIndex * 2);
+      for (let m = 0; m < microSpots.length; m++) {
+        const active = reducedMotion ? (m === 0) : (((phaseTick + m * 3) % 5) < 2);
+        if (!active) continue;
+        const mx = cx + microSpots[m][0];
+        const my = cy + microSpots[m][1];
+        const sz = (!reducedMotion && ((phaseTick + m) % 5 === 0)) ? 2 : 1;
+        drawStar(ctx, mx, my, sz, '#ffffff', (m & 1) ? accentCol : '#fde047');
+      }
+    }
+  }
+
+  function drawBiomeActionButton(ctx, b, label, worldKey, t, reducedMotion) {
+    const theme = getVictoryTheme(worldKey);
+    const x = R(b.x), y = R(b.y), w = R(b.w), h = R(b.h);
+    const pulse = !reducedMotion && ((Math.floor(t * 3.5) & 1) === 0);
+
+    // Sombra sob botão
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillRect(x, y + 2, w + 1, h);
+
+    // Borda externa escura chanfrada
+    ctx.fillStyle = theme.btnOutline;
+    ctx.fillRect(x - 1, y, w + 2, h);
+    ctx.fillRect(x, y - 1, w, h + 2);
+
+    // Corpo do botão com bevel 3D pixel art
+    ctx.fillStyle = pulse ? theme.btnFillHover : theme.btnFill;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = theme.btnTop;
+    ctx.fillRect(x + 1, y, w - 2, 1);
+    ctx.fillRect(x, y + 1, 1, h - 2);
+    ctx.fillStyle = theme.btnBottom;
+    ctx.fillRect(x + 1, y + h - 1, w - 2, 1);
+    ctx.fillRect(x + w - 1, y + 1, 1, h - 2);
+
+    // Brilho diagonal animado sutil varrendo o botão
+    if (!reducedMotion) {
+      const cycle = (t * 0.85) % 2.6;
+      if (cycle < 0.75) {
+        const u = cycle / 0.75;
+        const sx = x + R(u * (w + 12)) - 6;
+        if (typeof ctx.save === 'function') ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = theme.btnSheen;
+        for (let ry = 1; ry < h - 1; ry++) {
+          const px = sx - Math.floor(ry * 0.45);
+          if (px >= x + 1 && px < x + w - 4) {
+            ctx.fillRect(px, y + ry, 4, 1);
+          }
+        }
+        if (typeof ctx.restore === 'function') ctx.restore();
+      }
+    }
+
+    // Pontos especulares nos cantos superiores do botão
+    P1(ctx, x + 2, y + 2, '#ffffff');
+    P1(ctx, x + w - 3, y + 2, '#ffffff');
+
+    drawPixelTextCentered(ctx, label, x + w / 2, y + 5, '#ffffff', '#000000', w - 8, 9);
+  }
+
+  const VictoryChoreography = {
+    THEMES: VICTORY_BIOME_THEMES,
+    STAR_DELAYS: [0.46, 0.78, 1.10],
+    DEFAULT_BTN_RECT: { x: 102, y: 114, w: 116, h: 18 },
+
+    getTheme: getVictoryTheme,
+
+    resetAudioState(host) {
+      if (!host) return;
+      host._victoryAudioState = {
+        fanfarePlayed: false,
+        starsPlayed: [false, false, false]
+      };
+    },
+
+    updateCompletionAudio(host, phaseTime, isWorldFinale, reducedMotion) {
+      if (!host) return;
+      if (!host._victoryAudioState || phaseTime < 0.05) {
+        if (!host._victoryAudioState) {
+          this.resetAudioState(host);
+        }
+      }
+      const st = host._victoryAudioState;
+      if (!st.fanfarePlayed) {
+        st.fanfarePlayed = true;
+        GameHUD.playSfx(isWorldFinale ? 'worldFinaleFanfare' : 'victoryFanfare');
+      }
+      if (reducedMotion) return;
+      for (let i = 0; i < 3; i++) {
+        if (!st.starsPlayed[i] && phaseTime >= this.STAR_DELAYS[i]) {
+          st.starsPlayed[i] = true;
+          GameHUD.playSfx(`starChime${i + 1}`);
+        }
+      }
+    },
+
+    getCelebrationJumpOffset(phaseTime, reducedMotion, offsetSeed = 0) {
+      if (reducedMotion) return 0;
+      const t = Math.max(0, phaseTime - offsetSeed);
+      // Dois saltos alegres iniciais seguidos de balanço rítmico suave
+      if (t < 0.42) {
+        const p = t / 0.42;
+        return -R(Math.sin(p * Math.PI) * 8);
+      }
+      if (t < 0.80) {
+        const p = (t - 0.42) / 0.38;
+        return -R(Math.sin(p * Math.PI) * 5);
+      }
+      return -R(Math.abs(Math.sin((t - 0.80) * 3.4)) * 2);
+    },
+
+    renderStepResolvingFX(ctx, opts = {}) {
+      const worldKey = opts.worldKey || 'cave';
+      const theme = getVictoryTheme(worldKey);
+      const pt = Math.max(0, opts.phaseTime || 0);
+      const tq = opts.tq || 0;
+      const reducedMotion = Boolean(opts.reducedMotion);
+      const origin = opts.waveOrigin || { x: 160, y: 96 };
+      const rad = Math.max(0, opts.waveRadius || 0);
+      const bx = opts.barrierX !== undefined ? opts.barrierX : 260;
+      const by = opts.barrierY !== undefined ? opts.barrierY : 106;
+      const actors = Array.isArray(opts.actors) ? opts.actors : [];
+
+      // 1. Onda de purificação cristalina em múltiplos anéis + partículas temáticas na frente da onda
+      if (rad > 2 && rad < 340) {
+        const wc = theme.waveColors;
+        drawRing(ctx, origin.x, origin.y, R(rad), wc[2]);
+        if (rad > 6) drawRing(ctx, origin.x, origin.y, R(rad - 4), wc[0]);
+        if (rad > 12) drawRing(ctx, origin.x, origin.y, R(rad - 9), wc[1]);
+        if (!reducedMotion) {
+          const moteCount = 14;
+          for (let m = 0; m < moteCount; m++) {
+            const ang = (m / moteCount) * Math.PI * 2 + pt * 1.4;
+            const mx = R(origin.x + Math.cos(ang) * rad);
+            const my = R(origin.y + Math.sin(ang) * rad);
+            if (mx >= 0 && mx < W && my >= 20 && my < H) {
+              drawStar(ctx, mx, my, (m & 1) ? 2 : 1, '#ffffff', theme.particleColors[m % theme.particleColors.length]);
+            }
+          }
+        }
+      }
+
+      // 2. Clarão suave no cristal / barreira purificada + partículas subindo do bioma
+      if (pt < 1.35) {
+        const flashP = pt < 0.35 ? (pt / 0.35) : clamp(1 - (pt - 0.35) / 0.85, 0, 1);
+        if (flashP > 0.04) {
+          if (typeof ctx.save === 'function') ctx.save();
+          ctx.globalAlpha = flashP * (reducedMotion ? 0.32 : 0.55);
+          const fr = R(10 + flashP * 18);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(R(bx - fr), R(by - 2), fr * 2, 4);
+          ctx.fillRect(R(bx - 2), R(by - fr), 4, fr * 2);
+          ctx.fillStyle = theme.borderPrimary;
+          ctx.fillRect(R(bx - R(fr * 0.6)), R(by - R(fr * 0.6)), R(fr * 1.2), R(fr * 1.2));
+          if (typeof ctx.restore === 'function') ctx.restore();
+          drawRing(ctx, bx, by, R(6 + pt * 26), theme.borderHighlight);
+        }
+
+        // Partículas temáticas saindo da barreira purificada
+        const pCount = reducedMotion ? 5 : 14;
+        for (let k = 0; k < pCount; k++) {
+          const ang = -Math.PI * 0.85 + (k / Math.max(1, pCount - 1)) * Math.PI * 0.7;
+          const dist = 6 + pt * (26 + (k % 4) * 11);
+          const px = R(bx + Math.cos(ang) * dist + Math.sin(pt * 5 + k) * 3);
+          const py = R(by + Math.sin(ang) * dist - pt * 12);
+          if (px >= 0 && px < W && py >= 20 && py < H) {
+            const col = theme.particleColors[k % theme.particleColors.length];
+            if (worldKey === 'river' && (k % 3 === 0)) {
+              drawRing(ctx, px, py, 2, col);
+            } else {
+              drawStar(ctx, px, py, (k % 3 === 0) ? 2 : 1, '#ffffff', col);
+            }
+          }
+        }
+      }
+
+      // 3. Faíscas musicais e notas ao redor dos personagens comemorando
+      for (let a = 0; a < actors.length; a++) {
+        const act = actors[a];
+        if (!act) continue;
+        ActorAnimator.drawMusicNotesLoop(ctx, act.x, act.y - 26, tq, {
+          count: reducedMotion ? 2 : 4,
+          dirX: (a & 1) ? -12 : 12,
+          dirY: -22,
+          period: 1.25
+        });
+        if (!reducedMotion) {
+          for (let s = 0; s < 3; s++) {
+            const sx = R(act.x + Math.sin(pt * 6 + s * 2.1 + a) * 14);
+            const sy = R(act.y - 14 - ((pt * 28 + s * 9) % 24));
+            drawStar(ctx, sx, sy, 1, '#ffffff', theme.particleColors[(s + a) % theme.particleColors.length]);
+          }
+        }
+      }
+    },
+
+    renderCompletionOverlay(ctx, opts = {}) {
+      const worldKey = opts.worldKey || 'cave';
+      const theme = getVictoryTheme(worldKey);
+      const isWorldFinale = Boolean(opts.isWorldFinale);
+      const phaseTime = Math.max(0, opts.phaseTime || 0);
+      const t = opts.t || phaseTime;
+      const reducedMotion = Boolean(opts.reducedMotion);
+
+      // 1. Vinheta de fundo suave preservando a visibilidade dos personagens comemorando
+      const dimAlpha = reducedMotion ? 1 : clamp(phaseTime / 0.32, 0, 1);
+      if (typeof ctx.save === 'function') ctx.save();
+      ctx.globalAlpha = dimAlpha;
+      ctx.fillStyle = theme.dimColor;
+      ctx.fillRect(0, 20, W, H - 20);
+      if (typeof ctx.restore === 'function') ctx.restore();
+      TextOverlay?.dimLogicalRect?.(ctx, 0, 20, W, H - 20, theme.dimColor);
+
+      // 2. Explosão inicial de aura cristalina / raios solares antes e durante a entrada do card
+      if (!reducedMotion && phaseTime < 0.65) {
+        const bp = phaseTime / 0.65;
+        const r1 = R(16 + bp * 115);
+        drawRing(ctx, 160, 86, r1, bp < 0.45 ? '#ffffff' : theme.borderPrimary);
+        if (bp > 0.12) {
+          drawRing(ctx, 160, 86, R(bp * 88), theme.borderSecondary);
+        }
+      }
+
+      // Raios quentes (Caatinga) ou prismáticos (Santuário) sutis atrás do card
+      if (worldKey === 'caatinga' || worldKey === 'sanctuary' || isWorldFinale) {
+        const rayCount = 8;
+        const rot = reducedMotion ? 0 : t * 0.35;
+        if (typeof ctx.save === 'function') ctx.save();
+        ctx.globalAlpha = 0.16;
+        ctx.fillStyle = worldKey === 'caatinga' ? '#fbbf24' : theme.borderPrimary;
+        for (let r = 0; r < rayCount; r++) {
+          const ang = rot + (r / rayCount) * Math.PI * 2;
+          for (let d = 28; d < 126; d += 6) {
+            const rx = R(160 + Math.cos(ang) * d);
+            const ry = R(84 + Math.sin(ang) * d * 0.62);
+            if (rx >= 0 && rx < W && ry >= 20 && ry < H) {
+              ctx.fillRect(rx - 1, ry - 1, 3, 2);
+            }
+          }
+        }
+        if (typeof ctx.restore === 'function') ctx.restore();
+      }
+
+      // 3. Entrada animada do card (slide + overshoot suave; instantânea em reducedMotion)
+      const bw = 248, bh = 122;
+      const bx = 36;
+      const targetBy = 24;
+      let offsetY = 0;
+      if (!reducedMotion && phaseTime < 0.46) {
+        const u = clamp((phaseTime - 0.06) / 0.40, 0, 1);
+        const eased = u <= 0 ? 0 : easeOutBack(u);
+        offsetY = R((1 - eased) * 32);
+      }
+      const by = targetBy + offsetY;
+
+      // Partículas temáticas do bioma atrás/em volta do card
+      drawBiomeAmbientParticles(ctx, bx, by, bw, bh, worldKey, t, reducedMotion);
+
+      // Moldura temática exclusiva do bioma
+      drawThemedCompletionFrame(ctx, bx, by, bw, bh, worldKey, t, phaseTime, reducedMotion);
+
+      // 4. Textos de cabeçalho e celebração
+      const title = opts.title || 'Fase Concluída!';
+      const line1 = opts.line1 || '';
+      const line2 = opts.line2 || '';
+
+      drawPixelTextCentered(ctx, title, bx + bw / 2, by + 9, theme.titleColor, '#000000', bw - 22, 9);
+      if (line2) {
+        drawPixelTextCentered(ctx, line1, bx + bw / 2, by + 26, theme.line1Color, '#000000', bw - 22, 9);
+        drawPixelTextCentered(ctx, line2, bx + bw / 2, by + 38, theme.line2Color, '#000000', bw - 22, 9);
+      } else if (line1) {
+        drawPixelTextCentered(ctx, line1, bx + bw / 2, by + 30, theme.line1Color, '#000000', bw - 22, 10);
+      }
+
+      // 5. Três estrelas grandes de 5 pontas esculpidas em arco triunfal com entrada sequencial
+      const starPositions = [
+        { cx: bx + bw / 2 - 38, cy: by + 68, isCenter: false },
+        { cx: bx + bw / 2,      cy: by + 61, isCenter: true  },
+        { cx: bx + bw / 2 + 38, cy: by + 68, isCenter: false }
+      ];
+      for (let i = 0; i < 3; i++) {
+        const sp = starPositions[i];
+        const delay = reducedMotion ? 0 : this.STAR_DELAYS[i];
+        const age = phaseTime - delay;
+        drawSculptedStar(ctx, sp.cx, sp.cy, sp.isCenter, age, t, i, reducedMotion, theme.starAccent);
+      }
+
+      // 6. Botão temático do bioma ("Continuar >" / "Ir à [Próximo Mundo] >")
+      const baseBtn = opts.buttonRect || this.DEFAULT_BTN_RECT;
+      const btnRect = {
+        x: baseBtn.x,
+        y: baseBtn.y + offsetY,
+        w: baseBtn.w,
+        h: baseBtn.h
+      };
+      drawBiomeActionButton(ctx, btnRect, opts.buttonLabel || 'Continuar >', worldKey, t, reducedMotion);
+    }
+  };
+
   const TruePixelEngine = {
     W,
     H,
@@ -10361,6 +11292,7 @@
     DialogueBox,
     TutorialModal,
     GameHUD,
+    VictoryChoreography,
     StandardTutorialCards,
     playerProfile,
     getPlayerName,

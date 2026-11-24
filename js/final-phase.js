@@ -1525,6 +1525,11 @@
 
       E.DialogueBox.render(ctx, tq);
       E.TutorialModal.render(ctx, tq);
+      if (this.phase === 'celebrate_complete') {
+        this.drawCompletionOverlay(ctx, false);
+      } else if (this.phase === 'world_celebrate_complete') {
+        this.drawCompletionOverlay(ctx, true);
+      }
       E.GameHUD.renderModals(ctx);
       E.IrisTransition.render(ctx);
     };

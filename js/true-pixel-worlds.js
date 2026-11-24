@@ -14,7 +14,7 @@
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
     P1, drawRing, drawStar, measurePixelText, drawPixelChar, drawPixelText, drawPixelTextCentered, drawParchmentBox,
     TextOverlay,
-    ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
+    ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, VictoryChoreography, StandardTutorialCards
   } = E;
 
   const R = Math.round;
@@ -2367,7 +2367,7 @@
     STAGE_MIN_Y: 38,
     STAGE_MAX_Y: 126,
 
-    completeBtnRect: { x: 108, y: 115, w: 104, h: 15 },
+    completeBtnRect: { x: 102, y: 114, w: 116, h: 18 },
     skipMusicalBtnRect: { x: 74, y: 2, w: 44, h: 16 },
     gameOverBtnRect: { x: 96, y: 118, w: 128, h: 16 },
     forestSlashBtnRect: null,
@@ -5433,6 +5433,7 @@
         this.protag.state = 'celebrate';
         this.ordemCompanion.state = 'celebrate';
         this.guardianActor.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -5887,6 +5888,7 @@
         this.protag.state = 'celebrate';
         this.ordemCompanion.state = 'celebrate';
         this.guardianActor.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -6641,6 +6643,7 @@
         this.protag.state = 'celebrate';
         this.ordemCompanion.state = 'celebrate';
         this.guardianActor.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -7059,6 +7062,10 @@
         this.waveRadius = 1;
         this.phase = 'step_resolving';
         this.phaseTime = 0;
+        this.protag.state = 'celebrate';
+        if (this.ordemCompanion?.visible) this.ordemCompanion.state = 'celebrate';
+        if (this.guardianActor?.visible) this.guardianActor.state = 'celebrate';
+        GameHUD.playSfx('victoryFanfare');
       }
     },
 
@@ -7232,6 +7239,7 @@
         this.protag.state = 'celebrate';
         this.ordemCompanion.state = 'celebrate';
         if (this.guardianActor.visible) this.guardianActor.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -7250,6 +7258,9 @@
       DialogueBox.open(lines, () => {
         this.phase = 'celebrate_complete';
         this.phaseTime = 0;
+        this.protag.state = 'celebrate';
+        if (this.ordemCompanion?.visible) this.ordemCompanion.state = 'celebrate';
+        VictoryChoreography?.resetAudioState?.(this);
       });
     },
 
@@ -8146,10 +8157,24 @@
           this.setupStep(this.currentStep + 1);
         }
       } else if (this.phase === 'step_resolving') {
-        if (this.phaseTime >= 1.35) {
+        this.protag.state = 'celebrate';
+        if (this.ordemCompanion?.visible) this.ordemCompanion.state = 'celebrate';
+        if (this.guardianActor?.visible) this.guardianActor.state = 'celebrate';
+        const resolveDur = GameHUD.reducedMotion ? 0.95 : 1.50;
+        if (this.phaseTime >= resolveDur) {
           this.obstacleDecay = 1;
           this.openPostLevelDialogue();
         }
+      } else if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+        this.protag.state = 'celebrate';
+        if (this.ordemCompanion?.visible) this.ordemCompanion.state = 'celebrate';
+        if (this.guardianActor?.visible) this.guardianActor.state = 'celebrate';
+        VictoryChoreography?.updateCompletionAudio?.(
+          this,
+          this.phaseTime,
+          this.phase === 'world_celebrate_complete',
+          Boolean(GameHUD.reducedMotion)
+        );
       } else if (this.phase === 'defeat_pause') {
         this.protag.state = 'shock';
         if (
@@ -8226,37 +8251,18 @@
 
     drawCompletionOverlay(ctx, isWorldFinale = false) {
       const spec = this.getSpec();
-      const bx = 42, by = 28, bw = 236, bh = 108;
-      drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#3d2b24' });
-
-      if (isWorldFinale) {
-        const f12 = Math.floor(this.t * SPRITE_FPS);
-        for (let k = 0; k < 8; k++) {
-          const fx = 24 + ((k * 37) % 272);
-          const fy = 24 + ((f12 * 3 + k * 19) % 110);
-          drawStar(ctx, fx, fy, (k & 1) ? 3 : 2, '#ffffff', (k % 3 === 0) ? '#f2cc6b' : (k % 3 === 1 ? '#7ec456' : '#68b8c4'));
-        }
-        drawPixelTextCentered(ctx, spec.worldClearedTitle, bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
-        drawPixelTextCentered(ctx, spec.worldClearedLine1, bx + bw / 2, by + 28, '#ffffff', '#000000', bw - 20, 10);
-        drawPixelTextCentered(ctx, spec.worldClearedLine2, bx + bw / 2, by + 41, '#92e8ff', '#000000', bw - 20, 10);
-      } else {
-        drawPixelTextCentered(ctx, `${spec.hudLabel} - Fase ${this.currentLevel} Concluída!`, bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
-        drawPixelTextCentered(ctx, spec.phaseClearedLine, bx + bw / 2, by + 32, '#ffffff', '#000000', bw - 20, 10);
-      }
-
-      for (let i = 0; i < 3; i++) {
-        drawStar(ctx, bx + bw / 2 - 20 + i * 20, by + 62, 4, '#ffffff', '#e3b454');
-      }
-
-      const b = this.completeBtnRect;
-      ctx.fillStyle = '#2c221e';
-      ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-      ctx.fillStyle = '#3e7338';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.fillStyle = '#d9a85b';
-      ctx.fillRect(b.x, b.y, b.w, 1);
-      ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
-      drawPixelTextCentered(ctx, isWorldFinale ? spec.nextWorldButton : 'Continuar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 6, 9);
+      VictoryChoreography.renderCompletionOverlay(ctx, {
+        worldKey: this.worldKey || 'forest',
+        isWorldFinale,
+        title: isWorldFinale ? spec.worldClearedTitle : `${spec.hudLabel} - Fase ${this.currentLevel} Concluída!`,
+        line1: isWorldFinale ? spec.worldClearedLine1 : spec.phaseClearedLine,
+        line2: isWorldFinale ? spec.worldClearedLine2 : '',
+        buttonLabel: isWorldFinale ? spec.nextWorldButton : 'Continuar >',
+        buttonRect: this.completeBtnRect,
+        phaseTime: this.phaseTime,
+        t: this.t,
+        reducedMotion: Boolean(GameHUD.reducedMotion)
+      });
     },
 
     drawGameOverOverlay(ctx) {
@@ -8396,9 +8402,23 @@
         this.renderMusicalElements(ctx, tq);
       }
 
-      ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y, tq);
+      const isCelebrating =
+        this.phase === 'step_resolving' ||
+        this.phase === 'celebrate_complete' ||
+        this.phase === 'world_celebrate_complete';
+      const protagJumpY = isCelebrating
+        ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0)
+        : 0;
+      const ordemJumpY = isCelebrating
+        ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.1)
+        : 0;
+      const guardJumpY = isCelebrating
+        ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.2)
+        : 0;
+
+      ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y + protagJumpY, tq);
       if (this.ordemCompanion.visible) {
-        ActorAnimator.drawActor(ctx, 'ordem', this.ordemCompanion.state, this.ordemCompanion.x, this.ordemCompanion.y, tq, {
+        ActorAnimator.drawActor(ctx, 'ordem', this.ordemCompanion.state, this.ordemCompanion.x, this.ordemCompanion.y + ordemJumpY, tq, {
           flipX: Boolean(this.ordemCompanion.flipX)
         });
       }
@@ -8421,15 +8441,58 @@
         }
       }
       if (this.guardianActor.visible) {
-        ActorAnimator.drawActor(ctx, spec.guardianKey, this.guardianActor.state, this.guardianActor.x, this.guardianActor.y, tq, {
+        ActorAnimator.drawActor(ctx, spec.guardianKey, this.guardianActor.state, this.guardianActor.x, this.guardianActor.y + guardJumpY, tq, {
           flipX: Boolean(this.guardianActor.flipX)
         });
       }
       if (this.worldKey === 'sanctuary' && (this.phase === 'intro_dialogue' || this.phase === 'post_musical_dlg' || this.phase === 'world_celebrate_complete')) {
         const st = this.phase === 'world_celebrate_complete' ? 'celebrate' : 'idle';
-        ActorAnimator.drawActor(ctx, 'araci', st, 126, 142, tq, { flipX: false });
-        ActorAnimator.drawActor(ctx, 'irece', st, 156, 142, tq, { flipX: true });
-        ActorAnimator.drawActor(ctx, 'jurema', st, 184, 142, tq, { flipX: true });
+        const qJump1 = this.phase === 'world_celebrate_complete' ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.08) : 0;
+        const qJump2 = this.phase === 'world_celebrate_complete' ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.16) : 0;
+        const qJump3 = this.phase === 'world_celebrate_complete' ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.24) : 0;
+        ActorAnimator.drawActor(ctx, 'araci', st, 126, 142 + qJump1, tq, { flipX: false });
+        ActorAnimator.drawActor(ctx, 'irece', st, 156, 142 + qJump2, tq, { flipX: true });
+        ActorAnimator.drawActor(ctx, 'jurema', st, 184, 142 + qJump3, tq, { flipX: true });
+      }
+
+      if (this.phase === 'step_resolving') {
+        const celebActors = [{ x: this.protag.x, y: this.protag.y + protagJumpY }];
+        if (this.ordemCompanion.visible) celebActors.push({ x: this.ordemCompanion.x, y: this.ordemCompanion.y + ordemJumpY });
+        if (this.guardianActor.visible) celebActors.push({ x: this.guardianActor.x, y: this.guardianActor.y + guardJumpY });
+        VictoryChoreography.renderStepResolvingFX(ctx, {
+          worldKey: this.worldKey || 'forest',
+          phaseTime: this.phaseTime,
+          tq,
+          waveOrigin: this.waveOrigin,
+          waveRadius: this.waveRadius,
+          barrierX: this.isWorldFinale() ? 176 : 258,
+          barrierY: this.isWorldFinale() ? 34 : 108,
+          actors: celebActors,
+          reducedMotion: Boolean(GameHUD.reducedMotion)
+        });
+      } else if (this.phase === 'celebrate_complete' || this.phase === 'world_celebrate_complete') {
+        ActorAnimator.drawMusicNotesLoop(ctx, this.protag.x, this.protag.y + protagJumpY - 26, tq, {
+          count: GameHUD.reducedMotion ? 1 : 3,
+          dirX: 10,
+          dirY: -18,
+          period: 1.5
+        });
+        if (this.ordemCompanion.visible) {
+          ActorAnimator.drawMusicNotesLoop(ctx, this.ordemCompanion.x, this.ordemCompanion.y + ordemJumpY - 26, tq, {
+            count: GameHUD.reducedMotion ? 1 : 3,
+            dirX: -10,
+            dirY: -18,
+            period: 1.4
+          });
+        }
+        if (this.guardianActor.visible) {
+          ActorAnimator.drawMusicNotesLoop(ctx, this.guardianActor.x, this.guardianActor.y + guardJumpY - 26, tq, {
+            count: GameHUD.reducedMotion ? 1 : 3,
+            dirX: 8,
+            dirY: -18,
+            period: 1.35
+          });
+        }
       }
 
       if ((this.phase && this.phase.startsWith('shell_game_')) || (this.phase === 'tutorial' && this.shellGame)) {

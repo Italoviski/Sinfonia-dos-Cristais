@@ -493,6 +493,46 @@
   reward(n = 3) {
    cue([261.6, 329.6, 392, 523.3, 659.3].slice(0, Math.max(2, n + 1)), 0.06, 'triangle', 0.11, 0.18);
   },
+  victoryFanfare() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+   notes.forEach((f, i) => {
+    const st = t + i * 0.068;
+    const dur = i === notes.length - 1 ? 0.42 : 0.22;
+    tone(f, st, dur, 'triangle', 0.13);
+    tone(f * 2, st + 0.006, dur * 0.65, 'sine', 0.06);
+   });
+  },
+  worldFinaleFanfare() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   const arp = [392.0, 523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98];
+   arp.forEach((f, i) => {
+    const st = t + i * 0.065;
+    const dur = i >= arp.length - 2 ? 0.52 : 0.24;
+    tone(f, st, dur, 'triangle', 0.13);
+    tone(f * 2, st + 0.008, dur * 0.7, 'sine', 0.065);
+   });
+   // Acorde cristalino sustentado no clímax
+   [523.25, 783.99, 1046.5].forEach((f) => {
+    tone(f, t + 0.44, 0.58, 'sine', 0.075);
+   });
+  },
+  starChime(index = 1) {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   const idx = Math.max(1, Math.min(3, Number(index) || 1));
+   const baseFreqs = [783.99, 987.77, 1174.66]; // G5, B5, D6
+   const f = baseFreqs[idx - 1];
+   tone(f, t, 0.26, 'triangle', 0.14, f * 1.01);
+   tone(f * 2, t + 0.005, 0.20, 'sine', 0.08);
+   if (idx === 3) {
+    // Brilho extra na 3ª estrela (oitava triunfal G6)
+    tone(1567.98, t + 0.055, 0.36, 'triangle', 0.13);
+    tone(2093.0, t + 0.085, 0.30, 'sine', 0.07);
+   }
+  },
   error() {
    if (!enabled || !ensure()) return;
    const t = ctx.currentTime;
