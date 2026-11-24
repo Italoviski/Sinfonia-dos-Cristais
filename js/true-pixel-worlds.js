@@ -188,7 +188,7 @@
     6: [[-12, -8.5], [-7.5, -12.5], [-2.5, -15], [2.5, -15], [7.5, -12.5], [12, -8.5]]
   };
 
-  function drawExternalOrb(ctx, ox, oy, coreCol, midCol, rimCol, pulse = false) {
+  function drawExternalOrb(ctx, ox, oy, coreCol, midCol, rimCol, pulse = false, specCol = '#ffffff') {
     ox = RH(ox);
     oy = RH(oy);
     const r = pulse ? 3.0 : 2.5;
@@ -204,7 +204,7 @@
     ctx.fillRect(ox - r + 0.5, oy - r + 0.5, r * 2 - 1, r * 2 - 1);
     ctx.fillStyle = coreCol;
     ctx.fillRect(ox - 1, oy - 1, 2, 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = specCol;
     ctx.fillRect(ox - 1, oy - 1.5, 1, 1);
   }
 
@@ -216,17 +216,19 @@
   function getOrbPalette(piece) {
     if (piece.shadow) {
       return {
-        core: piece.type === 'rose' ? '#ffe0eb' : (piece.type === 'opal' ? '#ffe8b8' : (piece.type === 'citrine' ? '#fff3ba' : (piece.type === 'aqua' ? '#c9faf7' : '#e0f7ff'))),
-        mid: piece.type === 'rose' ? '#d46a92' : (piece.type === 'opal' ? '#d97538' : (piece.type === 'citrine' ? '#e6c34c' : (piece.type === 'aqua' ? '#399ca1' : '#68b0c9'))),
-        rim: '#240b36',
-        link: '#7e22ce'
+        core: '#0d0317',
+        mid: piece.type === 'rose' ? '#4a153b' : (piece.type === 'opal' ? '#4f1e14' : (piece.type === 'citrine' ? '#4d370e' : (piece.type === 'aqua' ? '#123b45' : '#241442'))),
+        rim: piece.type === 'rose' ? '#be4b82' : (piece.type === 'opal' ? '#c26238' : (piece.type === 'citrine' ? '#b89028' : (piece.type === 'aqua' ? '#2c8596' : '#9333ea'))),
+        spec: piece.type === 'rose' ? '#f472b6' : (piece.type === 'opal' ? '#fb923c' : (piece.type === 'citrine' ? '#facc15' : (piece.type === 'aqua' ? '#67e8f9' : '#c084fc'))),
+        link: '#4c1d95',
+        isShadow: true
       };
     }
-    if (piece.type === 'opal') return { core: '#fffdf2', mid: '#f7b259', rim: '#4a1912', link: '#e68a49' };
-    if (piece.type === 'rose') return { core: '#fffdf2', mid: '#f29bb8', rim: '#4f1e35', link: '#d97a9c' };
-    if (piece.type === 'citrine') return { core: '#fffdf2', mid: '#f5cf64', rim: '#4d2e0a', link: '#d9a43b' };
-    if (piece.type === 'aqua') return { core: '#fffdf2', mid: '#7be3eb', rim: '#143f4a', link: '#4bb2bf' };
-    return { core: '#fffdf2', mid: '#7fd4e6', rim: '#1e3a4d', link: '#569bb0' };
+    if (piece.type === 'opal') return { core: '#fffdf2', mid: '#f7b259', rim: '#4a1912', spec: '#ffffff', link: '#e68a49' };
+    if (piece.type === 'rose') return { core: '#fffdf2', mid: '#f29bb8', rim: '#4f1e35', spec: '#ffffff', link: '#d97a9c' };
+    if (piece.type === 'citrine') return { core: '#fffdf2', mid: '#f5cf64', rim: '#4d2e0a', spec: '#ffffff', link: '#d9a43b' };
+    if (piece.type === 'aqua') return { core: '#fffdf2', mid: '#7be3eb', rim: '#143f4a', spec: '#ffffff', link: '#4bb2bf' };
+    return { core: '#fffdf2', mid: '#7fd4e6', rim: '#1e3a4d', spec: '#ffffff', link: '#569bb0' };
   }
 
   const SHAPE_COLOR_MAP = {
@@ -273,6 +275,9 @@
     for (let i = 0; i < arcs1.length; i++) {
       const [ox, oy] = arcs1[i];
       ctx.fillRect(RH(x + ox * 0.65), RH(y + oy * 0.72), 1, 1);
+      if (pal.isShadow) {
+        ctx.fillRect(RH(x + ox * 0.45), RH(y + oy * 0.55), 1, 1);
+      }
       if (i < arcs1.length - 1) {
         const [nx, ny] = arcs1[i + 1];
         ctx.fillRect(RH(x + (ox + nx) * 0.5), RH(y + (oy + ny) * 0.5), 1, 1);
@@ -280,13 +285,13 @@
     }
     for (let i = 0; i < arcs1.length; i++) {
       const [ox, oy] = arcs1[i];
-      drawExternalOrb(ctx, x + ox, y + oy, pal.core, pal.mid, pal.rim, recentlyChanged);
+      drawExternalOrb(ctx, x + ox, y + oy, pal.core, pal.mid, pal.rim, recentlyChanged, pal.spec || '#ffffff');
     }
     if (row2 > 0) {
       const arcs2 = EXTERNAL_ORB_ARCS[row2] || EXTERNAL_ORB_ARCS[1];
       for (let i = 0; i < arcs2.length; i++) {
         const [ox, oy] = arcs2[i];
-        drawExternalOrb(ctx, x + ox, y + oy - 6, pal.core, pal.mid, pal.rim, recentlyChanged);
+        drawExternalOrb(ctx, x + ox, y + oy - 6, pal.core, pal.mid, pal.rim, recentlyChanged, pal.spec || '#ffffff');
       }
     }
   }
@@ -2343,6 +2348,7 @@
     magneticAnim: null,
     equationShockEffect: null,
     ghostHandAnim: null,
+    shadowSmokePuffs: [],
     actionHistory: [],
     _gestureSnapshot: null,
     _gestureCommitted: false,
@@ -2632,6 +2638,7 @@
       this.draggedPiece = null;
       this.equationPointer = null;
       this.shards = [];
+      this.shadowSmokePuffs = [];
       this.setupStep(1);
 
       if (this.phase === 'cutscene_enter') {
@@ -2693,6 +2700,7 @@
       this.deadEndAutoRewindPending = false;
       this.clearTrembleStates();
       this.shards = [];
+      this.shadowSmokePuffs = [];
       this.waveActive = false;
       this.waveRadius = 0;
       this.obstacleDecay = 0;
@@ -2936,6 +2944,20 @@
     // ==========================================================================
     // FÍSICA TÁTIL DE CRISTAIS, ALTAR DE ESMERALDA, DIVISÃO E EQUAÇÕES
     // ==========================================================================
+    spawnShadowSmokePuff(x, y) {
+      if (!Array.isArray(this.shadowSmokePuffs)) this.shadowSmokePuffs = [];
+      if (typeof ActorAnimator.spawnShadowSmokePuff === 'function') {
+        ActorAnimator.spawnShadowSmokePuff(this.shadowSmokePuffs, x, y, this.t);
+      }
+    },
+
+    triggerShadowCrystalBlocked(piece) {
+      if (!piece) return;
+      piece.rejectUntil = this.t + 0.36;
+      this.spawnShadowSmokePuff(piece.x, piece.y);
+      GameHUD.playSfx('shadowBlocked');
+    },
+
     spawnShatter(cx, cy, setKey = 'pure', count = 10) {
       for (let i = 0; i < count; i++) {
         const ang = (i / count) * Math.PI * 2 + (i % 3) * 0.2;
@@ -7507,6 +7529,29 @@
 
         if (eq && !eq.broken && eq.expanded && clickedInEq) {
           this.equationPointer = { startX: x, startY: y, origX: eq.x, origY: eq.y, moved: false };
+          return;
+        }
+
+        // Feedback sensorial se tentar arrastar/tocar um cristal sombrio (enraizado pelas sombras)
+        for (let i = this.pieces.length - 1; i >= 0; i--) {
+          const sp = this.pieces[i];
+          if (sp.shadow && !sp.broken && sp.value > 0 && Math.hypot(x - sp.x, y - sp.y) <= 16) {
+            this.triggerShadowCrystalBlocked(sp);
+            this._gestureSnapshot = null;
+            this._gestureCommitted = false;
+            return;
+          }
+        }
+        if (this.shadowEquation && !this.shadowEquation.broken && this.isInsideEquationAura(this.shadowEquation, x, y)) {
+          for (const sp of this.pieces) {
+            if (sp.shadow && !sp.broken && sp.value > 0 && sp.inEquation === 'shadow') {
+              sp.rejectUntil = this.t + 0.36;
+            }
+          }
+          this.spawnShadowSmokePuff(this.shadowEquation.x, this.shadowEquation.y);
+          GameHUD.playSfx('shadowBlocked');
+          this._gestureSnapshot = null;
+          this._gestureCommitted = false;
         }
       };
 
@@ -8466,6 +8511,9 @@
       }
 
       this.drawShards(ctx);
+      if (typeof ActorAnimator.drawShadowSmokePuffs === 'function') {
+        ActorAnimator.drawShadowSmokePuffs(ctx, this.shadowSmokePuffs, tq);
+      }
       if (this.equationShockEffect) {
         ActorAnimator.drawEquationShockwave(ctx, this.equationShockEffect, tq);
       }

@@ -237,11 +237,11 @@ test('DialogueBox.close existe, sincroniza gemas primordiais e valida retratos d
   assert.equal(drawnSpr, SpriteBank.araci.talk[2], 'Araci deve usar o quadro de fala enquanto DialogueBox digita sua fala');
 
   ActorAnimator.drawActor(spyCtx, 'protagonist', 'idle', 60, 142, 0.25);
-  assert.equal(drawnSpr, SpriteBank.protagonist.idle[3], 'Protagonista deve permanecer em idle enquanto Araci fala');
+  assert.equal(drawnSpr, SpriteBank.protagonist.idle[0], 'Protagonista deve permanecer em idle calmo enquanto Araci fala');
 
   DialogueBox.charProgress = 999;
   ActorAnimator.drawActor(spyCtx, 'araci', 'idle', 100, 142, 0.25);
-  assert.equal(drawnSpr, SpriteBank.araci.idle[3], 'Araci deve retornar para idle após concluir a digitação da fala');
+  assert.equal(drawnSpr, SpriteBank.araci.idle[0], 'Araci deve retornar para idle calmo após concluir a digitação da fala');
 
   DialogueBox.close();
   assert.equal(DialogueBox.isOpen, false, 'DialogueBox deve estar fechada após close()');
@@ -3212,6 +3212,197 @@ test('Menu Alternativo de Fases Mobile, God Mode Touch/URL/Opções e Enquadrame
   const journeyMapJs = fs.readFileSync('js/journey-map.js', 'utf8');
   assert.match(journeyMapJs, /if\(points\.length<2\)\{setPosition\(points\.at\(-1\)\);panel\(level\);return;\}/, 'Clicar no nó onde a fada já está deve abrir o painel imediatamente');
 });
+
+test('Ajustes Visuais v2: Enquadramento Portrait Marina, Idle Calmo + Piscada Independente, Walk Feminino Invertido, Sombra Imóvel/Fumaça e Guia Fase 1', async () => {
+  setupNodeDOM();
+  const fs = await import('node:fs');
+  const engineJs = fs.readFileSync('js/true-pixel-engine.js', 'utf8');
+  const caveJs = fs.readFileSync('js/true-pixel-cave.js', 'utf8');
+  const worldsJs = fs.readFileSync('js/true-pixel-worlds.js', 'utf8');
+
+  // Usa pixel tracking na criação de canvas para validar os retratos 28x28 e o espelhamento do walk feminino
+  const origCreate = globalThis.document.createElement;
+  globalThis.document.createElement = (tag) => {
+    const el = origCreate.call(globalThis.document, tag);
+    if (String(tag).toLowerCase() === 'canvas') {
+      const pixels = new Map();
+      const origGetContext = el.getContext.bind(el);
+      el._pixels = pixels;
+      el.getContext = () => {
+        const ctx = origGetContext();
+        let flipped = false;
+        ctx.translate = (tx) => { if (tx > 0) flipped = !flipped; };
+        ctx.scale = (sx) => { if (sx < 0) flipped = !flipped; };
+        ctx.fillRect = (x, y, w, h) => {
+          const ix = Math.round(x), iy = Math.round(y);
+          for (let dy = 0; dy < Math.max(1, Math.round(h)); dy++) {
+            for (let dx = 0; dx < Math.max(1, Math.round(w)); dx++) {
+              pixels.set(`${ix + dx},${iy + dy}`, ctx.fillStyle);
+            }
+          }
+        };
+        ctx.drawImage = (src) => {
+          if (src && src._pixels) {
+            for (const [k, col] of src._pixels.entries()) {
+              const [sx, sy] = k.split(',').map(Number);
+              const dx = flipped ? (el.width - 1 - sx) : sx;
+              pixels.set(`${dx},${sy}`, col);
+            }
+          }
+        };
+        return ctx;
+      };
+    }
+    return el;
+  };
+
+  try {
+    eval(engineJs);
+    eval(caveJs);
+    eval(worldsJs);
+    const E = globalThis.TruePixelEngine;
+    const Cave = globalThis.CaveChapter1;
+    const Worlds = globalThis.TruePixelWorlds;
+
+    // 1. Retratos (Marina, Masculino e Guardiãs): 28x28, _isDiamondBust, dentro da máscara e preservando olhos/gola
+    for (const pKey of ['portrait_protagonist_female', 'portrait_protagonist_male', 'portrait_araci', 'portrait_irece', 'portrait_jurema']) {
+      const pSet = E.SpriteBank.portraits[pKey];
+      assert.ok(pSet && pSet.idle[0], `${pKey} deve existir`);
+      const frame = pSet.idle[0];
+      assert.equal(frame.width, 28);
+      assert.equal(frame.height, 28);
+      assert.equal(frame._isDiamondBust, true);
+      let minY = 99, maxY = -1;
+      for (const k of frame._pixels.keys()) {
+        const [px, py] = k.split(',').map(Number);
+        const dist = Math.abs(px - 13.5) + Math.abs(py - 13.5);
+        assert.ok(dist <= 13.5, `${pKey} pixel (${px},${py}) fora da máscara losangular`);
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+      assert.ok(minY <= 3 && maxY >= 24, `${pKey} deve ocupar verticalmente topo (laço/coroa) e base (gola): minY=${minY}, maxY=${maxY}`);
+    }
+    // Verifica olhos brancos preservados no retrato da Marina
+    const marinaPixels = E.SpriteBank.portraits.portrait_protagonist_female.idle[0]._pixels;
+    const marinaEyeWhites = [...marinaPixels.entries()].filter(([k, col]) => {
+      const [, py] = k.split(',').map(Number);
+      return col === '#f3f3f4' && py >= 12 && py <= 17;
+    });
+    assert.ok(marinaEyeWhites.length >= 4, 'Retrato da Marina deve preservar ambos os olhos nítidos sem cortes');
+
+    // 2. Idle calmo (~2.8 FPS) e piscada independente (~3.8-4.8s por ~0.13s)
+    for (const actorKey of ['protagonist_male', 'protagonist_female', 'ordem', 'araci', 'irece', 'jurema']) {
+      const actor = E.SpriteBank[actorKey];
+      assert.equal(actor.idle.length, 4, `${actorKey}.idle deve manter 4 quadros`);
+      assert.ok(actor.idleBlink, `${actorKey} deve possuir idleBlink separado do loop de respiração`);
+      assert.ok(!actor.idle.includes(actor.idleBlink), `${actorKey}.idle não deve conter o frame de piscada no loop normal`);
+    }
+    const prevMotion = E.GameHUD.reducedMotion;
+    E.GameHUD.reducedMotion = false;
+    const drawnAtTimes = [];
+    const spyCtx = {
+      fillStyle: '#000',
+      fillRect: () => {},
+      drawImage: (img) => drawnAtTimes.push(img)
+    };
+    E.DialogueBox.close();
+    // Em t=0.05 e t=0.25 deve manter respiração calma (idle[0]) e sem piscar 3x/s
+    E.ActorAnimator.drawActor(spyCtx, 'protagonist_female', 'idle', 60, 142, 0.05);
+    E.ActorAnimator.drawActor(spyCtx, 'protagonist_female', 'idle', 60, 142, 0.25);
+    assert.equal(drawnAtTimes[0], E.SpriteBank.protagonist_female.idle[0]);
+    assert.equal(drawnAtTimes[1], E.SpriteBank.protagonist_female.idle[0]);
+    // Ao longo de 5 segundos em passos de 0.05s, deve disparar idleBlink apenas 1 vez (por ~0.13s)
+    let blinkHits = 0;
+    for (let step = 0; step < 100; step++) {
+      let lastSpr = null;
+      E.ActorAnimator.drawActor({ fillStyle: '#000', fillRect: () => {}, drawImage: (img) => { lastSpr = img; } }, 'protagonist_female', 'idle', 60, 142, step * 0.05);
+      if (lastSpr === E.SpriteBank.protagonist_female.idleBlink) blinkHits++;
+    }
+    assert.ok(blinkHits >= 2 && blinkHits <= 4, `Piscada independente deve durar ~0.13s em 5s (hits=${blinkHits})`);
+    E.GameHUD.reducedMotion = prevMotion;
+
+    // 3. Walk feminino invertido horizontalmente (olhando para direita por padrão)
+    const fWalk0 = E.SpriteBank.protagonist_female.walk[0];
+    // Verifica que o frame compilado tem pixels no lado espelhado em relação ao original sem espelhar
+    const xs = [...fWalk0._pixels.keys()].map(k => Number(k.split(',')[0]));
+    const avgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+    assert.ok(avgX > 25 && avgX < 40, `Walk feminino deve estar centralizado e virado para direita (avgX=${avgX})`);
+    assert.match(engineJs, /FEMALE_PROTAG_WALK_ROWS\.map\(rows => mirrorCanvas\(decodeHiBitFrame\(rows, FEMALE_PROTAG_PIXEL_PALETTE\)\)\)/);
+
+    // 4. Cristal Sombrio: Tutorial explícito + Aura em Fumaça + Unidades Sombrias + Bloqueio ao Tentar Arrastar
+    assert.match(E.StandardTutorialCards.FASE1_INTRO[0].body, /presos pelas sombras|não podem ser movidos/i);
+    const auraRects = [];
+    const auraCtx = {
+      fillStyle: '#000',
+      fillRect: (x, y, w, h) => auraRects.push({ x, y, w, h, col: auraCtx.fillStyle })
+    };
+    E.ActorAnimator.drawShadowCrystalAura(auraCtx, 160, 96, 0.5, 0.2, 11.5);
+    assert.ok(auraRects.some(r => r.col === '#140524' || r.col === '#1b1038'), 'Aura sombria deve desenhar nuvens de fumaça escura');
+    assert.ok(auraRects.some(r => r.col === '#a855f7' || r.col === '#9333ea'), 'Aura sombria deve desenhar fiapos violeta');
+
+    // Unidades sombrias devem usar núcleo escuro obsidiana (#0d0317) em Cave e Worlds
+    assert.match(caveJs, /const coreCol = piece\.shadow \? '#0d0317' : '#fffdf2'/);
+    assert.match(worldsJs, /core: '#0d0317'/);
+
+    // Tentar tocar/arrastar cristal sombrio dispara tremor + puff de fumaça + som shadowBlocked
+    Cave.init();
+    Cave.setupLevelStep(1, 1);
+    Cave.phase = 'gameplay';
+    const shadowPiece = Cave.pieces.find(p => p.shadow);
+    Cave.triggerShadowCrystalBlocked(shadowPiece);
+    assert.ok(shadowPiece.rejectUntil > Cave.t, 'Cristal sombrio deve tremer ao tentar arrastar');
+    assert.ok(Cave.shadowSmokePuffs.length >= 6, 'Deve gerar puff de fumaça escura ao tentar mover cristal sombrio');
+
+    Worlds.startByCampaignNode(6);
+    Worlds.running = false;
+    E.DialogueBox.close();
+    E.TutorialModal.close();
+    Worlds.phase = 'gameplay';
+    const wShadow = Worlds.pieces.find(p => p.shadow);
+    Worlds.triggerShadowCrystalBlocked(wShadow);
+    assert.ok(wShadow.rejectUntil > Worlds.t, 'Cristal sombrio nos Mundos 2-4 deve tremer ao tentar arrastar');
+    assert.ok(Worlds.shadowSmokePuffs.length >= 6, 'Mundos 2-4 devem gerar puff de fumaça escura ao tentar mover cristal sombrio');
+
+    // 5. Guia introdutória em loop na Fase 1 Etapa 1 (mouse -> mão agarrando -> arrasto até sombra)
+    Cave._fase1IntroGuideDismissed = false;
+    Cave.setupLevelStep(1, 1);
+    Cave.phase = 'tutorial';
+    E.TutorialModal.isOpen = false;
+    Cave.update(0.016);
+    assert.equal(Cave.phase, 'gameplay');
+    assert.ok(Cave.fase1IntroGuideAnim, 'Guia introdutória da Fase 1 deve iniciar ao entrar em gameplay após o tutorial');
+    const tBefore = Cave.fase1IntroGuideAnim.t;
+    Cave.update(0.5);
+    assert.ok(Cave.fase1IntroGuideAnim && Cave.fase1IntroGuideAnim.t > tBefore, 'Guia da Fase 1 deve animar em loop');
+    Cave.update(2.8);
+    assert.ok(Cave.fase1IntroGuideAnim, 'Guia da Fase 1 deve continuar em loop suave até o jogador interagir');
+
+    // Renderização do guia nos 3 estágios (cursor -> mão agarrando -> arraste translúcido)
+    const guideOps = [];
+    const guideCtx = {
+      save: () => {},
+      restore: () => {},
+      globalAlpha: 1,
+      fillStyle: '#000',
+      fillRect: () => {},
+      drawImage: (img) => guideOps.push(img)
+    };
+    Cave.fase1IntroGuideAnim.t = 0.2; // Estágio 1: cursor de mouse
+    E.drawFase1DragGuide(guideCtx, Cave.fase1IntroGuideAnim, 0.2);
+    Cave.fase1IntroGuideAnim.t = 0.95; // Estágio 2: mão agarrando
+    E.drawFase1DragGuide(guideCtx, Cave.fase1IntroGuideAnim, 0.95);
+    Cave.fase1IntroGuideAnim.t = 1.6; // Estágio 3: arraste do cristal translúcido
+    E.drawFase1DragGuide(guideCtx, Cave.fase1IntroGuideAnim, 1.6);
+    assert.ok(guideOps.length >= 5, 'drawFase1DragGuide deve desenhar cursor, mão agarrando e silhueta do cristal');
+
+    // Ao tocar/arrastar qualquer cristal, a animação some imediatamente
+    Cave.dismissFase1IntroGuide();
+    assert.equal(Cave.fase1IntroGuideAnim, null, 'Guia da Fase 1 deve sumir imediatamente quando o jogador toca/arrasta um cristal');
+  } finally {
+    globalThis.document.createElement = origCreate;
+  }
+});
+
 
 
 

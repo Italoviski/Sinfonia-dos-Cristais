@@ -499,6 +499,13 @@
    tone(233.08, t, 0.11, 'sawtooth', 0.11, 174.61);
    tone(174.61, t + 0.07, 0.15, 'sawtooth', 0.11, 130.81);
   },
+  shadowBlocked() {
+   if (!enabled || !ensure()) return;
+   const t = ctx.currentTime;
+   noiseBurst(t, 0.14, 420, 'lowpass', 1.4, 0.12, 160);
+   tone(110, t, 0.14, 'triangle', 0.14, 55);
+   tone(82.41, t + 0.03, 0.18, 'sawtooth', 0.09, 46);
+  },
   gameOver() {
    if (!enabled || !ensure()) return;
    const t = ctx.currentTime;

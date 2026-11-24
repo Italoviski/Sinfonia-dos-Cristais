@@ -83,9 +83,13 @@
 
   function mirrorCanvas(c) {
     const [m, x] = mk(c.width, c.height);
-    x.translate(c.width, 0);
-    x.scale(-1, 1);
-    x.drawImage(c, 0, 0);
+    if (x && typeof x.translate === 'function' && typeof x.scale === 'function') {
+      x.translate(c.width, 0);
+      x.scale(-1, 1);
+      if (typeof x.drawImage === 'function') x.drawImage(c, 0, 0);
+    } else if (x && typeof x.drawImage === 'function') {
+      x.drawImage(c, 0, 0);
+    }
     if (c.hib) m.hib = true;
     return m;
   }
@@ -1182,6 +1186,31 @@
     return c;
   }
 
+  function pickBustIndices(start, totalSrc, dstSize, mustKeep = []) {
+    const idxs = [];
+    for (let i = 0; i < dstSize; i++) {
+      idxs.push(start + Math.floor(((i + 0.5) * totalSrc) / dstSize));
+    }
+    for (const mkIdx of mustKeep) {
+      if (mkIdx < start || mkIdx >= start + totalSrc) continue;
+      if (!idxs.includes(mkIdx)) {
+        let best = 0;
+        let bestD = 999;
+        for (let i = 0; i < idxs.length; i++) {
+          if (mustKeep.includes(idxs[i])) continue;
+          const d = Math.abs(idxs[i] - mkIdx);
+          if (d < bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+        idxs[best] = mkIdx;
+        idxs.sort((a, b) => a - b);
+      }
+    }
+    return idxs;
+  }
+
   function buildPortraitFromRows(rows, pal, sxOff, syOff, opts = {}) {
     const [c, x] = mk(28, 28);
     c._isDiamondBust = true;
@@ -1192,6 +1221,43 @@
         x.fillRect(px, py, 1, 1);
       }
     };
+
+    if (opts.spanX && opts.spanY) {
+      const grid = new Array(64 * 64).fill(null);
+      for (let sy = 0; sy < Math.min(64, rows.length); sy++) {
+        const row = rows[sy] || '';
+        for (let sx = 0; sx < Math.min(64, row.length); sx++) {
+          const ch = row[sx];
+          if (!ch || ch === '.') continue;
+          const col = pal[ch];
+          if (col) grid[sy * 64 + sx] = col;
+        }
+      }
+      const putAbs = (sx, sy, col) => {
+        const ix = Math.round(sx);
+        const iy = Math.round(sy);
+        if (ix >= 0 && iy >= 0 && ix < 64 && iy < 64 && col) {
+          grid[iy * 64 + ix] = col;
+        }
+      };
+      if (opts.blink && opts.drawBlink) opts.drawBlink(putAbs);
+      if (opts.mouthOpen > 0 && opts.drawMouth) opts.drawMouth(putAbs, opts.mouthOpen);
+
+      const xs = pickBustIndices(sxOff, opts.spanX, 28, opts.keepX || []);
+      const ys = pickBustIndices(syOff, opts.spanY, 28, opts.keepY || []);
+      for (let py = 0; py < 28; py++) {
+        const sy = ys[py];
+        for (let px = 0; px < 28; px++) {
+          if (opts.trimBottomCorners && py >= 19 && (px <= 3 || px >= 24)) continue;
+          if (!isInsideDiamondMask(px, py)) continue;
+          const sx = xs[px];
+          const col = (sy >= 0 && sy < 64 && sx >= 0 && sx < 64) ? grid[sy * 64 + sx] : null;
+          if (col) put(px, py, col);
+        }
+      }
+      return c;
+    }
+
     for (let py = 0; py < 28; py++) {
       const sy = py + syOff;
       const row = rows[sy] || '';
@@ -2421,21 +2487,15 @@
   }
 
   function buildProtagonistPortrait(mouthOpen, blink) {
-    return buildPortraitFromRows(PROTAG_IDLE_ROWS[0], PROTAG_PIXEL_PALETTE, 17, 6, {
+    return buildPortraitFromRows(PROTAG_IDLE_ROWS[0], PROTAG_PIXEL_PALETTE, 14, 2, {
+      spanX: 35,
+      spanY: 35,
+      keepX: [25, 26, 30, 31, 32, 34, 37],
+      keepY: [19, 20, 21, 24, 25],
       mouthOpen,
       blink,
-      drawBlink: (put) => {
-        for (const ox of [8, 17]) {
-          for (let dx = 0; dx < 4; dx++) {
-            put(ox + dx, 14, '#ca7352');
-            put(ox + dx, 15, '#e79b73');
-            put(ox + dx, 16, '#2f1b17');
-          }
-        }
-        put(9, 17, '#e79b73');
-        put(10, 17, '#e79b73');
-      },
-      drawMouth: (put, m) => drawProtagMouth(put, m, 24, -17, -6)
+      drawBlink: (put) => drawProtagBlink(put, 19),
+      drawMouth: (put, m) => drawProtagMouth(put, m, 24, 0, 0)
     });
   }
 
@@ -3297,21 +3357,15 @@
   }
 
   function buildFemaleProtagonistPortrait(mouthOpen, blink) {
-    return buildPortraitFromRows(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE, 17, 6, {
+    return buildPortraitFromRows(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE, 14, 2, {
+      spanX: 35,
+      spanY: 35,
+      keepX: [25, 26, 30, 31, 32, 34, 37],
+      keepY: [20, 21, 24, 25],
       mouthOpen,
       blink,
-      drawBlink: (put) => {
-        for (const ox of [8, 17]) {
-          for (let dx = 0; dx < 4; dx++) {
-            put(ox + dx, 14, '#a25e4e');
-            put(ox + dx, 15, '#ca876f');
-            put(ox + dx, 16, '#27191a');
-          }
-        }
-        put(9, 17, '#ca876f');
-        put(10, 17, '#ca876f');
-      },
-      drawMouth: (put, m) => drawFemaleProtagMouth(put, m, 24, -17, -6)
+      drawBlink: (put) => drawFemaleProtagBlink(put, 20),
+      drawMouth: (put, m) => drawFemaleProtagMouth(put, m, 24, 0, 0)
     });
   }
 
@@ -5961,8 +6015,12 @@
       idleRow: ARACI_IDLE_ROW,
       walkRows: ARACI_WALK_ROWS,
       breatheCutY: 46,
-      sxOff: 18,
-      syOff: 6,
+      sxOff: 14,
+      syOff: 2,
+      spanX: 35,
+      spanY: 35,
+      keepX: [25, 26, 31, 32, 33, 36, 39],
+      keepY: [21, 22, 23, 25, 26],
       silCore: '#101c15',
       silRims: ['#68bd59', '#a5e06c', '#f2cc6b'],
       silAccent: (sx, sy, col) => (
@@ -5998,8 +6056,12 @@
       idleRow: IRECE_IDLE_ROW,
       walkRows: IRECE_WALK_ROWS,
       breatheCutY: 47,
-      sxOff: 18,
-      syOff: 5,
+      sxOff: 14,
+      syOff: 2,
+      spanX: 35,
+      spanY: 35,
+      keepX: [25, 26, 31, 32, 35, 38],
+      keepY: [18, 19, 20, 21, 23, 24],
       silCore: '#0f1a26',
       silRims: ['#4da6b8', '#9ef0ff', '#f2cc6b'],
       silAccent: (sx, sy, col) => (
@@ -6042,8 +6104,12 @@
       idleRow: JUREMA_IDLE_ROW,
       walkRows: JUREMA_WALK_ROWS,
       breatheCutY: 48,
-      sxOff: 16,
-      syOff: 5,
+      sxOff: 12,
+      syOff: 2,
+      spanX: 35,
+      spanY: 35,
+      keepX: [23, 24, 28, 29, 30, 33, 35],
+      keepY: [19, 20, 21, 24, 25],
       silCore: '#241310',
       silRims: ['#d96538', '#ffd35a', '#f2cc6b'],
       silAccent: (sx, sy) => (sx >= 45 && sx <= 54 && sy >= 7 && sy <= 20 ? '#ffd35a' : null),
@@ -6113,7 +6179,8 @@
     });
     return {
       back_silhouette: [sil0, sil1, sil2, sil1],
-      idle: [idle0, idle1, idle2, idle1],
+      idle: [idle0, idle0, idle1, idle1],
+      idleBlink: idle2,
       walk,
       talk: [idle0, talk1, talk2, talk1],
       sing: [idle0, sing1, sing2, sing1],
@@ -6122,6 +6189,18 @@
   }
 
   function buildGuardianPortrait(spec, mouthOpen, blink) {
+    if (spec.spanX && spec.spanY) {
+      return buildPortraitFromRows(spec.idleRow, spec.pal, spec.sxOff, spec.syOff, {
+        spanX: spec.spanX,
+        spanY: spec.spanY,
+        keepX: spec.keepX,
+        keepY: spec.keepY,
+        mouthOpen,
+        blink,
+        drawBlink: (put) => spec.drawBlink(put, 0, 0),
+        drawMouth: (put, m) => spec.drawMouth(put, m, 0, 0)
+      });
+    }
     return buildPortraitFromRows(spec.idleRow, spec.pal, spec.sxOff, spec.syOff, {
       mouthOpen,
       blink,
@@ -6373,6 +6452,7 @@
   // Compila todos os sprites Hi-Bit uma única vez no SpriteBank
   const PROTAG_F_IDLE0 = decodeHiBitFrame(PROTAG_IDLE_ROWS[0], PROTAG_PIXEL_PALETTE);
   const PROTAG_F_IDLE1 = decodeHiBitFrame(PROTAG_IDLE_ROWS[1], PROTAG_PIXEL_PALETTE);
+  const PROTAG_F_IDLE2 = decodeHiBitFrame(PROTAG_IDLE_ROWS[2], PROTAG_PIXEL_PALETTE);
   const PROTAG_F_IDLE2_BLINK = decodeHiBitFrame(PROTAG_IDLE_ROWS[2], PROTAG_PIXEL_PALETTE, (x, put) => drawProtagBlink(put, 19));
   const PROTAG_F_IDLE3 = decodeHiBitFrame(PROTAG_IDLE_ROWS[3], PROTAG_PIXEL_PALETTE);
   const PROTAG_WALK_FRAMES = PROTAG_WALK_ROWS.map(rows => decodeHiBitFrame(rows, PROTAG_PIXEL_PALETTE));
@@ -6407,9 +6487,10 @@
 
   const FEMALE_PROTAG_F_IDLE0 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE);
   const FEMALE_PROTAG_F_IDLE1 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[1], FEMALE_PROTAG_PIXEL_PALETTE);
+  const FEMALE_PROTAG_F_IDLE2 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[2], FEMALE_PROTAG_PIXEL_PALETTE);
   const FEMALE_PROTAG_F_IDLE2_BLINK = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[2], FEMALE_PROTAG_PIXEL_PALETTE, (x, put) => drawFemaleProtagBlink(put, 20));
   const FEMALE_PROTAG_F_IDLE3 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[3], FEMALE_PROTAG_PIXEL_PALETTE);
-  const FEMALE_PROTAG_WALK_FRAMES = FEMALE_PROTAG_WALK_ROWS.map(rows => decodeHiBitFrame(rows, FEMALE_PROTAG_PIXEL_PALETTE));
+  const FEMALE_PROTAG_WALK_FRAMES = FEMALE_PROTAG_WALK_ROWS.map(rows => mirrorCanvas(decodeHiBitFrame(rows, FEMALE_PROTAG_PIXEL_PALETTE)));
   const FEMALE_PROTAG_F_TALK1 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE, (x, put) => drawFemaleProtagMouth(put, 1, 24));
   const FEMALE_PROTAG_F_TALK2 = decodeHiBitFrame(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE, (x, put) => drawFemaleProtagMouth(put, 2, 24));
   const FEMALE_PROTAG_F_CELEB1 = buildOffsetFrame(FEMALE_PROTAG_IDLE_ROWS[0], FEMALE_PROTAG_PIXEL_PALETTE, -1, (x, put) => {
@@ -6452,7 +6533,8 @@
   const ORDEM_F_CELEB0 = buildHiBitOrdem('celeb0');
 
   const PROTAGONIST_MALE_ACTOR = {
-    idle: [PROTAG_F_IDLE0, PROTAG_F_IDLE1, PROTAG_F_IDLE2_BLINK, PROTAG_F_IDLE3],
+    idle: [PROTAG_F_IDLE0, PROTAG_F_IDLE1, PROTAG_F_IDLE2, PROTAG_F_IDLE3],
+    idleBlink: PROTAG_F_IDLE2_BLINK,
     walk: PROTAG_WALK_FRAMES,
     talk: [PROTAG_F_IDLE0, PROTAG_F_TALK1, PROTAG_F_TALK2, PROTAG_F_TALK1],
     celebrate: [PROTAG_F_IDLE0, PROTAG_F_CELEB1, PROTAG_F_CELEB2, PROTAG_F_CELEB1],
@@ -6462,7 +6544,8 @@
   };
 
   const PROTAGONIST_FEMALE_ACTOR = {
-    idle: [FEMALE_PROTAG_F_IDLE0, FEMALE_PROTAG_F_IDLE1, FEMALE_PROTAG_F_IDLE2_BLINK, FEMALE_PROTAG_F_IDLE3],
+    idle: [FEMALE_PROTAG_F_IDLE0, FEMALE_PROTAG_F_IDLE1, FEMALE_PROTAG_F_IDLE2, FEMALE_PROTAG_F_IDLE3],
+    idleBlink: FEMALE_PROTAG_F_IDLE2_BLINK,
     walk: FEMALE_PROTAG_WALK_FRAMES,
     talk: [FEMALE_PROTAG_F_IDLE0, FEMALE_PROTAG_F_TALK1, FEMALE_PROTAG_F_TALK2, FEMALE_PROTAG_F_TALK1],
     celebrate: [FEMALE_PROTAG_F_IDLE0, FEMALE_PROTAG_F_CELEB1, FEMALE_PROTAG_F_CELEB2, FEMALE_PROTAG_F_CELEB1],
@@ -6492,7 +6575,8 @@
     protagonist: PROTAGONIST_MALE_ACTOR,
     ordem: {
       back_silhouette: [ORDEM_F_SIL0, ORDEM_F_SIL1, ORDEM_F_SIL2, ORDEM_F_SIL1],
-      idle: [ORDEM_F_IDLE0, ORDEM_F_IDLE1, ORDEM_F_IDLE2, ORDEM_F_IDLE1],
+      idle: [ORDEM_F_IDLE0, ORDEM_F_IDLE1, ORDEM_F_IDLE0, ORDEM_F_IDLE1],
+      idleBlink: ORDEM_F_IDLE2,
       walk: ORDEM_WALK_FRAMES,
       talk: [ORDEM_F_IDLE0, ORDEM_F_TALK1, ORDEM_F_TALK2, ORDEM_F_TALK1],
       sing: [ORDEM_F_IDLE0, ORDEM_F_SING1, ORDEM_F_SING2, ORDEM_F_SING1],
@@ -6592,14 +6676,32 @@
       const effectiveKey = actorKey || 'protagonist';
       const actor = SpriteBank[effectiveKey] || SpriteBank.protagonist;
       const isDialogueTalking = stateKey === 'idle' && isActorDialogueSpeaking(effectiveKey);
+      const isCalmIdle = stateKey === 'idle' && !isDialogueTalking;
       const frames = isDialogueTalking
         ? (actor.talk || actor.sing || actor.idle)
         : (actor[stateKey] || actor.idle);
-      const f12 = Math.floor(t * (isDialogueTalking ? 10 : SPRITE_FPS));
+      const animFps = isDialogueTalking ? 10 : (isCalmIdle ? 2.8 : SPRITE_FPS);
+      const fTick = Math.floor(t * animFps);
       const idx = opts.loop === false
-        ? clamp(f12, 0, frames.length - 1)
-        : ((f12 % frames.length) + frames.length) % frames.length;
+        ? clamp(fTick, 0, frames.length - 1)
+        : ((fTick % frames.length) + frames.length) % frames.length;
       let spr = frames[idx];
+
+      // Piscada independente em repouso: a cada ~3.8–4.8s por ~0.13s (sem piscar 3x/s no loop de respiração)
+      if (isCalmIdle && actor.idleBlink && !GameHUD.reducedMotion) {
+        let keyHash = 0;
+        for (let i = 0; i < effectiveKey.length; i++) {
+          keyHash = ((keyHash * 31 + effectiveKey.charCodeAt(i)) | 0) & 0x7fffffff;
+        }
+        const blinkPeriod = 3.8 + (keyHash % 11) * 0.1;
+        const blinkDur = 0.13;
+        const blinkOffset = (keyHash % 17) * 0.09;
+        const blinkPhase = (((t + blinkOffset) % blinkPeriod) + blinkPeriod) % blinkPeriod;
+        if (blinkPhase >= blinkPeriod - blinkDur) {
+          spr = actor.idleBlink;
+        }
+      }
+
       if (!spr) return;
       if (opts.flipX) spr = mirrorCanvas(spr);
       if (!spr) return;
@@ -6613,6 +6715,7 @@
       const dx = RH(x - w / 2), drawY = RH(y - h + dy);
       ctx.drawImage(spr, dx, drawY, w, h);
 
+      const f12 = Math.floor(t * SPRITE_FPS);
       if (stateKey === 'celebrate') {
         const starPhase = f12 % 6;
         drawStar(ctx, x - 12, y - 20 - (starPhase & 1), 2, '#ffffff', '#ffd35a');
@@ -6860,37 +6963,102 @@
       if (!ctx) return;
       const cx = R(x), cy = R(y);
       const reduced = Boolean(GameHUD.reducedMotion);
-      const spin = reduced ? 0 : t;
-      const f12 = Math.floor(spin * SPRITE_FPS);
+      const animT = reduced ? 0.35 : t;
+      const rScale = Math.max(0.85, baseRadius / 11.5);
 
-      // Halo ondulante sombrio externo em roxo abissal
-      for (let a = 0; a < 28; a++) {
-        const ang = (a / 28) * Math.PI * 2;
-        const wave = reduced ? 0 : Math.sin(ang * 5 - spin * 6.5 + phase) * 1.2;
-        const rr = baseRadius + 1.5 + wave;
-        const px = R(cx + Math.cos(ang) * rr);
-        const py = R(cy + Math.sin(ang) * rr);
-        P1(ctx, px, py, (a & 1) ? '#3b0764' : '#1e0529');
-        if (!reduced && (a % 3) === 0) {
-          P1(ctx, R(cx + Math.cos(ang) * (rr + 1.2)), R(cy + Math.sin(ang) * (rr + 1.2)), '#581c87');
+      // 1. Nuvens escuras de base em roxo abissal e índigo sombrio (sem anel rígido)
+      const basePuffs = 8;
+      for (let i = 0; i < basePuffs; i++) {
+        const ang = (i / basePuffs) * Math.PI * 2 + phase * 0.4;
+        const sway = reduced ? 0 : Math.sin(animT * 2.1 + i * 1.4 + phase) * 1.6;
+        const lift = reduced ? 0 : Math.cos(animT * 1.7 + i * 1.1 + phase) * 1.2;
+        const rr = (9.5 + (i % 3) * 1.6) * rScale;
+        const px = R(cx + Math.cos(ang) * rr + sway * 0.6);
+        const py = R(cy + Math.sin(ang) * (rr * 0.88) + 1.5 + lift * 0.5);
+
+        ctx.fillStyle = (i & 1) ? '#140524' : '#1b1038';
+        ctx.fillRect(px - 2, py - 1, 5, 3);
+        ctx.fillRect(px - 1, py - 2, 3, 5);
+        ctx.fillStyle = (i % 3 === 0) ? '#3b0764' : '#2e1065';
+        ctx.fillRect(px - 1, py - 1, 3, 2);
+        if ((i & 1) === 0) {
+          P1(ctx, px, py - 2, '#581c87');
         }
       }
 
-      // Anel energético maligno pulsante
-      const ringR = R(baseRadius + (reduced ? 0 : Math.sin(spin * 5 + phase) * 0.8));
-      drawRing(ctx, cx, cy, ringR, (f12 & 1) ? '#9333ea' : '#6b21a8');
+      // 2. Volutas e fiapos de fumaça violeta subindo e ondulando organicamente
+      const wisps = 7;
+      for (let w = 0; w < wisps; w++) {
+        const prog = ((animT * 0.46 + (w / wisps) + phase * 0.13) % 1 + 1) % 1;
+        const spreadX = ((w - (wisps - 1) / 2) / 3) * 9.5 * rScale;
+        const curl = Math.sin(prog * Math.PI * 2.5 + w * 1.9 + phase) * (2.6 + prog * 2.2);
+        const wx = R(cx + spreadX * (0.75 + prog * 0.25) + curl);
+        const wy = R(cy + 7 * rScale - prog * (22 * rScale));
 
-      // 5 partículas/chamas sombrias orbitais girando ao redor do cristal
-      for (let k = 0; k < 5; k++) {
-        const ang = (k / 5) * Math.PI * 2 - spin * 2.6 + phase;
-        const orbitR = baseRadius + 2.5 + (reduced ? 0 : Math.sin(spin * 4 + k * 1.3) * 0.9);
-        const ox = R(cx + Math.cos(ang) * orbitR);
-        const oy = R(cy + Math.sin(ang) * orbitR);
-        P1(ctx, ox - 1, oy, '#2e0947');
-        P1(ctx, ox + 1, oy, '#2e0947');
-        P1(ctx, ox, oy + 1, '#2e0947');
-        P1(ctx, ox, oy, '#7e22ce');
-        P1(ctx, ox, oy - 1, '#c084fc');
+        if (prog < 0.45) {
+          // Nuvem densa na base/meio do cristal
+          ctx.fillStyle = '#140524';
+          ctx.fillRect(wx - 2, wy - 1, 4, 3);
+          ctx.fillStyle = '#3b0764';
+          ctx.fillRect(wx - 1, wy - 1, 3, 2);
+          P1(ctx, wx, wy - 2, '#6b21a8');
+        } else if (prog < 0.78) {
+          // Voluta média ondulante
+          ctx.fillStyle = '#2e1065';
+          ctx.fillRect(wx - 1, wy, 3, 2);
+          P1(ctx, wx, wy - 1, '#7e22ce');
+          P1(ctx, wx + (w & 1 ? 1 : -1), wy - 2, '#9333ea');
+        } else {
+          // Fiapos finos violeta se dissipando no topo
+          P1(ctx, wx, wy, '#6b21a8');
+          P1(ctx, wx + (w & 1 ? -1 : 1), wy - 1, '#a855f7');
+        }
+      }
+    },
+
+    spawnShadowSmokePuff(puffs, x, y, t) {
+      if (!Array.isArray(puffs)) return;
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2 + (i & 1) * 0.2;
+        const spd = 14 + (i % 3) * 8;
+        puffs.push({
+          t0: t,
+          x0: x + Math.cos(ang) * 4,
+          y0: y + Math.sin(ang) * 3,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd * 0.65 - 12,
+          dur: 0.46 + (i % 2) * 0.08,
+          col: i % 3 === 0 ? '#581c87' : (i & 1 ? '#2e1065' : '#140524'),
+          wispCol: i & 1 ? '#a855f7' : '#7e22ce'
+        });
+      }
+      if (puffs.length > 48) {
+        puffs.splice(0, puffs.length - 48);
+      }
+    },
+
+    drawShadowSmokePuffs(ctx, puffs, t) {
+      if (!ctx || !Array.isArray(puffs) || puffs.length === 0) return;
+      for (let i = puffs.length - 1; i >= 0; i--) {
+        const pf = puffs[i];
+        const age = t - pf.t0;
+        if (age < 0 || age >= pf.dur) {
+          if (age >= pf.dur) puffs.splice(i, 1);
+          continue;
+        }
+        const p = age / pf.dur;
+        const px = R(pf.x0 + pf.vx * age);
+        const py = R(pf.y0 + pf.vy * age);
+        if (p < 0.55) {
+          ctx.fillStyle = pf.col;
+          ctx.fillRect(px - 2, py - 1, 4, 3);
+          ctx.fillRect(px - 1, py - 2, 2, 4);
+          P1(ctx, px, py - 1, pf.wispCol);
+        } else {
+          ctx.fillStyle = pf.col;
+          ctx.fillRect(px - 1, py - 1, 2, 2);
+          P1(ctx, px, py - 2, pf.wispCol);
+        }
       }
     },
 
@@ -7447,6 +7615,8 @@
           if (half > 0) ctx.fillRect(R(cx + half), R(cy + dy), 1, 1);
         }
       };
+      strokeDiamond(14, '#2c221e');
+      strokeDiamond(15, '#8c7d70');
       strokeDiamond(D - 2, '#2c221e');
       strokeDiamond(D - 1, '#5c4938');
       strokeDiamond(D, '#5c4938');
@@ -7533,6 +7703,134 @@
     '....ooo....',
     '...........'
   ], { o: '#3b0764', W: '#ffffff', L: '#f3e8ff', M: '#c084fc', D: '#a855f7' });
+
+  const SPR_PIXEL_CURSOR = fromMap([
+    'oo.......',
+    'oWo......',
+    'oWWo.....',
+    'oWLWo....',
+    'oWLLWo...',
+    'oWLLLWo..',
+    'oWLLLLWo.',
+    'oWLLoooo.',
+    'oWLoWo...',
+    'oWo.oWo..',
+    '.o...oo..'
+  ], { o: '#140d2e', W: '#ffffff', L: '#e2d4f7' });
+
+  /**
+   * Animação guia introdutória da Fase 1 (Etapa 1):
+   * 1) Cursor de mouse em pixel art desliza até o cristal puro;
+   * 2) Ao chegar próximo do cristal, transforma-se na mão agarrando;
+   * 3) Arrasta silhueta/rastro translúcido do cristal puro até o cristal sombrio em loop suave.
+   */
+  function drawFase1DragGuide(ctx, anim, t = 0) {
+    if (!ctx || !anim) return;
+    const dur = Math.max(0.5, anim.duration || 2.8);
+    const p = (((anim.t || 0) % dur) / dur);
+
+    const fromX = anim.fromX ?? 118;
+    const fromY = anim.fromY ?? 96;
+    const toX = anim.toX ?? 204;
+    const toY = anim.toY ?? 96;
+
+    const fadeIn = p < 0.08 ? p / 0.08 : 1;
+    const fadeOut = p > 0.90 ? (1 - p) / 0.10 : 1;
+    const masterAlpha = clamp(fadeIn * fadeOut * 0.88, 0.08, 0.88);
+    const reduced = Boolean(GameHUD.reducedMotion);
+
+    ctx.save();
+    try {
+      // Trilha pontilhada sutil entre cristal puro e sombrio
+      const dots = 10;
+      ctx.globalAlpha = masterAlpha * 0.55;
+      for (let i = 1; i < dots; i++) {
+        const u = i / dots;
+        const arcY = -Math.sin(u * Math.PI) * 14;
+        const dx = R(fromX + (toX - fromX) * u);
+        const dy = R(fromY + (toY - fromY) * u + arcY);
+        ctx.fillStyle = (i & 1) ? '#f3e8ff' : '#c084fc';
+        ctx.fillRect(dx, dy, 1, 1);
+      }
+
+      if (reduced) {
+        const midX = R((fromX + toX) * 0.5);
+        const midY = R((fromY + toY) * 0.5 - 12);
+        ctx.globalAlpha = 0.7;
+        drawRing(ctx, R(toX), R(toY), 10, '#e040fb');
+        ctx.drawImage(SPR_PURE, midX - 6, midY - 7);
+        drawMiniOrb(ctx, midX, midY - 10, '#a8d8e6', '#294c66');
+        ctx.drawImage(SPR_GHOST_HAND_PRESS, midX - 2, midY - 1);
+        return;
+      }
+
+      // Alvo pulsante discreto ao redor do cristal sombrio
+      const targetPulse = 9 + Math.round(Math.sin(t * 6) * 1.2);
+      ctx.globalAlpha = masterAlpha * 0.52;
+      drawRing(ctx, R(toX), R(toY), targetPulse, '#e040fb');
+
+      // Fases:
+      // 0.00..0.28 -> cursor mouse entra e desliza até o cristal puro
+      // 0.28..0.42 -> transforma-se na mão aberta -> mão agarrando o cristal
+      // 0.42..0.84 -> mão agarrando arrasta silhueta/rastro do cristal puro até o cristal sombrio
+      // 0.84..1.00 -> encaixe/brilho suave no cristal sombrio antes de repetir
+      const enterStartX = fromX - 28;
+      const enterStartY = fromY + 18;
+
+      if (p < 0.28) {
+        const u = easeInOut(p / 0.28);
+        const mx = enterStartX + (fromX - enterStartX) * u;
+        const my = enterStartY + (fromY - enterStartY) * u;
+        ctx.globalAlpha = masterAlpha * 0.95;
+        ctx.drawImage(SPR_PIXEL_CURSOR, R(mx), R(my));
+        if (p > 0.20) {
+          ctx.globalAlpha = masterAlpha * 0.65;
+          drawRing(ctx, R(fromX), R(fromY), 12, '#9ef0ff');
+        }
+      } else if (p < 0.42) {
+        const gripU = (p - 0.28) / 0.14;
+        const pressing = gripU >= 0.45;
+        ctx.globalAlpha = masterAlpha * 0.72;
+        drawRing(ctx, R(fromX), R(fromY), pressing ? 10 : 12, pressing ? '#f3e8ff' : '#9ef0ff');
+        ctx.globalAlpha = masterAlpha * 0.94;
+        ctx.drawImage(pressing ? SPR_GHOST_HAND_PRESS : SPR_GHOST_HAND_OPEN, R(fromX - 2), R(fromY - 1));
+      } else if (p < 0.84) {
+        const u = easeInOut((p - 0.42) / 0.42);
+        const arcY = -Math.sin(u * Math.PI) * 14;
+        const cx = fromX + (toX - fromX) * u;
+        const cy = fromY + (toY - fromY) * u + arcY;
+
+        // Rastro translúcido da silhueta do cristal puro durante o arraste
+        for (let tr = 1; tr <= 3; tr++) {
+          const tu = Math.max(0, u - tr * 0.07);
+          const tArc = -Math.sin(tu * Math.PI) * 14;
+          const tx = fromX + (toX - fromX) * tu;
+          const ty = fromY + (toY - fromY) * tu + tArc;
+          ctx.globalAlpha = masterAlpha * (0.28 - tr * 0.06);
+          ctx.drawImage(SPR_PURE, R(tx - 6), R(ty - 7));
+        }
+
+        // Silhueta principal translúcida do cristal puro sendo arrastada
+        ctx.globalAlpha = masterAlpha * 0.68;
+        ctx.drawImage(SPR_PURE, R(cx - 6), R(cy - 7));
+        drawMiniOrb(ctx, R(cx), R(cy - 10), '#a8d8e6', '#294c66');
+
+        // Mão agarrando sobre o cristal arrastado
+        ctx.globalAlpha = masterAlpha * 0.95;
+        ctx.drawImage(SPR_GHOST_HAND_PRESS, R(cx - 2), R(cy - 1));
+      } else {
+        ctx.globalAlpha = masterAlpha * 0.62;
+        ctx.drawImage(SPR_PURE, R(toX - 6), R(toY - 7));
+        drawMiniOrb(ctx, R(toX), R(toY - 10), '#a8d8e6', '#294c66');
+        ctx.globalAlpha = masterAlpha * 0.88;
+        drawRing(ctx, R(toX), R(toY), 12, '#fbbf24');
+        drawStar(ctx, R(toX + 8), R(toY - 8), 3, '#ffffff', '#e040fb');
+        ctx.drawImage(SPR_GHOST_HAND_OPEN, R(toX + 1), R(toY + 1));
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
 
   /** Renderiza a dica visual translúcida da Mão Fantasma (Visão do Próximo Passo). */
   function drawGhostHandHint(ctx, anim, t = 0) {
@@ -9856,7 +10154,7 @@
         id: 'tut_drag_and_shadow_once',
         title: 'Cristais e Sombras',
         vignette: 'drag_and_shadow',
-        body: '{cyan:Arraste os cristais} pelo campo. As {gold:bolinhas luminosas} indicam seu valor: una {cyan:cristais puros} aos {orange:sombrios equivalentes} para {green:anulá-los}!'
+        body: '{cyan:Arraste os cristais puros} até os {purple:cristais sombrios} de {gold:mesmo valor} (bolinhas) para {green:anulá-los}! Os {orange:cristais sombrios estão presos pelas sombras} e não podem ser movidos.'
       },
       {
         id: 'tut_obstacle_decay',
@@ -10052,6 +10350,7 @@
     drawJustifiedPixelText,
     drawParchmentBox,
     drawGhostHandHint,
+    drawFase1DragGuide,
     drawTimeRewindEffect,
     drawDeadEndAlert,
     isMobileOrTouch,

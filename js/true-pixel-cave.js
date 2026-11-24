@@ -177,7 +177,7 @@
     6: [[-12, -8.5], [-7.5, -12.5], [-2.5, -15], [2.5, -15], [7.5, -12.5], [12, -8.5]]
   };
 
-  function drawExternalOrb(ctx, ox, oy, coreCol, midCol, rimCol, pulse = false) {
+  function drawExternalOrb(ctx, ox, oy, coreCol, midCol, rimCol, pulse = false, specCol = '#ffffff') {
     ox = RH(ox);
     oy = RH(oy);
     const r = pulse ? 3.0 : 2.5;
@@ -196,10 +196,10 @@
     ctx.fillStyle = midCol;
     ctx.fillRect(ox - r + 0.5, oy - r + 0.5, r * 2 - 1, r * 2 - 1);
 
-    // Núcleo brilhante e ponto especular superior esquerdo
+    // Núcleo e ponto especular superior esquerdo
     ctx.fillStyle = coreCol;
     ctx.fillRect(ox - 1, oy - 1, 2, 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = specCol;
     ctx.fillRect(ox - 1, oy - 1.5, 1, 1);
   }
 
@@ -242,24 +242,30 @@
     const orbCoords = EXTERNAL_ORB_ARCS[val] || EXTERNAL_ORB_ARCS[1];
     const recentlyChanged = Boolean(piece.lastValChangeAt && (t - piece.lastValChangeAt) < 0.28);
 
-    const coreCol = piece.shadow
-      ? (piece.type === 'rose' ? '#ffe0eb' : (piece.type === 'opal' ? '#ffe8b8' : '#e0f7ff'))
-      : '#fffdf2';
+    const coreCol = piece.shadow ? '#0d0317' : '#fffdf2';
     const midCol = piece.shadow
-      ? (piece.type === 'rose' ? '#d46a92' : (piece.type === 'opal' ? '#d97538' : '#68b0c9'))
+      ? (piece.type === 'rose' ? '#4a153b' : (piece.type === 'opal' ? '#4f1e14' : '#241442'))
       : piece.type === 'opal'
         ? '#f7b259'
         : piece.type === 'rose'
           ? '#f29bb8'
           : '#7fd4e6';
-    const rimCol = piece.shadow ? '#240b36' : (piece.type === 'opal' ? '#4a1912' : (piece.type === 'rose' ? '#4f1e35' : '#1e3a4d'));
-    const linkCol = piece.shadow ? '#7e22ce' : (piece.type === 'opal' ? '#e68a49' : (piece.type === 'rose' ? '#d97a9c' : '#569bb0'));
+    const rimCol = piece.shadow
+      ? (piece.type === 'rose' ? '#be4b82' : (piece.type === 'opal' ? '#c26238' : '#9333ea'))
+      : (piece.type === 'opal' ? '#4a1912' : (piece.type === 'rose' ? '#4f1e35' : '#1e3a4d'));
+    const specCol = piece.shadow
+      ? (piece.type === 'rose' ? '#f472b6' : (piece.type === 'opal' ? '#fb923c' : '#c084fc'))
+      : '#ffffff';
+    const linkCol = piece.shadow ? '#4c1d95' : (piece.type === 'opal' ? '#e68a49' : (piece.type === 'rose' ? '#d97a9c' : '#569bb0'));
 
-    // Filamento energético suave conectando o arco de bolinhas externas ao topo do cristal
+    // Filamento energético conectando o arco de bolinhas externas ao topo do cristal
     ctx.fillStyle = linkCol;
     for (let i = 0; i < orbCoords.length; i++) {
       const [ox, oy] = orbCoords[i];
       ctx.fillRect(RH(x + ox * 0.65), RH(y + oy * 0.72), 1, 1);
+      if (piece.shadow) {
+        ctx.fillRect(RH(x + ox * 0.45), RH(y + oy * 0.55), 1, 1);
+      }
       if (i < orbCoords.length - 1) {
         const [nx, ny] = orbCoords[i + 1];
         ctx.fillRect(RH(x + (ox + nx) * 0.5), RH(y + (oy + ny) * 0.5), 1, 1);
@@ -268,7 +274,7 @@
 
     for (let i = 0; i < orbCoords.length; i++) {
       const [ox, oy] = orbCoords[i];
-      drawExternalOrb(ctx, x + ox, y + oy, coreCol, midCol, rimCol, recentlyChanged);
+      drawExternalOrb(ctx, x + ox, y + oy, coreCol, midCol, rimCol, recentlyChanged, specCol);
     }
   }
 
@@ -2670,6 +2676,9 @@
     magneticAnim: null,
     equationShockEffect: null,
     ghostHandAnim: null,
+    fase1IntroGuideAnim: null,
+    _fase1IntroGuideDismissed: false,
+    shadowSmokePuffs: [],
     actionHistory: [],
     _gestureSnapshot: null,
     _gestureCommitted: false,
@@ -2880,6 +2889,8 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.fase1IntroGuideAnim = null;
+      this.shadowSmokePuffs = [];
       this.actionHistory = [];
       this._gestureSnapshot = null;
       this._gestureCommitted = false;
@@ -3112,6 +3123,7 @@
           const p = this.pieces[i];
           if (!p.shadow && !p.broken && p.value > 0 && Math.hypot(x - p.x, y - p.y) <= 16) {
             if (p.inEquation && eq && !eq.expanded) continue;
+            this.dismissFase1IntroGuide();
             this._gestureSnapshot = this.captureStepSnapshot();
             this._gestureCommitted = false;
             GameHUD.playSfx(p.type === 'opal' ? 'opalGrab' : (p.type === 'rose' ? 'roseGrab' : 'quartzGrab'));
@@ -3123,6 +3135,27 @@
             }
             return;
           }
+        }
+
+        // Feedback sensorial se tentar arrastar/tocar um cristal sombrio (enraizado pelas sombras)
+        for (let i = this.pieces.length - 1; i >= 0; i--) {
+          const sp = this.pieces[i];
+          if (sp.shadow && !sp.broken && sp.value > 0 && Math.hypot(x - sp.x, y - sp.y) <= 16) {
+            this.dismissFase1IntroGuide();
+            this.triggerShadowCrystalBlocked(sp);
+            return;
+          }
+        }
+        if (this.shadowEquation && !this.shadowEquation.broken && this.isInsideEquationAura(this.shadowEquation, x, y)) {
+          this.dismissFase1IntroGuide();
+          for (const sp of this.pieces) {
+            if (sp.shadow && !sp.broken && sp.value > 0 && sp.inEquation === 'shadow') {
+              sp.rejectUntil = this.t + 0.36;
+            }
+          }
+          this.spawnShadowSmokePuff(this.shadowEquation.x, this.shadowEquation.y);
+          GameHUD.playSfx('shadowBlocked');
+          return;
         }
 
         if (eq && !eq.broken && eq.expanded && clickedInEq) {
@@ -3701,6 +3734,9 @@
       this.pureEquation = null;
       this.shadowEquation = null;
       this.shards = [];
+      this.shadowSmokePuffs = [];
+      this.fase1IntroGuideAnim = null;
+      this._fase1IntroGuideDismissed = false;
       IrisTransition.start('in', 74, 118, 0.75);
 
       if (!this.running) {
@@ -4340,6 +4376,8 @@
       this.magneticAnim = null;
       this.equationShockEffect = null;
       this.ghostHandAnim = null;
+      this.fase1IntroGuideAnim = null;
+      this.shadowSmokePuffs = [];
       this.actionHistory = [];
       this._gestureSnapshot = null;
       this._gestureCommitted = false;
@@ -4680,6 +4718,40 @@
       this.restoreStepSnapshot(prevSnap, canRunAuto);
       GameHUD.playSfx('timeRewind');
       return true;
+    },
+
+    spawnShadowSmokePuff(x, y) {
+      if (!Array.isArray(this.shadowSmokePuffs)) this.shadowSmokePuffs = [];
+      if (typeof ActorAnimator.spawnShadowSmokePuff === 'function') {
+        ActorAnimator.spawnShadowSmokePuff(this.shadowSmokePuffs, x, y, this.t);
+      }
+    },
+
+    triggerShadowCrystalBlocked(piece) {
+      if (!piece) return;
+      piece.rejectUntil = this.t + 0.36;
+      this.spawnShadowSmokePuff(piece.x, piece.y);
+      GameHUD.playSfx('shadowBlocked');
+    },
+
+    startFase1IntroGuide() {
+      if (this.currentLevel !== 1 || this.currentStep !== 1 || this._fase1IntroGuideDismissed) return;
+      const pure = this.pieces.find(p => !p.shadow && !p.broken && p.value > 0);
+      const shadow = this.pieces.find(p => p.shadow && !p.broken && p.value > 0);
+      if (!pure || !shadow) return;
+      this.fase1IntroGuideAnim = {
+        t: 0,
+        duration: 2.8,
+        fromX: pure.x,
+        fromY: pure.y,
+        toX: shadow.x,
+        toY: shadow.y
+      };
+    },
+
+    dismissFase1IntroGuide() {
+      this.fase1IntroGuideAnim = null;
+      this._fase1IntroGuideDismissed = true;
     },
 
     spawnShatter(cx, cy, setKey, count = 12) {
@@ -5106,6 +5178,7 @@
         TutorialModal.open(StandardTutorialCards.FASE1_INTRO, () => {
           this.phase = 'gameplay';
           this.phaseTime = 0;
+          this.startFase1IntroGuide();
         });
       });
     },
@@ -5196,6 +5269,7 @@
       if (this.phase === 'tutorial' && !TutorialModal.isOpen) {
         this.phase = 'gameplay';
         this.phaseTime = 0;
+        this.startFase1IntroGuide();
       }
       if (this.equationShockEffect) {
         this.equationShockEffect.elapsed += dt;
@@ -5207,6 +5281,28 @@
         this.ghostHandAnim.t += dt;
         if (this.ghostHandAnim.t >= (this.ghostHandAnim.duration || 2.2)) {
           this.ghostHandAnim = null;
+        }
+      }
+      if (this.fase1IntroGuideAnim) {
+        if (this.phase !== 'gameplay' || this.currentLevel !== 1 || this.currentStep !== 1 || this.draggedPiece) {
+          if (this.draggedPiece) {
+            this.dismissFase1IntroGuide();
+          } else if (this.currentLevel !== 1 || this.currentStep !== 1) {
+            this.fase1IntroGuideAnim = null;
+          }
+        } else if (!TutorialModal.isOpen && !DialogueBox.isOpen) {
+          const pure = this.pieces.find(p => !p.shadow && !p.broken && p.value > 0);
+          const shadow = this.pieces.find(p => p.shadow && !p.broken && p.value > 0);
+          if (!pure || !shadow) {
+            this.dismissFase1IntroGuide();
+          } else {
+            this.fase1IntroGuideAnim.fromX = pure.x;
+            this.fase1IntroGuideAnim.fromY = pure.y;
+            this.fase1IntroGuideAnim.toX = shadow.x;
+            this.fase1IntroGuideAnim.toY = shadow.y;
+            const dur = this.fase1IntroGuideAnim.duration || 2.8;
+            this.fase1IntroGuideAnim.t = (this.fase1IntroGuideAnim.t + dt) % dur;
+          }
         }
       }
       if (this.rewindAnim) {
@@ -5894,6 +5990,9 @@
       }
 
       this.drawShards(ctx);
+      if (typeof ActorAnimator.drawShadowSmokePuffs === 'function') {
+        ActorAnimator.drawShadowSmokePuffs(ctx, this.shadowSmokePuffs, tq);
+      }
       if (this.equationShockEffect) {
         ActorAnimator.drawEquationShockwave(ctx, this.equationShockEffect, tq);
       }
@@ -5923,6 +6022,8 @@
 
       if (this.phase === 'gameplay' && this.ghostHandAnim && typeof E.drawGhostHandHint === 'function') {
         E.drawGhostHandHint(ctx, this.ghostHandAnim, tq);
+      } else if (this.phase === 'gameplay' && this.fase1IntroGuideAnim && typeof E.drawFase1DragGuide === 'function') {
+        E.drawFase1DragGuide(ctx, this.fase1IntroGuideAnim, tq);
       }
       if (this.rewindAnim && typeof E.drawTimeRewindEffect === 'function') {
         E.drawTimeRewindEffect(ctx, this.rewindAnim, tq);
