@@ -685,6 +685,7 @@
     const pw = 256, ph = 42;
     const px = R(cx - pw / 2), py = R(cy - ph / 2);
 
+    E?.TextOverlay?.clearLogicalRect?.(ctx, px - 3, py - 3, pw + 6, ph + 6);
     ctx.fillStyle = '#140e24';
     ctx.fillRect(px - 3, py - 3, pw + 6, ph + 6);
     ctx.fillStyle = '#281e42';
@@ -704,20 +705,35 @@
       ctx.fillRect(qx - 1, qy - 1, 2, 2);
     });
 
-    ctx.save();
-    ctx.font = 'bold 18px Consolas, "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    if (E?.TextOverlay?.isActiveFor?.(ctx)) {
+      const ovOpts = {
+        fontPx: 17,
+        fontFamily: 'Consolas, "Courier New", monospace',
+        weight: '700',
+        textBaseline: 'middle',
+        preserveColor: true,
+        strokeWidth: 0
+      };
+      E.TextOverlay.drawLine(ctx, text, cx + 2, cy + 2, '#090514', false, pw - 16, 18, 'center', ovOpts);
+      E.TextOverlay.drawLine(ctx, text, cx + 1, cy + 1, '#7c4dff', false, pw - 16, 18, 'center', ovOpts);
+      E.TextOverlay.drawLine(ctx, text, cx, cy - 1, '#40c4ff', false, pw - 16, 18, 'center', ovOpts);
+      E.TextOverlay.drawLine(ctx, text, cx, cy, (f12 & 1) ? '#e0f7fa' : '#ffffff', '#090514', pw - 16, 18, 'center', { ...ovOpts, strokeWidth: 0.7 });
+    } else {
+      ctx.save();
+      ctx.font = 'bold 18px Consolas, "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-    ctx.fillStyle = '#090514';
-    ctx.fillText(text, cx + 2, cy + 2);
-    ctx.fillStyle = '#7c4dff';
-    ctx.fillText(text, cx + 1, cy + 1);
-    ctx.fillStyle = '#40c4ff';
-    ctx.fillText(text, cx, cy - 1);
-    ctx.fillStyle = (f12 & 1) ? '#e0f7fa' : '#ffffff';
-    ctx.fillText(text, cx, cy);
-    ctx.restore();
+      ctx.fillStyle = '#090514';
+      ctx.fillText(text, cx + 2, cy + 2);
+      ctx.fillStyle = '#7c4dff';
+      ctx.fillText(text, cx + 1, cy + 1);
+      ctx.fillStyle = '#40c4ff';
+      ctx.fillText(text, cx, cy - 1);
+      ctx.fillStyle = (f12 & 1) ? '#e0f7fa' : '#ffffff';
+      ctx.fillText(text, cx, cy);
+      ctx.restore();
+    }
 
     if (E?.drawStar) {
       for (let i = 0; i < 6; i++) {
@@ -1388,6 +1404,7 @@
 
       // 1. CENA DA "LAST DANCE" (Correndo juntos pelos 4 cenários agora resolvidos e bonitos!)
       if (this.phase === 'final_last_dance' && this.lastDanceState) {
+        E.TextOverlay?.beginFrame?.(this.canvas);
         ctx.setTransform(2, 0, 0, 2, 0, 0);
         const ld = this.lastDanceState;
         drawLastDanceWorldScenery(ctx, ld.worldIdx, ld.scrollX, tq);

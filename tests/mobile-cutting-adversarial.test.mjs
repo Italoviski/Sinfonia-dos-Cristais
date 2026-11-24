@@ -144,7 +144,7 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
       assert.equal(isVirtualButtonActive, false, 'Virtual button must not be active or drawn');
     });
 
-    await t.test('3. Mobile Touch on Pause and Volume buttons without bouncing (R1)', async () => {
+    await t.test('3. Mobile Touch on Settings and Volume buttons without bouncing (R1)', async () => {
       await resetToForestGame();
 
       async function getPhysicalPoint(logicalX, logicalY) {
@@ -159,43 +159,43 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
         }, { lx: logicalX, ly: logicalY });
       }
 
-      // Pause button center: logical (198, 10)
-      const pausePt = await getPhysicalPoint(198, 10);
-      await page.tap('#truePixelScreen', { position: { x: pausePt.x, y: pausePt.y } });
+      // Settings button center: logical (286, 10)
+      const settingsPt = await getPhysicalPoint(286, 10);
+      await page.tap('#truePixelScreen', { position: { x: settingsPt.x, y: settingsPt.y } });
 
       let hudState = await page.evaluate(() => ({
-        paused: window.TruePixelEngine.GameHUD.paused,
+        settingsOpen: window.TruePixelEngine.GameHUD.settingsOpen,
         muted: window.TruePixelEngine.GameHUD.muted
       }));
-      assert.equal(hudState.paused, true, 'Pause button should toggle paused = true on single mobile tap');
+      assert.equal(hudState.settingsOpen, true, 'Settings button should toggle settingsOpen = true on single mobile tap');
 
-      // Tap again to unpause
-      await page.tap('#truePixelScreen', { position: { x: pausePt.x, y: pausePt.y } });
+      // Tap again to close settings
+      await page.tap('#truePixelScreen', { position: { x: settingsPt.x, y: settingsPt.y } });
       hudState = await page.evaluate(() => ({
-        paused: window.TruePixelEngine.GameHUD.paused,
+        settingsOpen: window.TruePixelEngine.GameHUD.settingsOpen,
         muted: window.TruePixelEngine.GameHUD.muted
       }));
-      assert.equal(hudState.paused, false, 'Pause button should toggle paused = false on second mobile tap');
+      assert.equal(hudState.settingsOpen, false, 'Settings button should toggle settingsOpen = false on second mobile tap');
 
-      // Volume / Mute button center: logical (286, 10)
-      const mutePt = await getPhysicalPoint(286, 10);
+      // Volume / Mute button center: logical (264, 10)
+      const mutePt = await getPhysicalPoint(264, 10);
       await page.tap('#truePixelScreen', { position: { x: mutePt.x, y: mutePt.y } });
 
       hudState = await page.evaluate(() => ({
-        paused: window.TruePixelEngine.GameHUD.paused,
+        settingsOpen: window.TruePixelEngine.GameHUD.settingsOpen,
         muted: window.TruePixelEngine.GameHUD.muted
       }));
       assert.equal(hudState.muted, true, 'Volume/Mute button should toggle muted = true on single mobile tap');
 
       await page.tap('#truePixelScreen', { position: { x: mutePt.x, y: mutePt.y } });
       hudState = await page.evaluate(() => ({
-        paused: window.TruePixelEngine.GameHUD.paused,
+        settingsOpen: window.TruePixelEngine.GameHUD.settingsOpen,
         muted: window.TruePixelEngine.GameHUD.muted
       }));
       assert.equal(hudState.muted, false, 'Volume/Mute button should toggle muted = false on second mobile tap');
     });
 
-    await t.test('4. Extreme and corner coordinates adversarial testing: (0,0), (319,179), (188,2), (276,2)', async () => {
+    await t.test('4. Extreme and corner coordinates adversarial testing: (0,0), (319,179), (254,2), (276,2)', async () => {
       async function testPoint(logicalX, logicalY) {
         await resetToForestGame();
 
@@ -204,7 +204,7 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
           const E = window.TruePixelEngine;
           const fn = W.forestNinja;
           const initialScreen = document.body.dataset.screen;
-          const initialPaused = E.GameHUD.paused;
+          const initialSettings = E.GameHUD.settingsOpen;
           const initialMuted = E.GameHUD.muted;
           const initialCuts = fn.bladeTrail.length;
 
@@ -226,7 +226,7 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
 
           const isSlicingWhileDown = fn.isSlicing;
           const cutsDelta = fn.bladeTrail.length - initialCuts;
-          const pausedChanged = E.GameHUD.paused !== initialPaused;
+          const settingsChanged = E.GameHUD.settingsOpen !== initialSettings;
           const mutedChanged = E.GameHUD.muted !== initialMuted;
           const screenAfter = document.body.dataset.screen;
 
@@ -237,7 +237,7 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
           return {
             screenChanged: screenAfter !== initialScreen,
             newScreen: screenAfter,
-            pausedChanged,
+            settingsChanged,
             mutedChanged,
             isSlicingWhileDown,
             isSlicingAfterUp: fn.isSlicing,
@@ -248,38 +248,28 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
 
       // Corner A: (0, 0) - Top-left extreme corner (in top bar zone y <= 20)
       const res00 = await testPoint(0, 0);
-      assert.equal(res00.pausedChanged, false, '(0,0) must not trigger pause');
+      assert.equal(res00.settingsChanged, false, '(0,0) must not trigger settings');
       assert.equal(res00.mutedChanged, false, '(0,0) must not trigger mute');
       assert.equal(res00.isSlicingWhileDown, false, '(0,0) is in header bar (y<=20), must NOT start slice');
       assert.equal(res00.cutsDelta, 0, '(0,0) must not record blade trail');
 
       // Corner B: (319, 179) - Bottom-right extreme corner (in game arena)
       const res319 = await testPoint(319, 179);
-      assert.equal(res319.pausedChanged, false, '(319,179) must not trigger pause');
+      assert.equal(res319.settingsChanged, false, '(319,179) must not trigger settings');
       assert.equal(res319.mutedChanged, false, '(319,179) must not trigger mute');
       assert.equal(res319.isSlicingWhileDown, true, '(319,179) starts slice stroke cleanly');
       assert.equal(res319.isSlicingAfterUp, false, 'isSlicing reset on pointerup');
       assert.equal(res319.cutsDelta, 1, '(319,179) records 1 trail point');
 
-      // Corner C: (188, 2) - Top-left boundary of Pause button
-      // Note: Map button occupies x: 154..186 with padX: 2 (effective 152..188).
-      // At exact boundary (188, 2), Map button's padded hitbox takes precedence.
-      // At (189, 2), Pause button is cleanly activated.
-      const res188 = await testPoint(188, 2);
-      assert.equal(res188.cutsDelta, 0, '(188,2) in header zone must never start blade cut');
-      const res189 = await testPoint(189, 2);
-      assert.equal(res189.pausedChanged, true, '(189,2) inside Pause button body toggles pause');
-      assert.equal(res189.cutsDelta, 0, 'Pause button tap must not start blade cut');
+      // Corner C: (255, 2) - Mute button boundary (buttons.mute: x: 254..274)
+      const res255 = await testPoint(255, 2);
+      assert.equal(res255.mutedChanged, true, '(255,2) inside Mute button body toggles mute');
+      assert.equal(res255.cutsDelta, 0, 'Mute button tap must not start blade cut');
 
-      // Corner D: (276, 2) - Top-left boundary of Mute button
-      // Note: Restart button occupies x: 210..274 with padX: 2 (effective 208..276).
-      // At (276, 2), Restart button's padded hitbox is activated.
-      // At (277, 2), Mute button is cleanly activated.
-      const res276 = await testPoint(276, 2);
-      assert.equal(res276.cutsDelta, 0, '(276,2) in header zone must never start blade cut');
+      // Corner D: (277, 2) - Settings button boundary (buttons.settings: x: 276..296)
       const res277 = await testPoint(277, 2);
-      assert.equal(res277.mutedChanged, true, '(277,2) inside Mute button body toggles mute');
-      assert.equal(res277.cutsDelta, 0, 'Mute button tap must not start blade cut');
+      assert.equal(res277.settingsChanged, true, '(277,2) inside Settings button body toggles settings');
+      assert.equal(res277.cutsDelta, 0, 'Settings button tap must not start blade cut');
     });
 
     await t.test('5. Direct swipe gesture cuts crystals and prevents page scroll/zoom', async () => {
@@ -349,17 +339,17 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
       assert.equal(swipeResult.scrollY, 0, 'Page scrollY must remain 0 during swipe gestures');
     });
 
-    await t.test('6. Resuming from pause modal via mobile tap does NOT slice crystals', async () => {
+    await t.test('6. Closing settings modal via mobile tap does NOT slice crystals', async () => {
       await resetToForestGame();
 
       await page.evaluate(() => {
         const W = window.TruePixelWorlds;
         const E = window.TruePixelEngine;
         const fn = W.forestNinja;
-        E.GameHUD.paused = true;
+        E.GameHUD.settingsOpen = true;
         fn.flyingCrystals = [{
           x: 160,
-          y: 60,
+          y: 140,
           vx: 0,
           vy: 0,
           rot: 0,
@@ -374,13 +364,13 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
         fn.bladeTrail = [];
       });
 
-      // Resume button is at logical (160, 59)
+      // "Voltar ao Jogo" button is at logical (160, 140)
       const resumePt = await page.evaluate(() => {
         const cv = document.getElementById('truePixelScreen');
         const rect = cv.getBoundingClientRect();
         return {
           x: rect.left + (160 / 320) * rect.width,
-          y: rect.top + (59 / 180) * rect.height
+          y: rect.top + (140 / 180) * rect.height
         };
       });
 
@@ -389,15 +379,15 @@ test('Playwright Mobile Adversarial: Full touch, UI, and edge case suite', async
       const resumeResult = await page.evaluate(() => {
         const fn = window.TruePixelWorlds.forestNinja;
         return {
-          paused: window.TruePixelEngine.GameHUD.paused,
+          settingsOpen: window.TruePixelEngine.GameHUD.settingsOpen,
           isSlicing: fn.isSlicing,
           flyingCount: fn.flyingCrystals.length,
           bladeTrailCount: fn.bladeTrail.length
         };
       });
 
-      assert.equal(resumeResult.paused, false, 'Tapping resume should unpause the game');
-      assert.equal(resumeResult.isSlicing, false, 'Unpausing must NOT start a slicing stroke');
+      assert.equal(resumeResult.settingsOpen, false, 'Tapping Voltar ao Jogo should close settings modal');
+      assert.equal(resumeResult.isSlicing, false, 'Closing modal must NOT start a slicing stroke');
       assert.equal(resumeResult.flyingCount, 1, 'Flying crystals under modal must NOT be accidentally sliced');
       assert.equal(resumeResult.bladeTrailCount, 0, 'No blade trail should be recorded on resume tap');
     });

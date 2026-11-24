@@ -365,11 +365,13 @@ test('Item 5: Botão Guia na HUD das fases abre Menu em duas colunas organizado 
   const HUD = globalThis.TruePixelEngine.GameHUD;
   const bGuide = HUD.buttons.guide;
 
-  // Não quebra coordenadas dos botões existentes testados pela suíte mobile
+  // Verifica layout da top bar sem botão Pause e com botão Casa (home) ao lado de Configurações
   assert.ok(bGuide, 'GameHUD.buttons.guide deve existir');
+  assert.equal(HUD.buttons.pause, undefined, 'Botão Pause deve ter sido removido da barra superior');
   assert.equal(HUD.buttons.map.x, 154, 'Botão Mapa não deve deslocar de x=154');
-  assert.equal(HUD.buttons.pause.x, 188, 'Botão Pause não deve deslocar de x=188');
-  assert.equal(HUD.buttons.mute.x, 276, 'Botão Mute não deve deslocar de x=276');
+  assert.equal(HUD.buttons.settings.x, 276, 'Botão Configurações deve estar em x=276');
+  assert.ok(HUD.buttons.home, 'Botão Casa (home) deve existir');
+  assert.equal(HUD.buttons.home.x, 298, 'Botão Casa (home) deve estar imediatamente ao lado de Configurações em x=298');
   assert.ok(bGuide.x + bGuide.w <= HUD.buttons.map.x, 'Botão Guia não deve sobrepor o botão Mapa');
 
   // Verifica catálogo organizado nos 4 mundos

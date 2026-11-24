@@ -349,7 +349,7 @@
     return w + 1;
   }
 
-  function wrapPixelLines(text, maxWidth = 999) {
+  function wrapPixelLines(text, maxWidth = 999, measureFn = measurePixelText, spaceWidth = 3) {
     const paragraphs = String(text || '').split('\n');
     const lines = [];
     for (const para of paragraphs) {
@@ -359,13 +359,13 @@
         continue;
       }
       let curLine = words[0];
-      let curW = measurePixelText(curLine);
+      let curW = measureFn(curLine);
       for (let w = 1; w < words.length; w++) {
         const word = words[w];
-        const wordW = measurePixelText(word);
-        if (curW + 3 + wordW <= maxWidth) {
+        const wordW = measureFn(word);
+        if (curW + spaceWidth + wordW <= maxWidth) {
           curLine += ' ' + word;
-          curW += 3 + wordW;
+          curW += spaceWidth + wordW;
         } else {
           lines.push(curLine);
           curLine = word;
@@ -386,11 +386,374 @@
     return col;
   }
 
-  function renderHDCanvasLine(ctx, line, drawX, topY, col, shadowCol, maxW, lineHeight, align = 'left') {
-    if (!ctx || typeof ctx.fillText !== 'function') return false;
+  // ============================================================================
+  // CANVAS OVERLAY HiDPI DEDICADO PARA TEXTOS (Resolução Nativa Real do Dispositivo)
+  // Mantém 100% dos sprites/cenários em True Pixel Art (640x360, pixelated) enquanto
+  // todos os textos são rasterizados em resolução nativa (rect * devicePixelRatio)
+  // com imageSmoothingEnabled = true, suporte a clip, globalAlpha, rotação/shake e
+  // mascaramento de camadas (caixas, modais e transição íris).
+  // ============================================================================
+  const TextOverlay = {
+    canvas: null,
+    ctx: null,
+    targetCanvas: null,
+    active: false,
+    scaleX: 1,
+    scaleY: 1,
+    dpr: 1,
+    _lastRectKey: '',
+    _clipStack: [],
+    _eventsBound: false,
+
+    canUseDOM() {
+      return Boolean(
+        typeof document !== 'undefined' &&
+        typeof document.createElement === 'function' &&
+        document.body &&
+        typeof global.HTMLCanvasElement === 'function'
+      );
+    },
+
+    isRealCanvas(cv) {
+      return Boolean(this.canUseDOM() && cv && cv instanceof global.HTMLCanvasElement);
+    },
+
+    ensureOverlay() {
+      if (!this.canUseDOM()) return null;
+      let ov = typeof document.getElementById === 'function'
+        ? document.getElementById('truePixelTextOverlay')
+        : null;
+      if (!ov) {
+        ov = document.createElement('canvas');
+        ov.id = 'truePixelTextOverlay';
+        ov.setAttribute('aria-hidden', 'true');
+        ov.style.cssText = [
+          'position:fixed',
+          'left:0',
+          'top:0',
+          'width:0',
+          'height:0',
+          'display:none',
+          'pointer-events:none',
+          'z-index:41',
+          'background:transparent',
+          'image-rendering:auto',
+          '-webkit-user-select:none',
+          'user-select:none'
+        ].join(';');
+        document.body.appendChild(ov);
+      }
+      this.canvas = ov;
+      if (!this.ctx || this.ctx.canvas !== ov) {
+        this.ctx = ov.getContext('2d');
+      }
+      if (this.ctx) {
+        this.ctx.imageSmoothingEnabled = true;
+      }
+      this.bindEvents();
+      return ov;
+    },
+
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      const onLayoutChange = () => {
+        if (this.targetCanvas) this.syncLayout(this.targetCanvas);
+      };
+      if (typeof global.addEventListener === 'function') {
+        global.addEventListener('resize', onLayoutChange);
+        global.addEventListener('orientationchange', onLayoutChange);
+      }
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('fullscreenchange', onLayoutChange);
+        document.addEventListener('webkitfullscreenchange', onLayoutChange);
+        document.addEventListener('mozfullscreenchange', onLayoutChange);
+        document.addEventListener('MSFullscreenChange', onLayoutChange);
+      }
+    },
+
+    syncLayout(gameCanvas) {
+      if (!this.isRealCanvas(gameCanvas)) {
+        this.active = false;
+        this.targetCanvas = null;
+        return false;
+      }
+      const ov = this.ensureOverlay();
+      if (!ov || !this.ctx) {
+        this.active = false;
+        return false;
+      }
+
+      const hidden = Boolean(gameCanvas.hidden || (gameCanvas.style && gameCanvas.style.display === 'none'));
+      const rect = typeof gameCanvas.getBoundingClientRect === 'function'
+        ? gameCanvas.getBoundingClientRect()
+        : { left: 0, top: 0, width: 0, height: 0 };
+
+      if (hidden || !rect || rect.width < 2 || rect.height < 2) {
+        ov.hidden = true;
+        ov.style.display = 'none';
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        this.ctx.clearRect(0, 0, ov.width, ov.height);
+        this.active = false;
+        this._lastRectKey = '';
+        return false;
+      }
+
+      const dpr = clamp(Number(global.devicePixelRatio) || 1, 1, 3);
+      const targetW = Math.max(1, Math.round(rect.width * dpr));
+      const targetH = Math.max(1, Math.round(rect.height * dpr));
+      const key = `${rect.left.toFixed(2)}|${rect.top.toFixed(2)}|${rect.width.toFixed(2)}|${rect.height.toFixed(2)}|${targetW}|${targetH}`;
+
+      if (key !== this._lastRectKey || ov.hidden || ov.style.display === 'none') {
+        ov.hidden = false;
+        ov.style.display = 'block';
+        ov.style.left = `${rect.left}px`;
+        ov.style.top = `${rect.top}px`;
+        ov.style.width = `${rect.width}px`;
+        ov.style.height = `${rect.height}px`;
+        if (ov.width !== targetW || ov.height !== targetH) {
+          ov.width = targetW;
+          ov.height = targetH;
+        }
+        this._lastRectKey = key;
+      }
+
+      this.targetCanvas = gameCanvas;
+      this.dpr = dpr;
+      this.scaleX = ov.width / W;
+      this.scaleY = ov.height / H;
+      this.ctx.imageSmoothingEnabled = true;
+      this.active = true;
+      return true;
+    },
+
+    beginFrame(gameCanvas) {
+      this._clipStack = [];
+      if (!this.syncLayout(gameCanvas)) return false;
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.globalAlpha = 1;
+      this.ctx.globalCompositeOperation = 'source-over';
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      return true;
+    },
+
+    hide(gameCanvas = null) {
+      if (gameCanvas && this.targetCanvas && gameCanvas !== this.targetCanvas) return;
+      this._clipStack = [];
+      this.active = false;
+      this._lastRectKey = '';
+      if (this.canvas) {
+        if (this.ctx) {
+          this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        this.canvas.hidden = true;
+        if (this.canvas.style) {
+          this.canvas.style.display = 'none';
+        }
+      }
+    },
+
+    isActiveFor(ctx) {
+      return Boolean(
+        this.active &&
+        this.ctx &&
+        this.canvas &&
+        ctx &&
+        ctx.canvas &&
+        ctx.canvas === this.targetCanvas
+      );
+    },
+
+    getTransformInfo(ctx) {
+      const cw = (ctx.canvas && ctx.canvas.width) || (W * 2);
+      const ch = (ctx.canvas && ctx.canvas.height) || (H * 2);
+      const rx = this.canvas.width / cw;
+      const ry = this.canvas.height / ch;
+      let a = 2, b = 0, c = 0, d = 2, e = 0, f = 0;
+      if (typeof ctx.getTransform === 'function') {
+        try {
+          const m = ctx.getTransform();
+          if (m && Number.isFinite(m.a) && Number.isFinite(m.d)) {
+            a = m.a; b = m.b; c = m.c; d = m.d; e = m.e; f = m.f;
+          }
+        } catch (_) {}
+      }
+      const ma = a * rx, mb = b * ry, mc = c * rx, md = d * ry, me = e * rx, mf = f * ry;
+      const sx = Math.hypot(ma, mb);
+      const sy = Math.hypot(mc, md);
+      const rot = (Math.abs(mb) > 1e-4 || Math.abs(mc) > 1e-4) ? Math.atan2(mb, ma) : 0;
+      return { ma, mb, mc, md, me, mf, sx, sy, rot };
+    },
+
+    pushClipRect(ctx, x, y, w, h) {
+      if (!this.isActiveFor(ctx)) return;
+      const m = this.getTransformInfo(ctx);
+      this._clipStack.push({
+        x: m.ma * x + m.mc * y + m.me,
+        y: m.mb * x + m.md * y + m.mf,
+        w: Math.max(0, w * m.sx),
+        h: Math.max(0, h * m.sy)
+      });
+    },
+
+    popClipRect(ctx) {
+      if (!this.isActiveFor(ctx)) return;
+      if (this._clipStack.length > 0) this._clipStack.pop();
+    },
+
+    clearLogicalRect(ctx, x, y, w, h) {
+      if (!this.isActiveFor(ctx)) return;
+      const m = this.getTransformInfo(ctx);
+      const octx = this.ctx;
+      const px = Math.floor(m.ma * x + m.mc * y + m.me);
+      const py = Math.floor(m.mb * x + m.md * y + m.mf);
+      const pw = Math.ceil(Math.max(0, w * m.sx));
+      const ph = Math.ceil(Math.max(0, h * m.sy));
+      octx.save();
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.clearRect(px, py, pw, ph);
+      octx.restore();
+    },
+
+    dimLogicalRect(ctx, x, y, w, h, rgba = 'rgba(10, 8, 6, 0.65)') {
+      if (!this.isActiveFor(ctx)) return;
+      const m = this.getTransformInfo(ctx);
+      const octx = this.ctx;
+      const px = Math.floor(m.ma * x + m.mc * y + m.me);
+      const py = Math.floor(m.mb * x + m.md * y + m.mf);
+      const pw = Math.ceil(Math.max(0, w * m.sx));
+      const ph = Math.ceil(Math.max(0, h * m.sy));
+      octx.save();
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.globalCompositeOperation = 'source-atop';
+      octx.fillStyle = rgba;
+      octx.fillRect(px, py, pw, ph);
+      octx.restore();
+    },
+
+    maskIris(ctx, cx, cy, radius) {
+      if (!this.isActiveFor(ctx)) return;
+      const octx = this.ctx;
+      if (radius <= 1) {
+        octx.setTransform(1, 0, 0, 1, 0, 0);
+        octx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        return;
+      }
+      const m = this.getTransformInfo(ctx);
+      const px = m.ma * cx + m.mc * cy + m.me;
+      const py = m.mb * cx + m.md * cy + m.mf;
+      octx.save();
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.globalCompositeOperation = 'destination-in';
+      octx.beginPath();
+      octx.ellipse(px, py, Math.max(0, radius * m.sx), Math.max(0, radius * m.sy), 0, 0, Math.PI * 2);
+      octx.fillStyle = '#ffffff';
+      octx.fill();
+      octx.restore();
+    },
+
+    measureLogicalText(ctx, text, fontPx, fontFamily = '"Fredoka", "Segoe UI", system-ui, sans-serif', weight = '700') {
+      if (!this.isActiveFor(ctx)) return null;
+      const m = this.getTransformInfo(ctx);
+      if (m.sx <= 0 || m.sy <= 0) return null;
+      const pxFont = Math.max(10, fontPx * m.sy);
+      const octx = this.ctx;
+      octx.save();
+      octx.font = `${weight} ${pxFont.toFixed(2)}px ${fontFamily}`;
+      const measured = octx.measureText(String(text || '')).width / m.sx;
+      octx.restore();
+      return measured;
+    },
+
+    drawLine(ctx, line, drawX, topY, col, shadowCol, maxW, lineHeight, align = 'left', opts = null) {
+      if (!this.isActiveFor(ctx)) return false;
+      if (!line) return true;
+      const m = this.getTransformInfo(ctx);
+      if (m.sx <= 0 || m.sy <= 0) return false;
+
+      const fontPx = (opts && Number.isFinite(opts.fontPx))
+        ? opts.fontPx
+        : clamp((lineHeight || 9) - 1.4, 5.8, 8.6);
+      const pxFont = Math.max(10, fontPx * m.sy);
+      const fillCol = (opts && opts.preserveColor) ? (col || '#ffffff') : normalizeReadableTextColor(col);
+      const hasShadow = shadowCol !== null && shadowCol !== undefined && shadowCol !== false;
+      const strokeCol = (opts && opts.strokeCol !== undefined)
+        ? opts.strokeCol
+        : (hasShadow ? ((shadowCol && shadowCol !== fillCol) ? shadowCol : '#000000') : 'rgba(0, 0, 0, 0.72)');
+      const weight = (opts && opts.weight) || '700';
+      const fontFamily = (opts && opts.fontFamily) || '"Fredoka", "Segoe UI", system-ui, sans-serif';
+      const baseline = (opts && opts.textBaseline) || 'alphabetic';
+
+      const octx = this.ctx;
+      octx.save();
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.imageSmoothingEnabled = true;
+      octx.globalCompositeOperation = 'source-over';
+      octx.globalAlpha = typeof ctx.globalAlpha === 'number' ? clamp(ctx.globalAlpha, 0, 1) : 1;
+
+      for (const cl of this._clipStack) {
+        octx.beginPath();
+        octx.rect(cl.x, cl.y, cl.w, cl.h);
+        octx.clip();
+      }
+
+      const baseLogicalY = baseline === 'middle' ? topY : (topY + fontPx * 0.92);
+      const pxX = m.ma * drawX + m.mc * baseLogicalY + m.me;
+      const pxY = m.mb * drawX + m.md * baseLogicalY + m.mf;
+
+      octx.font = `${weight} ${pxFont.toFixed(2)}px ${fontFamily}`;
+      octx.textAlign = align === 'center' ? 'center' : (align === 'right' ? 'right' : 'left');
+      octx.textBaseline = baseline;
+      octx.lineJoin = 'round';
+      octx.miterLimit = 2;
+
+      const limitW = (Number.isFinite(maxW) && maxW > 0 && maxW < 900) ? (maxW * m.sx) : undefined;
+      const strokeW = (opts && opts.strokeWidth !== undefined)
+        ? opts.strokeWidth * m.sy
+        : Math.max(1.8, pxFont * (hasShadow ? 0.16 : 0.08));
+
+      if (m.rot !== 0) {
+        octx.translate(pxX, pxY);
+        octx.rotate(m.rot);
+        if (strokeW > 0 && strokeCol) {
+          octx.lineWidth = strokeW;
+          octx.strokeStyle = strokeCol;
+          if (limitW !== undefined) octx.strokeText(line, 0, 0, limitW);
+          else octx.strokeText(line, 0, 0);
+        }
+        octx.fillStyle = fillCol;
+        if (limitW !== undefined) octx.fillText(line, 0, 0, limitW);
+        else octx.fillText(line, 0, 0);
+      } else {
+        if (strokeW > 0 && strokeCol) {
+          octx.lineWidth = strokeW;
+          octx.strokeStyle = strokeCol;
+          if (limitW !== undefined) octx.strokeText(line, pxX, pxY, limitW);
+          else octx.strokeText(line, pxX, pxY);
+        }
+        octx.fillStyle = fillCol;
+        if (limitW !== undefined) octx.fillText(line, pxX, pxY, limitW);
+        else octx.fillText(line, pxX, pxY);
+      }
+
+      octx.restore();
+      return true;
+    }
+  };
+
+  function renderHDCanvasLine(ctx, line, drawX, topY, col, shadowCol, maxW, lineHeight, align = 'left', opts = null) {
     if (!line) return true;
-    const fontPx = Math.round(Math.max(6, Math.min(8.5, (lineHeight || 9) - 2)));
-    const fillCol = normalizeReadableTextColor(col);
+    // Caminho principal no navegador real: desenha diretamente no Overlay HiDPI nativo
+    if (TextOverlay.isActiveFor(ctx)) {
+      return TextOverlay.drawLine(ctx, line, drawX, topY, col, shadowCol, maxW, lineHeight, align, opts);
+    }
+    // Fallback seguro para ambientes Node / mock canvas / offscreen canvas
+    if (!ctx || typeof ctx.fillText !== 'function') return false;
+    const fontPx = (opts && Number.isFinite(opts.fontPx))
+      ? Math.round(Math.max(5, opts.fontPx))
+      : Math.round(Math.max(6, Math.min(8.5, (lineHeight || 9) - 2)));
+    const fillCol = (opts && opts.preserveColor) ? (col || '#ffffff') : normalizeReadableTextColor(col);
     const strokeCol = (shadowCol && shadowCol !== fillCol) ? shadowCol : '#000000';
     if (typeof ctx.save === 'function') ctx.save();
     ctx.font = `700 ${fontPx}px "Fredoka", "Segoe UI", system-ui, sans-serif`;
@@ -416,7 +779,16 @@
 
   function drawPixelText(ctx, text, x, y, col = '#ffea31', shadowCol = '#000000', maxWidth = 999, lineHeight = 10, align = 'left') {
     x = R(x); y = R(y);
-    const lines = wrapPixelLines(text, maxWidth);
+    const useOverlayMeasure = TextOverlay.isActiveFor(ctx);
+    const fontPx = clamp((lineHeight || 9) - 1.4, 5.8, 8.6);
+    const measureFn = useOverlayMeasure
+      ? (s) => {
+          const w = TextOverlay.measureLogicalText(ctx, s, fontPx);
+          return w !== null ? w : measurePixelText(s);
+        }
+      : measurePixelText;
+    const spaceW = useOverlayMeasure ? Math.max(2.2, fontPx * 0.34) : 3;
+    const lines = wrapPixelLines(text, maxWidth, measureFn, spaceW);
     let cy = y;
     for (const line of lines) {
       let drawX = x;
@@ -445,7 +817,16 @@
   }
 
   function drawPixelTextCentered(ctx, text, centerX, y, col = '#ffea31', shadowCol = '#000000', maxWidth = 280, lineHeight = 10) {
-    const lines = wrapPixelLines(text, maxWidth);
+    const useOverlayMeasure = TextOverlay.isActiveFor(ctx);
+    const fontPx = clamp((lineHeight || 9) - 1.4, 5.8, 8.6);
+    const measureFn = useOverlayMeasure
+      ? (s) => {
+          const w = TextOverlay.measureLogicalText(ctx, s, fontPx);
+          return w !== null ? w : measurePixelText(s);
+        }
+      : measurePixelText;
+    const spaceW = useOverlayMeasure ? Math.max(2.2, fontPx * 0.34) : 3;
+    const lines = wrapPixelLines(text, maxWidth, measureFn, spaceW);
     let cy = R(y);
     for (const line of lines) {
       if (!renderHDCanvasLine(ctx, line, centerX, cy, col, shadowCol, maxWidth, lineHeight, 'center')) {
@@ -520,21 +901,21 @@
     return tokens;
   }
 
-  function wrapJustifiedLines(text, maxWidth = 999) {
+  function wrapJustifiedLines(text, maxWidth = 999, measureFn = measurePixelText, baseSpace = 3) {
     const rawParagraphs = String(text || '').split('\n');
     const lines = [];
 
     for (const para of rawParagraphs) {
       const tokens = parseRichTokens(para);
       if (!tokens.length) {
-        lines.push({ words: [], justify: false, gapWidth: 3, totalWidth: 0 });
+        lines.push({ words: [], justify: false, gapWidth: baseSpace, totalWidth: 0 });
         continue;
       }
 
       // Pre-calcula larguras de cada palavra
       const measuredTokens = tokens.map(t => ({
         ...t,
-        width: measurePixelText(t.text)
+        width: measureFn(t.text)
       }));
 
       let curWords = [];
@@ -543,17 +924,18 @@
       for (let i = 0; i < measuredTokens.length; i++) {
         const token = measuredTokens[i];
         const nextWordsWidth = curWordsWidth + token.width;
-        const defaultSpace = (curWords.length > 0) ? curWords.length * 3 : 0;
+        const defaultSpace = (curWords.length > 0) ? curWords.length * baseSpace : 0;
 
         if (curWords.length > 0 && (nextWordsWidth + defaultSpace > maxWidth)) {
           const gaps = curWords.length - 1;
           const extra = maxWidth - curWordsWidth;
-          const gapW = gaps > 0 ? (extra / gaps) : 3;
+          const gapW = gaps > 0 ? (extra / gaps) : baseSpace;
+          const finalGap = gaps > 0 ? Math.max(baseSpace, Math.min(gapW, baseSpace * 3.2)) : baseSpace;
           lines.push({
             words: curWords,
             justify: gaps > 0,
-            gapWidth: gaps > 0 ? Math.max(3, gapW) : 3,
-            totalWidth: curWordsWidth + gaps * (gaps > 0 ? Math.max(3, gapW) : 3)
+            gapWidth: finalGap,
+            totalWidth: curWordsWidth + gaps * finalGap
           });
           curWords = [token];
           curWordsWidth = token.width;
@@ -568,8 +950,8 @@
         lines.push({
           words: curWords,
           justify: false,
-          gapWidth: 3,
-          totalWidth: curWordsWidth + (curWords.length - 1) * 3
+          gapWidth: baseSpace,
+          totalWidth: curWordsWidth + (curWords.length - 1) * baseSpace
         });
       }
     }
@@ -580,7 +962,16 @@
   function drawJustifiedPixelText(ctx, text, x, y, maxWidth = 999, lineHeight = 11, defaultCol = '#ffea31', shadowCol = '#000000') {
     x = R(x);
     y = R(y);
-    const lines = wrapJustifiedLines(text, maxWidth);
+    const useOverlay = TextOverlay.isActiveFor(ctx);
+    const fontPx = clamp((lineHeight || 10) - 1.4, 5.8, 8.6);
+    const measureFn = useOverlay
+      ? (s) => {
+          const w = TextOverlay.measureLogicalText(ctx, s, fontPx);
+          return w !== null ? w : measurePixelText(s);
+        }
+      : measurePixelText;
+    const baseSpace = useOverlay ? Math.max(2.2, fontPx * 0.34) : 3;
+    const lines = wrapJustifiedLines(text, maxWidth, measureFn, baseSpace);
     let cy = y;
 
     for (const line of lines) {
@@ -590,15 +981,15 @@
       }
 
       let curX = x;
-      const gap = line.justify ? line.gapWidth : 3.5;
+      const gap = line.justify ? line.gapWidth : (useOverlay ? baseSpace : 3.5);
 
       for (let i = 0; i < line.words.length; i++) {
         const word = line.words[i];
         const col = word.color || defaultCol;
-        const rx = R(curX);
+        const rx = useOverlay ? curX : R(curX);
 
-        if (!renderHDCanvasLine(ctx, word.text, rx, cy, col, shadowCol, word.width + 6, lineHeight, 'left')) {
-          let px = rx;
+        if (!renderHDCanvasLine(ctx, word.text, rx, cy, col, shadowCol, word.width + 6, lineHeight, 'left', useOverlay ? { fontPx } : null)) {
+          let px = R(curX);
           for (let c = 0; c < word.text.length; c++) {
             const ch = word.text[c];
             if (ch === ' ') px += 3;
@@ -622,6 +1013,7 @@
   // ============================================================================
   function drawParchmentBox(ctx, bx, by, bw, bh, opts = {}) {
     bx = R(bx); by = R(by); bw = R(bw); bh = R(bh);
+    TextOverlay.clearLogicalRect(ctx, bx, by, bw, bh);
     // Sombra projetada suave sob a caixa
     ctx.fillStyle = 'rgba(8, 6, 14, 0.6)';
     ctx.fillRect(bx + 2, by + 3, bw, bh);
@@ -6689,6 +7081,7 @@
       if (radius <= 1) {
         ctx.fillStyle = '#05030f';
         ctx.fillRect(0, 0, W, H);
+        TextOverlay.maskIris(ctx, this.cx, this.cy, 0);
         return;
       }
       if (radius >= maxR - 1) return;
@@ -6724,6 +7117,7 @@
           ctx.fillRect(runStart, y, W - runStart, 1);
         }
       }
+      TextOverlay.maskIris(ctx, this.cx, this.cy, radius);
     }
   };
 
@@ -6972,6 +7366,7 @@
     drawNamePlate(ctx, x, y, w, name) {
       x = R(x); y = R(y);
       const h = 12, mid = y + h / 2;
+      TextOverlay.clearLogicalRect(ctx, x - 7, y, w + 14, h);
       // Pontas em losango nas laterais
       for (let i = 0; i <= 6; i++) {
         const half = 6 - i;
@@ -8036,6 +8431,7 @@
       // Véu escuro suave sobre o fundo
       ctx.fillStyle = 'rgba(10, 8, 6, 0.65)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay.dimLogicalRect(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.65)');
 
       // Card com enquadramento ampliado e harmonioso para preenchimento de texto
       const cx = 24, cy = 18, cw = 272, ch = 144;
@@ -8145,6 +8541,26 @@
     Y: '#f2cc6b'
   });
 
+  // Ícone pixel art nítido de Casinha (Home) para a barra superior (11x10)
+  const HOME_ICON_SPR = fromMap([
+    '.....o.....',
+    '....oYo....',
+    '...oYYYo...',
+    '..oYYRYYo..',
+    '.oYRWWWRYo.',
+    'oYoWWWWWoYo',
+    '.ooWWdWWoo.',
+    '..oWWdWWo..',
+    '..oWWdWWo..',
+    '..ooooooo..'
+  ], {
+    o: '#14111c',
+    Y: '#ffe887',
+    R: '#f2cc6b',
+    W: '#e8f8ff',
+    d: '#4f78c4'
+  });
+
   function isMobileOrTouch() {
     if (typeof window === 'undefined') return false;
     if (typeof document !== 'undefined' && document.body?.classList?.contains('is-touch-device')) return true;
@@ -8158,6 +8574,7 @@
   function drawVirtualTouchButton(ctx, rect, label = '⎵ ESPAÇO', active = false) {
     if (!rect || !ctx) return;
     const { x, y, w, h } = rect;
+    TextOverlay.clearLogicalRect(ctx, x - 1, y - 1, w + 2, h + 2);
     ctx.fillStyle = 'rgba(8, 12, 28, 0.85)';
     ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
     ctx.fillStyle = active ? '#2b8bc2' : '#1b3a69';
@@ -8180,6 +8597,7 @@
     guideCardPage: 0,
     guideLayout: null,
     _lastHideSteps: false,
+    _abilitiesVisible: false,
     muted: false,
     musicVol: 50,
     sfxVol: 50,
@@ -8200,15 +8618,15 @@
     onUseAbility1: null,
     onUseAbility2: null,
 
-    // Botões na barra superior (320x20):
+    // Botões na barra superior (320x20) — sem Pause e com botão Casa (home) ao lado de Configurações:
     buttons: {
       guide:      { x: 120, y: 2, w: 32, h: 16 },
       map:        { x: 154, y: 2, w: 32, h: 16 },
-      pause:      { x: 188, y: 2, w: 20, h: 16 },
-      restart:    { x: 210, y: 2, w: 44, h: 16 },
-      fullscreen: { x: 256, y: 2, w: 18, h: 16 },
-      mute:       { x: 276, y: 2, w: 20, h: 16 },
-      settings:   { x: 298, y: 2, w: 20, h: 16 }
+      restart:    { x: 188, y: 2, w: 44, h: 16 },
+      fullscreen: { x: 234, y: 2, w: 18, h: 16 },
+      mute:       { x: 254, y: 2, w: 20, h: 16 },
+      settings:   { x: 276, y: 2, w: 20, h: 16 },
+      home:       { x: 298, y: 2, w: 20, h: 16 }
     },
 
     get guideCatalog() {
@@ -8294,15 +8712,6 @@
       return this.guideLayout;
     },
 
-    // Botões do Modal de Pause (centralizados na caixa 184px)
-    pauseMenuBtns: [
-      { id: 'resume',   label: 'Continuar Jogo',  x: 92, y: 52,  w: 136, h: 15 },
-      { id: 'restart',  label: 'Reiniciar Fase',  x: 92, y: 71,  w: 136, h: 15 },
-      { id: 'mute',     label: 'Alternar Mudo',   x: 92, y: 90,  w: 136, h: 15 },
-      { id: 'settings', label: 'Configurações',   x: 92, y: 109, w: 136, h: 15 },
-      { id: 'map',      label: 'Voltar ao Mapa',  x: 92, y: 128, w: 136, h: 15 }
-    ],
-
     // Botões e barras clicáveis do Modal de Configurações
     settingsBtns: {
       musMinus:      { x: 136, y: 46, w: 18, h: 13 },
@@ -8319,6 +8728,7 @@
 
     onRestart: null,
     onGoMap: null,
+    onGoHome: null,
     onMuteChange: null,
     onGodModeChange: null,
 
@@ -8543,6 +8953,89 @@
       }
     },
 
+    triggerGoHome() {
+      this.paused = false;
+      this.settingsOpen = false;
+      this.guideOpen = false;
+      this._abilitiesVisible = false;
+      if (typeof DialogueBox !== 'undefined' && typeof DialogueBox.close === 'function') DialogueBox.close();
+      if (typeof TutorialModal !== 'undefined' && typeof TutorialModal.close === 'function') TutorialModal.close();
+      this.playSfx('click');
+
+      if (typeof this.onGoHome === 'function') {
+        this.onGoHome();
+        return;
+      }
+
+      try {
+        global.CaveChapter1?.stopMusicAudio?.();
+        global.CaveChapter1?.deactivateCanvas?.();
+      } catch (_) {}
+      try {
+        global.TruePixelWorlds?.stopMusicAudio?.();
+        global.TruePixelWorlds?.deactivateCanvas?.();
+      } catch (_) {}
+      try {
+        global.CrystalAudio?.stopAllMusic?.();
+      } catch (_) {}
+      TextOverlay.hide();
+
+      if (global.CrystalApp && typeof global.CrystalApp.goto === 'function') {
+        global.CrystalApp.goto('home');
+      }
+    },
+
+    isSpecialOrModalActive(hideSteps = false) {
+      if (hideSteps) return true;
+      if (this.paused || this.settingsOpen || this.guideOpen) return true;
+      if (typeof TutorialModal !== 'undefined' && TutorialModal.isOpen) return true;
+
+      const cave = global.CaveChapter1;
+      if (cave && typeof cave.isActiveGame === 'function' && cave.isActiveGame()) {
+        const cp = String(cave.phase || '');
+        if (
+          cp === 'musical_vignette' ||
+          cp === 'musical_part1_shadows' ||
+          cp === 'musical_part2_bright' ||
+          cp === 'celebrate_complete' ||
+          cp === 'world_celebrate_complete' ||
+          cp === 'game_over' ||
+          cp === 'walk_to_forest_exit'
+        ) {
+          return true;
+        }
+      }
+
+      const worlds = global.TruePixelWorlds;
+      if (worlds && typeof worlds.isActiveGame === 'function' && worlds.isActiveGame()) {
+        const wp = String(worlds.phase || '');
+        if (
+          worlds.forestNinja ||
+          worlds.riverMelody ||
+          worlds.shellGame ||
+          wp.startsWith('forest_ninja_') ||
+          wp === 'river_melody_game' ||
+          wp.startsWith('shell_game_') ||
+          wp === 'musical_vignette' ||
+          wp === 'musical_part1_shadows' ||
+          wp === 'musical_part2_bright' ||
+          wp === 'celebrate_complete' ||
+          wp === 'world_celebrate_complete' ||
+          wp === 'game_over' ||
+          wp === 'walk_to_world_exit' ||
+          wp === 'final_last_dance' ||
+          wp === 'final_wall_thanks' ||
+          wp === 'final_musical_order_puzzle' ||
+          wp === 'final_gem_delivery' ||
+          wp === 'final_gate_opening'
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
     resolveAbilityKey(idOrNum) {
       if (idOrNum === 2 || idOrNum === '2' || idOrNum === 'rewind' || idOrNum === 'undo') {
         return 'rewind';
@@ -8666,6 +9159,7 @@
 
     drawCrystalAbilityButton(ctx, btn, st, key, t) {
       const x = R(btn.x), y = R(btn.y), w = R(btn.w), h = R(btn.h);
+      TextOverlay.clearLogicalRect(ctx, x, y, w, h);
       const isVision = key === 'vision';
       const nowMs = typeof performance !== 'undefined' ? performance.now() : 0;
       const flashing = nowMs < (st.flashUntil || 0);
@@ -8776,7 +9270,7 @@
     },
 
     handleClick(x, y) {
-      if (this.inRect(x, y, this.buttons.map, 2)) {
+      if (this.inRect(x, y, this.buttons.map, 1)) {
         if (this.isMapLocked()) {
           this.playSfx('error');
           global.CrystalApp?.notify?.('Conclua a Caverna para liberar o Mapa!');
@@ -8793,33 +9287,30 @@
         }
         return true;
       }
-      if (this.inRect(x, y, this.buttons.pause, 2)) {
-        this.settingsOpen = false;
-        this.guideOpen = false;
-        this.paused = !this.paused;
-        this.playSfx('click');
-        this.syncAudio();
-        return true;
-      }
-      if (this.inRect(x, y, this.buttons.restart, 2)) {
+      if (this.inRect(x, y, this.buttons.restart, 1)) {
         this.guideOpen = false;
         this.triggerRestart();
         return true;
       }
-      if (this.inRect(x, y, this.buttons.mute, 2)) {
+      if (this.inRect(x, y, this.buttons.mute, 1)) {
         this.toggleMute();
         return true;
       }
-      if (this.inRect(x, y, this.buttons.fullscreen, 2)) {
+      if (this.inRect(x, y, this.buttons.fullscreen, 1)) {
         this.toggleFullscreen();
         this.playSfx('click');
         return true;
       }
-      if (this.inRect(x, y, this.buttons.settings, 2)) {
+      if (this.inRect(x, y, this.buttons.settings, 1)) {
         this.guideOpen = false;
+        this.paused = false;
         this.settingsOpen = !this.settingsOpen;
         this.playSfx('click');
         this.syncAudio();
+        return true;
+      }
+      if (this.inRect(x, y, this.buttons.home, 1)) {
+        this.triggerGoHome();
         return true;
       }
       if (this.inRect(x, y, this.buttons.guide, 1)) {
@@ -8957,37 +9448,7 @@
         return true;
       }
 
-      if (this.paused) {
-        for (const b of this.pauseMenuBtns) {
-          if (this.inRect(x, y, b)) {
-            if (b.id === 'resume') {
-              this.paused = false;
-              this.playSfx('click');
-              this.syncAudio();
-            } else if (b.id === 'restart') {
-              this.triggerRestart();
-            } else if (b.id === 'mute') {
-              this.toggleMute();
-            } else if (b.id === 'settings') {
-              this.settingsOpen = true;
-              this.playSfx('click');
-            } else if (b.id === 'map') {
-              if (this.isMapLocked()) {
-                this.playSfx('error');
-                global.CrystalApp?.notify?.('Conclua a Caverna para liberar o Mapa!');
-                return true;
-              }
-              this.paused = false;
-              this.playSfx('click');
-              if (typeof this.onGoMap === 'function') this.onGoMap();
-            }
-            return true;
-          }
-        }
-        return true;
-      }
-
-      if (!this._lastHideSteps && !this.paused && !this.settingsOpen && !this.guideOpen) {
+      if (!this.isSpecialOrModalActive(this._lastHideSteps)) {
         if (this.isAbilityUnlocked('vision') && this.inRect(x, y, this.abilityButtons.vision, 1)) {
           this.useAbility('vision');
           return true;
@@ -9002,6 +9463,7 @@
     },
 
     drawButtonBox(ctx, r, active = false) {
+      TextOverlay.clearLogicalRect(ctx, r.x - 1, r.y - 1, r.w + 2, r.h + 2);
       ctx.fillStyle = '#2c221e';
       ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
       ctx.fillStyle = active ? '#633b34' : '#3d2b24';
@@ -9036,6 +9498,17 @@
     renderSingleLineHudText(ctx, text, x, y, maxW, col = '#ffffff', strokeCol = '#000000', baseFontPx = 6.6) {
       const s = String(text || '');
       if (!s) return;
+      if (TextOverlay.isActiveFor(ctx)) {
+        const measured = TextOverlay.measureLogicalText(ctx, s, baseFontPx);
+        const estW = Math.max(1, measured !== null ? measured : measurePixelText(s));
+        const scale = estW > maxW ? Math.max(0.72, maxW / estW) : 1;
+        const fontPx = Math.max(5.2, baseFontPx * scale);
+        TextOverlay.drawLine(ctx, s, x, y, col, strokeCol, maxW, fontPx + 1.4, 'left', {
+          fontPx,
+          preserveColor: true
+        });
+        return;
+      }
       if (ctx && typeof ctx.fillText === 'function') {
         const estW = Math.max(1, measurePixelText(s));
         const scale = estW > maxW ? Math.max(0.68, maxW / estW) : 1;
@@ -9062,6 +9535,7 @@
 
     renderTopBar(ctx, levelNum, currentStep, totalSteps, hideSteps = false, customTitle = null) {
       this._lastHideSteps = Boolean(hideSteps);
+      TextOverlay.clearLogicalRect(ctx, 0, 0, W, 20);
       // Barra Superior Esculpida (0..20) com alto contraste para texto branco/azul
       ctx.fillStyle = '#141930';
       ctx.fillRect(0, 0, W, 20);
@@ -9073,7 +9547,7 @@
 
       const labelPrefix = this.worldLabel || 'Caverna';
       const titleStr = customTitle || `${labelPrefix} - Fase ${levelNum}`;
-      const rightLimit = hideSteps ? 96 : (this.buttons.guide.x - 4);
+      const rightLimit = hideSteps ? (this.buttons.guide.x - 4) : (this.buttons.guide.x - 4);
 
       if (!hideSteps) {
         const safeSteps = Math.max(1, Number(totalSteps) || 1);
@@ -9116,10 +9590,11 @@
       ctx.fillRect(bguide.x + 6, bguide.y + 6, 2, 4);
       drawPixelTextCentered(ctx, 'Guia', bguide.x + 9 + (bguide.w - 9) / 2, bguide.y + 4, this.guideOpen ? '#ffea31' : '#ffe887', '#000000', bguide.w - 8, 8);
 
-      // 0. Botão MAPA (Bloqueado dentro da Caverna até concluí-la, salvo God Mode)
+      // Botão MAPA (Bloqueado dentro da Caverna até concluí-la, salvo God Mode)
       const bmap = this.buttons.map;
       const mapLocked = this.isMapLocked();
       if (mapLocked) {
+        TextOverlay.clearLogicalRect(ctx, bmap.x - 1, bmap.y - 1, bmap.w + 2, bmap.h + 2);
         ctx.fillStyle = '#181420';
         ctx.fillRect(bmap.x - 1, bmap.y - 1, bmap.w + 2, bmap.h + 2);
         ctx.fillStyle = '#241e2e';
@@ -9139,17 +9614,11 @@
         drawPixelTextCentered(ctx, 'Mapa', bmap.x + bmap.w / 2, bmap.y + 4, '#92e8ff', '#000000', bmap.w - 4, 8);
       }
 
-      // 1. Botão PAUSE (❚❚)
-      const bp = this.buttons.pause;
-      this.drawButtonBox(ctx, bp, this.paused);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(bp.x + 6, bp.y + 4, 3, 8);
-      ctx.fillRect(bp.x + 11, bp.y + 4, 3, 8);
-
-      // 2. Botão REINICIAR FASE (↻ Reiniciar — representativo e perfeitamente enquadrado)
+      // Botão REINICIAR FASE (↻ Reiniciar — representativo e perfeitamente enquadrado)
       const br = this.buttons.restart;
       const nowMs = typeof performance !== 'undefined' ? performance.now() : 0;
       const flashing = nowMs < this.restartFlashUntil;
+      TextOverlay.clearLogicalRect(ctx, br.x, br.y, br.w, br.h);
       ctx.fillStyle = flashing ? '#2b8bc2' : '#1e3a5f';
       ctx.fillRect(br.x, br.y, br.w, br.h);
       ctx.fillStyle = flashing ? '#ffffff' : '#92e8ff';
@@ -9160,34 +9629,11 @@
       ctx.drawImage(RESTART_ICON_SPR, br.x + 3, br.y + 3);
       drawPixelTextCentered(ctx, 'Reiniciar', br.x + 13 + (br.w - 14) / 2, br.y + 5, flashing ? '#92e8ff' : '#ffffff', '#000000', br.w - 14, 8);
 
-      // 3. Botão DEIXAR NO MUDO (🔊 / 🔇)
-      const bm = this.buttons.mute;
-      this.drawButtonBox(ctx, bm, this.muted);
-      ctx.fillStyle = this.muted ? '#d96538' : '#7ec456';
-      ctx.fillRect(bm.x + 4, bm.y + 6, 3, 4);
-      ctx.fillRect(bm.x + 7, bm.y + 5, 2, 6);
-      ctx.fillRect(bm.x + 9, bm.y + 4, 2, 8);
-      if (this.muted) {
-        P1(ctx, bm.x + 13, bm.y + 5, '#e65c4f');
-        P1(ctx, bm.x + 14, bm.y + 6, '#e65c4f');
-        P1(ctx, bm.x + 15, bm.y + 7, '#e65c4f');
-        P1(ctx, bm.x + 16, bm.y + 8, '#e65c4f');
-        P1(ctx, bm.x + 16, bm.y + 5, '#e65c4f');
-        P1(ctx, bm.x + 15, bm.y + 6, '#e65c4f');
-        P1(ctx, bm.x + 14, bm.y + 7, '#e65c4f');
-        P1(ctx, bm.x + 13, bm.y + 8, '#e65c4f');
-      } else {
-        P1(ctx, bm.x + 13, bm.y + 6, '#a8d8e6');
-        P1(ctx, bm.x + 13, bm.y + 9, '#a8d8e6');
-        P1(ctx, bm.x + 15, bm.y + 5, '#ffffff');
-        P1(ctx, bm.x + 15, bm.y + 10, '#ffffff');
-      }
-
-      // 4. Botão TELA CHEIA (⛶ / 🗗)
+      // Botão TELA CHEIA (⛶ / 🗗)
       const bf = this.buttons.fullscreen;
       const isFull = this.isFullscreen();
       this.drawButtonBox(ctx, bf, isFull);
-      const fx = bf.x + 10, fy = bf.y + 8;
+      const fx = bf.x + 9, fy = bf.y + 8;
       const iconCol = isFull ? '#ffe033' : '#92e8ff';
       if (isFull) {
         P1(ctx, fx - 4, fy - 3, iconCol);
@@ -9217,7 +9663,30 @@
         P1(ctx, fx + 4, fy + 2, iconCol);
       }
 
-      // 5. Botão CONFIGURAÇÕES (⚙)
+      // Botão DEIXAR NO MUDO (🔊 / 🔇)
+      const bm = this.buttons.mute;
+      this.drawButtonBox(ctx, bm, this.muted);
+      ctx.fillStyle = this.muted ? '#d96538' : '#7ec456';
+      ctx.fillRect(bm.x + 4, bm.y + 6, 3, 4);
+      ctx.fillRect(bm.x + 7, bm.y + 5, 2, 6);
+      ctx.fillRect(bm.x + 9, bm.y + 4, 2, 8);
+      if (this.muted) {
+        P1(ctx, bm.x + 13, bm.y + 5, '#e65c4f');
+        P1(ctx, bm.x + 14, bm.y + 6, '#e65c4f');
+        P1(ctx, bm.x + 15, bm.y + 7, '#e65c4f');
+        P1(ctx, bm.x + 16, bm.y + 8, '#e65c4f');
+        P1(ctx, bm.x + 16, bm.y + 5, '#e65c4f');
+        P1(ctx, bm.x + 15, bm.y + 6, '#e65c4f');
+        P1(ctx, bm.x + 14, bm.y + 7, '#e65c4f');
+        P1(ctx, bm.x + 13, bm.y + 8, '#e65c4f');
+      } else {
+        P1(ctx, bm.x + 13, bm.y + 6, '#a8d8e6');
+        P1(ctx, bm.x + 13, bm.y + 9, '#a8d8e6');
+        P1(ctx, bm.x + 15, bm.y + 5, '#ffffff');
+        P1(ctx, bm.x + 15, bm.y + 10, '#ffffff');
+      }
+
+      // Botão CONFIGURAÇÕES (⚙)
       const bs = this.buttons.settings;
       this.drawButtonBox(ctx, bs, this.settingsOpen);
       const gx = bs.x + 10, gy = bs.y + 8;
@@ -9230,21 +9699,32 @@
       ctx.fillStyle = '#141930';
       ctx.fillRect(gx - 1, gy - 1, 3, 3);
 
-      if (!hideSteps) {
+      // Botão CASA / MENU INICIAL (⌂ — posicionado imediatamente ao lado de Configurações)
+      const bh = this.buttons.home;
+      this.drawButtonBox(ctx, bh, false);
+      ctx.drawImage(HOME_ICON_SPR, bh.x + 5, bh.y + 3);
+
+      // Habilidades (Visão / Voltar) e Selo GOD MODE:
+      // Nunca renderizados sobre VÍDEO DEMO, vinhetas, TutorialModal, modais do HUD ou minigames especiais
+      const hideOverlays = this.isSpecialOrModalActive(hideSteps);
+      this._abilitiesVisible = !hideOverlays;
+
+      if (!hideOverlays) {
         const nowSec = (typeof performance !== 'undefined' ? performance.now() : 0) / 1000;
         this.renderAbilities(ctx, nowSec);
-      }
 
-      if (this.godMode) {
-        const bx = hideSteps ? 3 : 116, by = hideSteps ? 21 : 23, bw = 56, bh = 11;
-        ctx.fillStyle = 'rgba(24, 14, 42, 0.88)';
-        ctx.fillRect(bx, by, bw, bh);
-        ctx.fillStyle = '#ffea31';
-        ctx.fillRect(bx, by, bw, 1);
-        ctx.fillRect(bx, by + bh - 1, bw, 1);
-        ctx.fillRect(bx, by, 1, bh);
-        ctx.fillRect(bx + bw - 1, by, 1, bh);
-        this.renderSingleLineHudText(ctx, 'GOD MODE', bx + 4, by + 2, bw - 6, '#ffea31', '#000000', 5.4);
+        if (this.godMode) {
+          const bx = 116, by = 23, bw = 56, bhg = 11;
+          TextOverlay.clearLogicalRect(ctx, bx, by, bw, bhg);
+          ctx.fillStyle = 'rgba(24, 14, 42, 0.88)';
+          ctx.fillRect(bx, by, bw, bhg);
+          ctx.fillStyle = '#ffea31';
+          ctx.fillRect(bx, by, bw, 1);
+          ctx.fillRect(bx, by + bhg - 1, bw, 1);
+          ctx.fillRect(bx, by, 1, bhg);
+          ctx.fillRect(bx + bw - 1, by, 1, bhg);
+          this.renderSingleLineHudText(ctx, 'GOD MODE', bx + 4, by + 2, bw - 6, '#ffea31', '#000000', 5.4);
+        }
       }
     },
 
@@ -9317,10 +9797,11 @@
     },
 
     renderModals(ctx, t = 0) {
-      if (!this.paused && !this.settingsOpen && !this.guideOpen) return;
+      if (!this.settingsOpen && !this.guideOpen) return;
 
       ctx.fillStyle = 'rgba(10, 8, 6, 0.55)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay.dimLogicalRect(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.55)');
 
       if (this.guideOpen) {
         this.renderGuideModal(ctx, t);
@@ -9364,23 +9845,6 @@
 
         this.drawButtonBox(ctx, sb.closeBtn, true);
         drawPixelTextCentered(ctx, 'Voltar ao Jogo', sb.closeBtn.x + sb.closeBtn.w / 2, sb.closeBtn.y + 4, '#ffffff', '#000000', sb.closeBtn.w - 4, 9);
-        return;
-      }
-
-      if (this.paused) {
-        const cx = 68, cy = 26, cw = 184, ch = 132;
-        drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 16, headerBg: '#163b6c' });
-        drawPixelTextCentered(ctx, 'Jogo Pausado', cx + cw / 2, cy + 7, '#ffffff', '#000000', cw - 16, 9);
-
-        for (const b of this.pauseMenuBtns) {
-          const mapLocked = b.id === 'map' && this.isMapLocked();
-          this.drawButtonBox(ctx, b, b.id === 'resume');
-          const label = b.id === 'mute'
-            ? (this.muted ? 'Som: Mudo' : 'Som: Ligado')
-            : (mapLocked ? 'Mapa (Bloqueado)' : b.label);
-          const col = mapLocked ? '#77708a' : (b.id === 'resume' ? '#92e8ff' : '#ffffff');
-          drawPixelTextCentered(ctx, label, b.x + b.w / 2, b.y + 4, col, '#000000', b.w - 6, 9);
-        }
       }
     }
   };
@@ -9581,6 +10045,7 @@
     drawPixelChar,
     drawPixelText,
     drawPixelTextCentered,
+    TextOverlay,
     RICH_COLOR_MAP,
     parseRichTokens,
     wrapJustifiedLines,

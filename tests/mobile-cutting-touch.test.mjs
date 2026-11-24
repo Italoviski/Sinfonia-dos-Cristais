@@ -228,24 +228,24 @@ test('Mobile Touch & Cutting: Pause and Volume Buttons single touch toggle witho
     for (const handler of tStartHandlers) handler(touchstartEvt);
   }
 
-  // 1. Test Pause button tap (buttons.pause: x: 188..208, y: 2..18)
-  assert.equal(E.GameHUD.paused, false, 'Game should start unpaused');
-  simulateMobileTap(198, 10);
-  assert.equal(E.GameHUD.paused, true, 'Single mobile tap on Pause should toggle paused to true without bouncing back');
+  // 1. Test Settings button tap (buttons.settings: x: 276..296, y: 2..18)
+  assert.equal(E.GameHUD.settingsOpen, false, 'Settings modal should start closed');
+  simulateMobileTap(286, 10);
+  assert.equal(E.GameHUD.settingsOpen, true, 'Single mobile tap on Settings should toggle settingsOpen to true without bouncing back');
 
   // Verify test harness exposes HUD state
   if (globalThis.CrystalTestAPI?.getState) {
     const apiState = globalThis.CrystalTestAPI.getState();
-    assert.equal(apiState.hud?.paused, true, 'CrystalTestAPI should reflect paused = true');
+    assert.equal(apiState.hud?.settingsOpen, true, 'CrystalTestAPI should reflect settingsOpen = true');
   }
 
-  // Tap again to unpause (using pause button or resume button in modal)
-  simulateMobileTap(198, 10);
-  assert.equal(E.GameHUD.paused, false, 'Second mobile tap should unpause');
-
-  // 2. Test Volume/Mute button tap (buttons.mute: x: 276..296, y: 2..18)
-  assert.equal(E.GameHUD.muted, false, 'Audio should start unmuted');
+  // Tap again to close settings
   simulateMobileTap(286, 10);
+  assert.equal(E.GameHUD.settingsOpen, false, 'Second mobile tap should close settings');
+
+  // 2. Test Volume/Mute button tap (buttons.mute: x: 254..274, y: 2..18)
+  assert.equal(E.GameHUD.muted, false, 'Audio should start unmuted');
+  simulateMobileTap(264, 10);
   assert.equal(E.GameHUD.muted, true, 'Single mobile tap on Mute should toggle muted to true without bouncing back');
 
   if (globalThis.CrystalTestAPI?.getState) {
@@ -253,7 +253,7 @@ test('Mobile Touch & Cutting: Pause and Volume Buttons single touch toggle witho
     assert.equal(apiState.hud?.muted, true, 'CrystalTestAPI should reflect muted = true');
   }
 
-  simulateMobileTap(286, 10);
+  simulateMobileTap(264, 10);
   assert.equal(E.GameHUD.muted, false, 'Second mobile tap should unmute');
 });
 
@@ -412,14 +412,14 @@ test('Mobile Usability: Resuming from pause modal via mobile tap does not trigge
   Worlds._bound = false;
   Worlds.bindInput();
 
-  // Pause the game
-  E.GameHUD.paused = true;
-  assert.equal(E.GameHUD.paused, true);
+  // Open Settings modal (pauses gameplay)
+  E.GameHUD.settingsOpen = true;
+  assert.equal(E.GameHUD.settingsOpen, true);
 
-  // Resume button is at x: 92..228, y: 52..67 (center ~160, 59)
-  // Simulate mobile tap on Resume button
+  // "Voltar ao Jogo" button in Settings modal is at x: 106..214, y: 133..148 (center ~160, 140)
+  // Simulate mobile tap on Close/Resume button
   const clientX = 160 * 2;
-  const clientY = 59 * 2;
+  const clientY = 140 * 2;
   const pointerdownEvt = {
     type: 'pointerdown',
     pointerId: 1,
@@ -441,9 +441,9 @@ test('Mobile Usability: Resuming from pause modal via mobile tap does not trigge
   const tStartHandlers = canvasListeners.get('touchstart') || [];
   for (const handler of tStartHandlers) handler(touchstartEvt);
 
-  assert.equal(E.GameHUD.paused, false, 'Tapping resume should unpause the game');
-  assert.equal(fn.isSlicing, false, 'Unpausing via tap MUST NOT start an accidental blade cut');
-  assert.equal(fn.flyingCrystals.length, 1, 'Flying crystals must not be accidentally sliced when tapping resume');
+  assert.equal(E.GameHUD.settingsOpen, false, 'Tapping Voltar ao Jogo should close settings modal');
+  assert.equal(fn.isSlicing, false, 'Closing modal via tap MUST NOT start an accidental blade cut');
+  assert.equal(fn.flyingCrystals.length, 1, 'Flying crystals must not be accidentally sliced when closing settings');
 });
 
 test('Mobile CSS Integrity: touch-action: none !important and overscroll-behavior: none !important are defined', async () => {

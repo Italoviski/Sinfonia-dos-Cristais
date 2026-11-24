@@ -345,11 +345,13 @@ test('Interface Cristalina na HUD renderiza botões temáticos dos mundos e pres
   const E = globalThis.TruePixelEngine;
   const HUD = E.GameHUD;
 
-  // Preservar coordenadas existentes da top bar
+  // Verifica layout da top bar (sem Pause, com Casa ao lado de Configurações)
   assert.equal(HUD.buttons.guide.x, 120);
   assert.equal(HUD.buttons.map.x, 154);
-  assert.equal(HUD.buttons.pause.x, 188);
-  assert.equal(HUD.buttons.mute.x, 276);
+  assert.equal(HUD.buttons.pause, undefined);
+  assert.equal(HUD.buttons.mute.x, 254);
+  assert.equal(HUD.buttons.settings.x, 276);
+  assert.equal(HUD.buttons.home.x, 298);
 
   // Estado completo com todos os cristais primordiais (3 cargas)
   resetSocketsAndProgress(E, { fairy: true, forest: true, river: true, caatinga: true }, [5, 10, 15, 20]);

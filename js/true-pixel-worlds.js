@@ -13,6 +13,7 @@
   const {
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
     P1, drawRing, drawStar, measurePixelText, drawPixelChar, drawPixelText, drawPixelTextCentered, drawParchmentBox,
+    TextOverlay,
     ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
   } = E;
 
@@ -2361,7 +2362,7 @@
     STAGE_MAX_Y: 126,
 
     completeBtnRect: { x: 108, y: 115, w: 104, h: 15 },
-    skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
+    skipMusicalBtnRect: { x: 74, y: 2, w: 44, h: 16 },
     gameOverBtnRect: { x: 96, y: 118, w: 128, h: 16 },
     forestSlashBtnRect: null,
     _exitIrisStarted: false,
@@ -2420,6 +2421,7 @@
       cv.style.width = roundFn(W * scale) + 'px';
       cv.style.height = roundFn(H * scale) + 'px';
       cv.style.display = cv.hidden ? 'none' : 'block';
+      TextOverlay?.syncLayout?.(cv);
     },
 
     toLogicalCoords(clientX, clientY) {
@@ -2460,6 +2462,7 @@
           this.canvas.style.background = 'transparent';
           this.canvas.style.boxShadow = 'none';
         }
+        TextOverlay?.hide?.(this.canvas);
       }
     },
 
@@ -6419,7 +6422,7 @@
     handleForestNinjaVignetteClick(x, y) {
       const fn = this.forestNinja;
       if (!fn || this.phase !== 'forest_ninja_vignette') return false;
-      const cx = 24, cy = 18, cw = 272, ch = 152;
+      const cx = 24, cy = 21, cw = 272, ch = 149;
 
       if (fn.vignetteCard === 1) {
         // Botão "Praticar Corte >" no Card 1
@@ -6817,8 +6820,9 @@
       if (!fn) return;
       ctx.fillStyle = 'rgba(10, 14, 8, 0.72)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay?.dimLogicalRect?.(ctx, 0, 20, W, H - 20, 'rgba(10, 14, 8, 0.72)');
 
-      const cx = 24, cy = 18, cw = 272, ch = 152;
+      const cx = 24, cy = 21, cw = 272, ch = 149;
       drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 18, headerBg: '#213d28' });
 
       if (fn.vignetteCard === 1) {
@@ -8213,6 +8217,7 @@
     drawGameOverOverlay(ctx) {
       ctx.fillStyle = 'rgba(10, 8, 6, 0.58)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay?.dimLogicalRect?.(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.58)');
       const bx = 34, by = 28, bw = 252, bh = 116;
       drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#59221c' });
       drawPixelTextCentered(ctx, 'Equilíbrio Perdido!', bx + bw / 2, by + 8, '#ffea31', '#000000', bw - 16, 9);
@@ -8288,11 +8293,14 @@
       ctx.imageSmoothingEnabled = false;
 
       if (this.phase === 'map_iris_in' || this.phase === 'map_active') {
+        TextOverlay?.hide?.(this.canvas);
         ctx.setTransform(2, 0, 0, 2, 0, 0);
         ctx.clearRect(0, 0, W, H);
         IrisTransition.render(ctx);
         return;
       }
+
+      TextOverlay?.beginFrame?.(this.canvas);
 
       const bgSet = getBiomeBgSet(this.worldKey);
       this.composeBackground(bgSet);
@@ -8385,7 +8393,7 @@
       if (this.phase === 'river_melody_game' || (this.phase === 'tutorial' && this.riverMelody)) {
         this.drawRiverMelodyGame(ctx, tq);
       }
-      if (this.phase === 'forest_ninja_vignette' || this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_'))) {
+      if (this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_') && this.phase !== 'forest_ninja_vignette')) {
         this.drawForestNinjaGame(ctx, tq);
       }
 
@@ -8464,11 +8472,31 @@
 
       ctx.setTransform(2, 0, 0, 2, 0, 0);
       const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
-      const hudCustomTitle = spec.customHudTitle || (this.phase && this.phase.startsWith('shell_game_') ? 'Caatinga - O Desafio das Areias' : (this.phase === 'river_melody_game' ? 'Rio - Melodia das Águas' : null));
-      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical, hudCustomTitle);
+      const inSpecialMinigame = inMusical ||
+        Boolean(this.forestNinja) ||
+        Boolean(this.riverMelody) ||
+        Boolean(this.shellGame) ||
+        Boolean(this.phase && (
+          this.phase.startsWith('forest_ninja_') ||
+          this.phase === 'river_melody_game' ||
+          this.phase.startsWith('shell_game_')
+        ));
+      const hudCustomTitle = spec.customHudTitle || (
+        this.phase && this.phase.startsWith('shell_game_')
+          ? 'Caatinga - O Desafio das Areias'
+          : (this.phase === 'river_melody_game'
+              ? 'Rio - Melodia das Águas'
+              : (this.phase && this.phase.startsWith('forest_ninja_') ? 'Floresta - Corte Cristalino' : null))
+      );
+      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inSpecialMinigame, hudCustomTitle);
+
+      if (this.phase === 'forest_ninja_vignette') {
+        this.drawForestNinjaVignette(ctx, tq);
+      }
 
       if (inMusical && GameHUD.godMode) {
         const sb = this.skipMusicalBtnRect;
+        TextOverlay?.clearLogicalRect?.(ctx, sb.x, sb.y, sb.w, sb.h);
         ctx.fillStyle = '#3d2b24';
         ctx.fillRect(sb.x, sb.y, sb.w, sb.h);
         ctx.fillStyle = '#d9a85b';

@@ -12,6 +12,7 @@
   const {
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
     P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, measurePixelText, drawJustifiedPixelText, drawParchmentBox,
+    TextOverlay,
     ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
   } = E;
   const R = Math.round;
@@ -2545,16 +2546,21 @@
         const isCurrent = (i === activeIndex);
 
         if (isCurrent && w.isHold) {
+          const useOv = TextOverlay && TextOverlay.isActiveFor(ctx);
+          const measuredW = useOv ? TextOverlay.measureLogicalText(ctx, w.text, 8.6) : null;
+          const drawW = (measuredW && measuredW > 0) ? measuredW : w.width;
           // Palavra apagada na base
           drawPixelText(ctx, w.text, w.x, w.y, '#6c5b52', null);
           const pHold = clamp((time - w.t) / (w.holdDur || w.dur), 0, 1);
-          const fillW = Math.round(w.width * pHold);
+          const fillW = Math.round(drawW * pHold);
           if (fillW > 0) {
             ctx.save();
             ctx.beginPath();
             ctx.rect(w.x, w.y - 3, fillW, 16);
             ctx.clip();
+            TextOverlay?.pushClipRect?.(ctx, w.x, w.y - 3, fillW, 16);
             drawPixelText(ctx, w.text, w.x, w.y, '#ffe033', '#2c221e');
+            TextOverlay?.popClipRect?.(ctx);
             ctx.restore();
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(w.x + fillW, w.y - 1, 1, 9);
@@ -2651,7 +2657,7 @@
     _lastAudioTime: null,
     _lastAudioPerf: null,
     cloudPopTime: -1,
-    skipMusicalBtnRect: { x: 92, y: 2, w: 58, h: 16 },
+    skipMusicalBtnRect: { x: 74, y: 2, w: 44, h: 16 },
     vignetteCard: 1,
     vignettePracticeTime: 0,
     isHoldingSpace: false,
@@ -2819,6 +2825,7 @@
           this.canvas.style.background = 'transparent';
           this.canvas.style.boxShadow = 'none';
         }
+        TextOverlay?.hide?.(this.canvas);
       }
     },
 
@@ -2978,6 +2985,7 @@
       cv.style.width = roundFn(W * scale) + 'px';
       cv.style.height = roundFn(H * scale) + 'px';
       cv.style.display = cv.hidden ? 'none' : 'block';
+      TextOverlay?.syncLayout?.(cv);
     },
 
     toLogicalCoords(clientX, clientY) {
@@ -3838,6 +3846,7 @@
     renderMusicalVignette(ctx, tq) {
       ctx.fillStyle = 'rgba(10, 8, 6, 0.65)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay?.dimLogicalRect?.(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.65)');
 
       const cx = 24, cy = 18, cw = 272, ch = 152;
       drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 18, headerBg: '#3d2b24' });
@@ -5658,6 +5667,7 @@
     drawGameOverOverlay(ctx) {
       ctx.fillStyle = 'rgba(10, 8, 6, 0.58)';
       ctx.fillRect(0, 20, W, H - 20);
+      TextOverlay?.dimLogicalRect?.(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.58)');
 
       const bx = 34, by = 28, bw = 252, bh = 116;
       drawParchmentBox(ctx, bx, by, bw, bh, { headerH: 17, headerBg: '#59221c' });
@@ -5771,11 +5781,14 @@
 
       // Se já entrou no Mapa, desenha apenas o Iris In abrindo sobre o Mapa
       if (this.phase === 'map_iris_in' || this.phase === 'map_active') {
+        TextOverlay?.hide?.(this.canvas);
         ctx.setTransform(2, 0, 0, 2, 0, 0);
         ctx.clearRect(0, 0, W, H);
         IrisTransition.render(ctx);
         return;
       }
+
+      TextOverlay?.beginFrame?.(this.canvas);
 
       this.composeBackground();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -5886,13 +5899,14 @@
       }
 
       ctx.setTransform(2, 0, 0, 2, 0, 0);
-      // HUD Superior Completo (Título da Fase, Etapa + Botões de Pause, Recomeçar, Mudo e Configurações)
+      // HUD Superior Completo (Título da Fase, Etapa + Guia, Mapa, Recomeçar, Tela Cheia, Mudo, Configurações e Casa)
       const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
-      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical);
+      GameHUD.renderTopBar(ctx, this.currentLevel, this.currentStep, this.totalSteps, inMusical || this.phase === 'musical_vignette');
 
       // Botão Pular >> no topo durante o show musical, visível apenas no God Mode
       if (inMusical && GameHUD.godMode) {
         const sb = this.skipMusicalBtnRect;
+        TextOverlay?.clearLogicalRect?.(ctx, sb.x, sb.y, sb.w, sb.h);
         ctx.fillStyle = '#3d2b24';
         ctx.fillRect(sb.x, sb.y, sb.w, sb.h);
         ctx.fillStyle = '#d9a85b';
