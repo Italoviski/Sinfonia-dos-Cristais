@@ -179,13 +179,31 @@
     rock: SHARD_ROWS.map((r) => fromMap(r, { W: '#6e635f', L: '#524846', M: '#3b3332', D: '#262020' }))
   };
 
+  const MAX_REGULAR_VALUE = 8;
+  const MAX_SPLITTABLE_EVEN_VALUE = 12;
+  function getMaxPieceValue(typeOrPiece, candidateVal = 8) {
+    const t = typeof typeOrPiece === 'string' ? typeOrPiece : typeOrPiece?.type;
+    if ((t === 'citrine' || t === 'aqua') && candidateVal % 2 === 0) {
+      return MAX_SPLITTABLE_EVEN_VALUE;
+    }
+    return MAX_REGULAR_VALUE;
+  }
+
   const EXTERNAL_ORB_ARCS = {
     1: [[0, -14.5]],
     2: [[-4.5, -14], [4.5, -14]],
     3: [[-7.5, -12.5], [0, -15], [7.5, -12.5]],
     4: [[-9.5, -11], [-3.5, -14.5], [3.5, -14.5], [9.5, -11]],
     5: [[-11, -9.5], [-6, -13.5], [0, -15.5], [6, -13.5], [11, -9.5]],
-    6: [[-12, -8.5], [-7.5, -12.5], [-2.5, -15], [2.5, -15], [7.5, -12.5], [12, -8.5]]
+    6: [[-12, -8.5], [-7.5, -12.5], [-2.5, -15], [2.5, -15], [7.5, -12.5], [12, -8.5]],
+    7: [
+      [-9.5, -10.5], [-3.5, -13.5], [3.5, -13.5], [9.5, -10.5],
+      [-6.5, -18], [0, -19.5], [6.5, -18]
+    ],
+    8: [
+      [-10, -10], [-3.5, -13.5], [3.5, -13.5], [10, -10],
+      [-10, -16], [-3.5, -19.5], [3.5, -19.5], [10, -16]
+    ]
   };
 
   function drawExternalOrb(ctx, ox, oy, coreCol, midCol, rimCol, pulse = false, specCol = '#ffffff') {
@@ -266,9 +284,37 @@
   }
 
   function drawOrbsForValue(ctx, x, y, rawVal, pal, recentlyChanged) {
-    const total = clamp(Math.round(rawVal || 1), 1, 12);
-    const row1 = Math.min(6, total);
-    const row2 = Math.max(0, total - 6);
+    const total = clamp(Math.round(rawVal || 1), 1, MAX_SPLITTABLE_EVEN_VALUE);
+    if (total <= 8) {
+      const arcs = EXTERNAL_ORB_ARCS[total] || EXTERNAL_ORB_ARCS[1];
+      const splitIdx = total >= 7 ? 4 : arcs.length;
+      const drawArcLinks = (list) => {
+        ctx.fillStyle = pal.link;
+        for (let i = 0; i < list.length; i++) {
+          const [ox, oy] = list[i];
+          ctx.fillRect(RH(x + ox * 0.65), RH(y + oy * 0.72), 1, 1);
+          if (pal.isShadow) {
+            ctx.fillRect(RH(x + ox * 0.45), RH(y + oy * 0.55), 1, 1);
+          }
+          if (i < list.length - 1) {
+            const [nx, ny] = list[i + 1];
+            ctx.fillRect(RH(x + (ox + nx) * 0.5), RH(y + (oy + ny) * 0.5), 1, 1);
+          }
+        }
+      };
+      drawArcLinks(arcs.slice(0, splitIdx));
+      if (splitIdx < arcs.length) {
+        drawArcLinks(arcs.slice(splitIdx));
+      }
+      for (let i = 0; i < arcs.length; i++) {
+        const [ox, oy] = arcs[i];
+        drawExternalOrb(ctx, x + ox, y + oy, pal.core, pal.mid, pal.rim, recentlyChanged, pal.spec || '#ffffff');
+      }
+      return;
+    }
+
+    const row1 = Math.min(6, Math.ceil(total / 2));
+    const row2 = Math.max(0, total - row1);
     const arcs1 = EXTERNAL_ORB_ARCS[row1] || EXTERNAL_ORB_ARCS[1];
 
     ctx.fillStyle = pal.link;
@@ -291,7 +337,7 @@
       const arcs2 = EXTERNAL_ORB_ARCS[row2] || EXTERNAL_ORB_ARCS[1];
       for (let i = 0; i < arcs2.length; i++) {
         const [ox, oy] = arcs2[i];
-        drawExternalOrb(ctx, x + ox, y + oy - 6, pal.core, pal.mid, pal.rim, recentlyChanged, pal.spec || '#ffffff');
+        drawExternalOrb(ctx, x + ox, y + oy - 5.5, pal.core, pal.mid, pal.rim, recentlyChanged, pal.spec || '#ffffff');
       }
     }
   }
@@ -2335,7 +2381,8 @@
     camPanY: 0,
     shellGame: null,
     shellCalmBtnRect: { x: 8, y: 23, w: 98, h: 14 },
-    forestNinjaComboBadgeRect: { x: 230, y: 23, w: 62, h: 14 },
+    riverCalmBtnRect: { x: 6, y: 38, w: 88, h: 12 },
+    forestNinjaComboBadgeRect: { x: 228, y: 23, w: 66, h: 14 },
     emeraldAltar: null,
     pureEquation: null,
     shadowEquation: null,
@@ -3040,9 +3087,20 @@
       return purePiece.type === shadowPiece.type;
     },
 
+    _removePieceFromFraction(piece) {
+      if (!piece) return false;
+      const had = Boolean(piece.inFraction);
+      piece.inFraction = null;
+      if (this.fractionPlatform) {
+        this.fractionPlatform.topPieces = (this.fractionPlatform.topPieces || []).filter((p) => p !== piece && !p.broken && p.value > 0);
+        this.fractionPlatform.bottomPieces = (this.fractionPlatform.bottomPieces || []).filter((p) => p !== piece && !p.broken && p.value > 0);
+      }
+      return had;
+    },
+
     isCompatibleShadowTarget(purePiece, candidate, px = purePiece.x, py = purePiece.y) {
       if (this.phase !== 'gameplay') return false;
-      if (!purePiece || purePiece.shadow || purePiece.broken || purePiece.value <= 0 || purePiece.inMoldId) return false;
+      if (!purePiece || purePiece.shadow || purePiece.broken || purePiece.value <= 0 || purePiece.inMoldId || purePiece.inFraction) return false;
       if (!candidate || !candidate.shadow || candidate.broken || candidate.value <= 0 || candidate.inEquation) return false;
       if (
         purePiece.inEquation === 'pure' &&
@@ -3082,6 +3140,11 @@
 
       const wasInPureEq = purePiece.inEquation === 'pure';
       purePiece.inEquation = null;
+      if (purePiece.inFraction) {
+        this._removePieceFromFraction(purePiece);
+        this.layoutFractionPieces();
+        this.updateFractionPlatformState();
+      }
       if (this.pureEquation) {
         this.pureEquation.dropHover = false;
         this.pureEquation.removeHover = false;
@@ -3108,11 +3171,13 @@
     },
 
     checkEmeraldAltarBlessing(piece) {
-      if (!this.emeraldAltar || !piece || piece.shadow || piece.broken || piece.value <= 0) return false;
-      if (piece.type === 'opal' || piece.boosted || piece.value * 2 > 6) return false;
+      if (!this.emeraldAltar || !piece || piece.shadow || piece.broken || piece.value <= 0 || piece.inFraction) return false;
+      const doubled = piece.value * 2;
+      const maxVal = getMaxPieceValue(piece, doubled);
+      if (piece.type === 'opal' || piece.boosted || doubled > maxVal) return false;
       if (Math.hypot(piece.x - this.emeraldAltar.x, piece.y - this.emeraldAltar.y) <= 22) {
         this.commitActionSnapshot();
-        piece.value = clamp(piece.value * 2, 1, 6);
+        piece.value = clamp(doubled, 1, maxVal);
         piece.boosted = true;
         piece.lastValChangeAt = this.t;
         GameHUD.playSfx('reward');
@@ -3133,7 +3198,7 @@
     },
 
     trySplitCrystalOnTap(piece) {
-      if (!piece || piece.shadow || piece.broken || piece.inFraction || piece.inMoldId || piece.value < 2 || piece.value % 2 !== 0) return false;
+      if (!piece || piece.shadow || piece.broken || piece.inMoldId || piece.shape || piece.value < 2 || piece.value % 2 !== 0) return false;
       if (piece.type !== 'citrine' && piece.type !== 'aqua') return false;
       if (this.selectedPiece === piece) this.selectedPiece = null;
 
@@ -3144,6 +3209,7 @@
       const origX = piece.x, origY = piece.y;
       piece.x = clamp(origX - 10, this.STAGE_MIN_X, this.STAGE_MAX_X);
 
+      const inFracSlot = piece.inFraction || null;
       const clone = {
         id: `${piece.id}_sp_${Math.floor(this.t * 1000)}_${this.pieces.length}`,
         type: piece.type,
@@ -3151,6 +3217,7 @@
         shadow: false,
         boosted: Boolean(piece.boosted),
         inEquation: piece.inEquation || null,
+        inFraction: inFracSlot,
         lastValChangeAt: this.t,
         x: clamp(origX + 10, this.STAGE_MIN_X, this.STAGE_MAX_X),
         y: origY
@@ -3160,7 +3227,17 @@
       GameHUD.playSfx('shatter');
       this.spawnShatter(origX, origY, piece.type === 'citrine' ? 'citrine' : 'aqua', 8);
 
-      if (piece.inEquation === 'pure' && this.pureEquation && !this.pureEquation.broken) {
+      if (inFracSlot && this.fractionPlatform && !this.fractionPlatform.broken) {
+        const list = inFracSlot === 'top' ? this.fractionPlatform.topPieces : this.fractionPlatform.bottomPieces;
+        const idx = list.indexOf(piece);
+        if (idx >= 0) {
+          list.splice(idx + 1, 0, clone);
+        } else {
+          list.push(clone);
+        }
+        this.layoutFractionPieces();
+        this.updateFractionPlatformState();
+      } else if (piece.inEquation === 'pure' && this.pureEquation && !this.pureEquation.broken) {
         this.layoutEquationPieces(this.pureEquation, 'pure');
       } else {
         this.resolveFreeCrystalCollisions();
@@ -3170,7 +3247,7 @@
       this._committingAction = true;
       try {
         for (const candidate of [piece, clone]) {
-          if (!candidate.broken) {
+          if (!candidate.broken && !candidate.inFraction) {
             const hit = this.findTouchingCompatibleShadow(candidate, candidate.x, candidate.y);
             if (hit) this.triggerImmediateAnnulment(candidate, hit);
           }
@@ -3186,7 +3263,7 @@
     },
 
     moveDraggedPieceWithCollision(piece, rawX, rawY) {
-      if (!piece || piece.broken || piece.value <= 0 || piece.inFraction) return { annulled: false };
+      if (!piece || piece.broken || piece.value <= 0) return { annulled: false };
 
       const clampedTarget = this.clampCrystalPos(rawX, rawY);
       let curX = clamp(piece.x, this.STAGE_MIN_X, this.STAGE_MAX_X);
@@ -3294,13 +3371,25 @@
         piece.x = curX;
         piece.y = curY;
 
+        if (piece.inFraction && this.fractionPlatform && !this.fractionPlatform.broken) {
+          const fp = this.fractionPlatform;
+          const stillInFrac = Math.abs(curX - fp.x) <= (fp.w * 0.5 + 8) && Math.abs(curY - fp.y) <= (fp.h * 0.5 + 10);
+          if (!stillInFrac) {
+            this.commitActionSnapshot();
+            this._removePieceFromFraction(piece);
+            this.layoutFractionPieces();
+            this.updateFractionPlatformState();
+            GameHUD.playSfx('equationRemove');
+          }
+        }
+
         if (this.checkEmeraldAltarBlessing(piece)) {
           if (piece.broken || this.phase !== 'gameplay') return { annulled: true };
           this.triggerDefeatIfImpossible();
           if (this.phase !== 'gameplay') return { annulled: true };
         }
 
-        if (!piece.shape && !piece.inEquation && this.electricShapes && this.electricShapes.length > 0) {
+        if (!piece.shape && !piece.inEquation && !piece.inFraction && this.electricShapes && this.electricShapes.length > 0) {
           for (const es of this.electricShapes) {
             if (!es.used && es.shape === 'circle' && Math.hypot(curX - es.x, curY - es.y) <= 14) {
               this.tryEnterElectricShapeNode(es, [piece]);
@@ -3609,6 +3698,21 @@
       if (!target.shape || !dragged.shape) return null;
 
       const s1 = target.shape, s2 = dragged.shape;
+
+      // 0. 2 Círculos da mesma cor -> Círculo único com a soma das unidades
+      if (
+        s1 === 'circle' &&
+        s2 === 'circle' &&
+        (target.borderType || target.type) === (dragged.borderType || dragged.type) &&
+        (target.coreType || target.type) === (dragged.coreType || dragged.type) &&
+        (target.value + dragged.value) <= getMaxPieceValue(target.borderType || target.type, target.value + dragged.value)
+      ) {
+        return {
+          resultShape: 'circle',
+          targetRotAngle: 0,
+          label: 'CÍRCULO + CÍRCULO = CÍRCULO MAIOR!'
+        };
+      }
 
       // 1. 2 Quadrados idênticos -> Retângulo Cristalino (gira 90° e encaixa lado a lado [■|■])
       if (
@@ -3962,6 +4066,25 @@
       return true;
     },
 
+    _releaseCircleMoldOnMerge(piece, snap) {
+      if (!piece) return snap;
+      const nodeId = piece.sourceNodeId || null;
+      if (nodeId) {
+        const node = (this.electricShapes || []).find((es) => es.id === nodeId && es.shape === 'circle');
+        if (node) {
+          node.used = false;
+          node.hover = false;
+          node.firstPieceId = null;
+          node.borderType = null;
+          node.firstValue = 0;
+        }
+        if (snap && Array.isArray(snap.components) && snap.components.length === 1) {
+          return { ...snap.components[0], sourceNodeId: null };
+        }
+      }
+      return snap;
+    },
+
     tryTessellateShapes(target, dropped) {
       if (!target || !dropped || target === dropped) return false;
       if (target.broken || dropped.broken || target.shadow || dropped.shadow) return false;
@@ -3970,6 +4093,48 @@
       const s1 = target.shape, s2 = dropped.shape;
       const snapT = this.snapshotPiece(target);
       const snapD = this.snapshotPiece(dropped);
+
+      // 0. 2 Círculos da mesma cor -> Círculo único com a soma das unidades
+      if (
+        s1 === 'circle' &&
+        s2 === 'circle' &&
+        (target.borderType || target.type) === (dropped.borderType || dropped.type) &&
+        (target.coreType || target.type) === (dropped.coreType || dropped.type) &&
+        (target.value + dropped.value) <= getMaxPieceValue(target.borderType || target.type, target.value + dropped.value)
+      ) {
+        this.commitActionSnapshot();
+        const snapDUnwrapped = this._releaseCircleMoldOnMerge(dropped, snapD);
+        target.shape = 'circle';
+        target.borderType = target.borderType || target.type;
+        target.coreType = target.coreType || target.type;
+        target.value += dropped.value;
+        target.boosted = Boolean(target.boosted || dropped.boosted);
+        target.restorableEquation = target.restorableEquation || dropped.restorableEquation || null;
+        target.components = [snapT, snapDUnwrapped];
+        target.sourceNodeId = null;
+        target.rotAngle = 0;
+        target.targetRotAngle = 0;
+        target.lastValChangeAt = this.t;
+        dropped.broken = true;
+        dropped.inEquation = null;
+        if (this.selectedPiece === dropped) this.selectedPiece = null;
+        this.tessellationPreview = null;
+        GameHUD.playSfx(target.type === 'rose' ? 'roseMerge' : 'quartzMerge');
+        this.spawnFloatingBanner('circle', target.x, target.y);
+        this.spawnShatter(target.x, target.y, SHARD_SPR[target.type] ? target.type : 'pure', 10);
+        if (this.pureEquation && !this.pureEquation.broken && target.inEquation === 'pure') {
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+        } else {
+          this.resolveFreeCrystalCollisions();
+        }
+        const hit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (hit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try { this.triggerImmediateAnnulment(target, hit); } finally { this._committingAction = prevC; }
+        }
+        return true;
+      }
 
       // 1. 2 Quadrados idênticos -> Retângulo Cristalino
       if (
@@ -4275,22 +4440,47 @@
       const freePure = active.filter((p) => !p.shadow && !p.inEquation && !p.inFraction && !p.inMoldId);
       const freeShadow = active.filter((p) => p.shadow && !p.inEquation);
 
-      // 2. Anulação direta entre cristal puro manipulável e sombrio livre compatível
+      // 2. Anulação direta entre cristal puro manipulável e sombrio livre compatível (sem criar beco sem saída)
       for (const p of active) {
         if (!canManipulatePure(p)) continue;
         for (const s of freeShadow) {
           if (this.isCompatibleShadowTarget(p, s, s.x, s.y)) {
-            return dragHint(p, s.x, s.y, 'Anular cristais!');
+            let safeToAnnul = true;
+            const prevPBroken = p.broken;
+            const prevSBroken = s.broken;
+            try {
+              p.broken = true;
+              s.broken = true;
+              safeToAnnul = this.isStepStillSolvable();
+            } finally {
+              p.broken = prevPBroken;
+              s.broken = prevSBroken;
+            }
+            if (safeToAnnul) {
+              return dragHint(p, s.x, s.y, 'Anular cristais!');
+            }
           }
         }
       }
 
-      // 3. Preencher Plataforma de Fração ainda não equilibrada
+      // 3. Preencher ou equilibrar Plataforma de Fração ainda não equilibrada
       if (fp && !fp.broken && !fp.glowing) {
         const fracCandidate = freePure.find((p) => !p.shape && p.type !== 'opal');
         if (fracCandidate) {
           const destY = (fp.topSum === 0 || fp.topSum < fp.bottomSum) ? fp.topY : fp.bottomY;
           return dragHint(fracCandidate, fp.x, destY, 'Preencher fração!');
+        }
+        if (fp.topSum > fp.bottomSum && (fp.topPieces || []).length > 0) {
+          const movable = fp.topPieces.find((p) => !p.broken && p.value <= fp.topSum - fp.bottomSum) || fp.topPieces[0];
+          if (movable) {
+            return dragHint(movable, fp.x, fp.bottomY, 'Equilibrar fração!');
+          }
+        }
+        if (fp.bottomSum > fp.topSum && (fp.bottomPieces || []).length > 0) {
+          const movable = fp.bottomPieces.find((p) => !p.broken && p.value <= fp.bottomSum - fp.topSum) || fp.bottomPieces[0];
+          if (movable) {
+            return dragHint(movable, fp.x, fp.topY, 'Equilibrar fração!');
+          }
         }
       }
 
@@ -4342,7 +4532,7 @@
 
       // 7. Altar Esmeralda (multiplicação x2)
       if (this.emeraldAltar) {
-        const freeQuartz = freePure.filter((p) => !p.shape && p.type !== 'opal' && !p.boosted);
+        const freeQuartz = freePure.filter((p) => !p.shape && p.type !== 'opal' && !p.boosted && (p.value * 2) <= getMaxPieceValue(p, p.value * 2));
         const altarTarget = freeQuartz.find((p) => freeShadow.some((s) => s.type === p.type && s.value === p.value * 2)) || freeQuartz[0];
         if (altarTarget) {
           return dragHint(altarTarget, this.emeraldAltar.x, this.emeraldAltar.y, 'Multiplicar no altar!');
@@ -4386,7 +4576,8 @@
         }
         for (let i = 0; i < eqQuartz.length; i++) {
           for (let j = i + 1; j < eqQuartz.length; j++) {
-            if (eqQuartz[i].type === eqQuartz[j].type && (eqQuartz[i].value + eqQuartz[j].value) <= 6) {
+            const sumVal = eqQuartz[i].value + eqQuartz[j].value;
+            if (eqQuartz[i].type === eqQuartz[j].type && sumVal <= getMaxPieceValue(eqQuartz[i], sumVal)) {
               return dragHint(eqQuartz[i], eqQuartz[j].x, eqQuartz[j].y, 'Somar na equação!');
             }
           }
@@ -4397,7 +4588,8 @@
       for (let i = 0; i < freeNonOpals.length; i++) {
         for (let j = i + 1; j < freeNonOpals.length; j++) {
           const a = freeNonOpals[i], b = freeNonOpals[j];
-          if (a.type === b.type && (a.value + b.value) <= 6) {
+          const sumVal = a.value + b.value;
+          if (a.type === b.type && sumVal <= getMaxPieceValue(a, sumVal)) {
             return dragHint(a, b.x, b.y, 'Fundir cristais!');
           }
         }
@@ -4550,6 +4742,9 @@
         delete restoredFp.topPieceIds;
         delete restoredFp.bottomPieceIds;
         this.fractionPlatform = restoredFp;
+        if (typeof this.layoutFractionPieces === 'function') {
+          this.layoutFractionPieces();
+        }
         if (typeof this.updateFractionPlatformState === 'function') {
           this.updateFractionPlatformState();
         }
@@ -4667,37 +4862,68 @@
 
     _mergeSameColorPieces(target, source) {
       if (!target || !source || target === source || target.broken || source.broken) return false;
-      if (target.shadow || source.shadow || target.shape || source.shape) return false;
-      if (target.inFraction || source.inFraction || target.type === 'opal' || source.type === 'opal') return false;
-      if (target.type !== source.type || (target.value + source.value) > 6) return false;
+      if (target.shadow || source.shadow) return false;
+      if (target.shape || source.shape) {
+        if (target.shape === 'circle' && source.shape === 'circle') {
+          return this.tryTessellateShapes(target, source);
+        }
+        return false;
+      }
+      if (target.type === 'opal' || source.type === 'opal') return false;
+      const sumVal = target.value + source.value;
+      if (target.type !== source.type || sumVal > getMaxPieceValue(target, sumVal)) return false;
 
       this.commitActionSnapshot();
-      target.value += source.value;
+      const wasInFrac = Boolean(target.inFraction || source.inFraction);
+      const sourceWasInPureEq = source.inEquation === 'pure';
+      if (source.inFraction) {
+        this._removePieceFromFraction(source);
+      }
+      target.value = sumVal;
       target.boosted = Boolean(target.boosted || source.boosted);
       target.lastValChangeAt = this.t;
-      const keepInEq = target.inEquation === 'pure' ||
-        Boolean(this.pureEquation && !this.pureEquation.broken && this.isInsideEquationAura(this.pureEquation, target.x, target.y, true));
-      if (keepInEq && this.pureEquation && !this.pureEquation.broken) {
-        target.inEquation = 'pure';
+      if (!target.inFraction) {
+        const keepInEq = target.inEquation === 'pure' ||
+          Boolean(this.pureEquation && !this.pureEquation.broken && this.isInsideEquationAura(this.pureEquation, target.x, target.y, true));
+        if (keepInEq && this.pureEquation && !this.pureEquation.broken) {
+          target.inEquation = 'pure';
+        }
+      } else {
+        target.inEquation = null;
       }
       source.broken = true;
       source.inEquation = null;
       if (this.selectedPiece === source) this.selectedPiece = null;
       GameHUD.playSfx(target.type === 'rose' ? 'roseMerge' : 'quartzMerge');
       this.spawnShatter(target.x, target.y, SHARD_SPR[target.type] ? target.type : 'pure', 8);
+      if (wasInFrac && this.fractionPlatform && !this.fractionPlatform.broken) {
+        this.layoutFractionPieces();
+        this.updateFractionPlatformState();
+      }
       if (this.pureEquation && !this.pureEquation.broken) {
-        this.layoutEquationPieces(this.pureEquation, 'pure');
+        if (sourceWasInPureEq && target.inFraction) {
+          const members = this.pieces.filter((p) => !p.broken && !p.shadow && p.value > 0 && p.inEquation === 'pure');
+          if (members.length <= 1) {
+            this.breakPureEquation();
+          } else {
+            this.layoutEquationPieces(this.pureEquation, 'pure');
+          }
+        } else {
+          this.layoutEquationPieces(this.pureEquation, 'pure');
+        }
       } else {
         this.resolveFreeCrystalCollisions();
       }
-      const mergedHit = this.findTouchingCompatibleShadow(target, target.x, target.y);
-      if (mergedHit) {
-        const prevC = this._committingAction;
-        this._committingAction = true;
-        try {
-          this.triggerImmediateAnnulment(target, mergedHit);
-        } finally {
-          this._committingAction = prevC;
+      if (!target.inFraction) {
+        const mergedHit = this.findTouchingCompatibleShadow(target, target.x, target.y);
+        if (mergedHit) {
+          const prevC = this._committingAction;
+          this._committingAction = true;
+          try {
+            this.triggerImmediateAnnulment(target, mergedHit);
+          } finally {
+            this._committingAction = prevC;
+          }
         }
       }
       return true;
@@ -4722,22 +4948,40 @@
       this.checkEmeraldAltarBlessing(dropped);
       if (dropped.broken || this.phase !== 'gameplay') return;
 
-      // -1. Entrada na Plataforma de Fração do Rio (zona contínua em toda a área da plataforma)
-      if (this.fractionPlatform && !this.fractionPlatform.broken && !dropped.inFraction) {
+      // -1. Plataforma de Fração do Rio (entrada, reorganização interna, fusão interna e saída)
+      if (this.fractionPlatform && !this.fractionPlatform.broken) {
         const fp = this.fractionPlatform;
         const inFracBody = Math.abs(dropped.x - fp.x) <= (fp.w * 0.5 + 8) && Math.abs(dropped.y - fp.y) <= (fp.h * 0.5 + 10);
         // Opala de Fogo não entra na fração: ela subtrai do cristal que está lá dentro.
-        if (inFracBody && dropped.type !== 'opal') {
-          commitDropOnce();
+        if (inFracBody && dropped.type !== 'opal' && !dropped.shape) {
           let targetSlot;
           if (dropped.y < fp.y - 4) {
             targetSlot = 'top';
           } else if (dropped.y > fp.y + 4) {
             targetSlot = 'bottom';
           } else {
-            targetSlot = ((fp.topPieces?.length || 0) > 0 && (fp.bottomPieces?.length || 0) === 0) ? 'bottom' : (dropped.y < fp.y ? 'top' : 'bottom');
+            const topOthers = (fp.topPieces || []).filter((p) => p !== dropped && !p.broken && p.value > 0);
+            const botOthers = (fp.bottomPieces || []).filter((p) => p !== dropped && !p.broken && p.value > 0);
+            targetSlot = (topOthers.length > 0 && botOthers.length === 0) ? 'bottom' : (dropped.y < fp.y ? 'top' : 'bottom');
           }
+          const targetList = targetSlot === 'top' ? fp.topPieces : fp.bottomPieces;
+          const mergeTarget = (targetList || []).find((other) =>
+            other !== dropped &&
+            !other.broken &&
+            !other.shadow &&
+            !other.shape &&
+            other.value > 0 &&
+            other.type === dropped.type &&
+            Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 20 &&
+            (other.value + dropped.value) <= getMaxPieceValue(other, other.value + dropped.value)
+          );
+          if (mergeTarget && this._mergeSameColorPieces(mergeTarget, dropped)) {
+            return;
+          }
+
+          commitDropOnce();
           const wasInPureEq = dropped.inEquation === 'pure';
+          this._removePieceFromFraction(dropped);
           dropped.inFraction = targetSlot;
           dropped.inEquation = null;
           if (wasInPureEq && this.pureEquation && !this.pureEquation.broken) {
@@ -4748,12 +4992,18 @@
               this.layoutEquationPieces(this.pureEquation, 'pure');
             }
           }
-          const targetList = targetSlot === 'top' ? fp.topPieces : fp.bottomPieces;
           if (!targetList.includes(dropped)) targetList.push(dropped);
+          targetList.sort((a, b) => a.x - b.x);
           this.layoutFractionPieces();
           this.updateFractionPlatformState();
           GameHUD.playSfx('equationInsert');
           return;
+        } else if (dropped.inFraction) {
+          commitDropOnce();
+          this._removePieceFromFraction(dropped);
+          this.layoutFractionPieces();
+          this.updateFractionPlatformState();
+          GameHUD.playSfx('equationRemove');
         }
       }
 
@@ -4790,6 +5040,18 @@
             if (this.tryTessellateShapes(other, dropped)) {
               return;
             }
+            if (
+              other.shape === 'circle' &&
+              dropped.shape === 'circle' &&
+              (other.borderType || other.type) === (dropped.borderType || dropped.type) &&
+              (other.coreType || other.type) === (dropped.coreType || dropped.type)
+            ) {
+              dropped.rejectUntil = this.t + 0.35;
+              other.rejectUntil = this.t + 0.35;
+              GameHUD.playSfx('error');
+              this.resolveFreeCrystalCollisions();
+              return;
+            }
           }
         }
       }
@@ -4808,7 +5070,8 @@
             other.type === dropped.type &&
             Math.hypot(dropped.x - other.x, dropped.y - other.y) <= 24
           ) {
-            if (other.value + dropped.value <= 6) {
+            const sumVal = other.value + dropped.value;
+            if (sumVal <= getMaxPieceValue(other, sumVal)) {
               this._mergeSameColorPieces(other, dropped);
               return;
             }
@@ -4828,7 +5091,7 @@
               p.value > 0 &&
               p.inEquation === 'pure' &&
               p.type === dropped.type &&
-              (p.value + dropped.value) <= 6
+              (p.value + dropped.value) <= getMaxPieceValue(p, p.value + dropped.value)
             );
             if (sameCol && this._mergeSameColorPieces(sameCol, dropped)) {
               return;
@@ -4857,7 +5120,7 @@
         }
       }
 
-      // 3. Fusão entre cristais puros da mesma cor (até 6 bolinhas, fora de formas geométricas)
+      // 3. Fusão entre cristais puros da mesma cor (fora de formas geométricas)
       //    ou formação automática do agrupador/parênteses (pureEquation) ao unir cristais puros de cores diferentes!
       if (!dropped.shape && dropped.type !== 'opal') {
         for (const other of this.pieces) {
@@ -4892,7 +5155,8 @@
               this.resolveFreeCrystalCollisions();
               return;
             }
-            if (other.value + dropped.value > 6) {
+            const sumVal = other.value + dropped.value;
+            if (sumVal > getMaxPieceValue(other, sumVal)) {
               dropped.rejectUntil = this.t + 0.35;
               other.rejectUntil = this.t + 0.35;
               GameHUD.playSfx('error');
@@ -4974,15 +5238,16 @@
             return d;
           }
 
-          // 1. Altar de Esmeralda (dobra 1 única vez peças <= 3)
+          // 1. Altar de Esmeralda (dobra 1 única vez peças até o limite da cor)
           if (hasAltar) {
             let lastPair = '';
+            const maxAltarVal = canSplit ? MAX_SPLITTABLE_EVEN_VALUE : MAX_REGULAR_VALUE;
             for (let i = 0; i < cur.length; i++) {
               const p = cur[i];
               const pk = `${p.v},${p.b}`;
               if (pk === lastPair) continue;
               lastPair = pk;
-              if (!p.b && p.v * 2 <= 6) {
+              if (!p.b && p.v * 2 <= maxAltarVal) {
                 const next = cur.slice();
                 next[i] = { v: p.v * 2, b: 1 };
                 if (pushState(next, d)) return d;
@@ -5007,12 +5272,14 @@
             }
           }
 
-          // 3. Soma / Fusão entre duas peças da mesma cor (v1 + v2 <= 6)
+          // 3. Soma / Fusão entre duas peças da mesma cor
           const seenMergePairs = new Set();
           for (let i = 0; i < cur.length; i++) {
             for (let j = i + 1; j < cur.length; j++) {
               const a = cur[i], b = cur[j];
-              if (a.v + b.v > 6) continue;
+              const sumVal = a.v + b.v;
+              const maxMergeVal = (canSplit && sumVal % 2 === 0) ? MAX_SPLITTABLE_EVEN_VALUE : MAX_REGULAR_VALUE;
+              if (sumVal > maxMergeVal) continue;
               const mKey = `${a.v}${a.b}+${b.v}${b.b}`;
               if (seenMergePairs.has(mKey)) continue;
               seenMergePairs.add(mKey);
@@ -5020,7 +5287,7 @@
               for (let k = 0; k < cur.length; k++) {
                 if (k !== i && k !== j) next.push(cur[k]);
               }
-              next.push({ v: a.v + b.v, b: (a.b || b.b) ? 1 : 0 });
+              next.push({ v: sumVal, b: (a.b || b.b) ? 1 : 0 });
               if (pushState(next, d)) return d;
             }
           }
@@ -5050,12 +5317,24 @@
       const shadows = this.pieces.filter((p) => p.shadow && !p.broken && p.value > 0);
       if (shadows.length === 0) return true;
       const pures = this.pieces.filter((p) => !p.shadow && !p.broken && p.value > 0);
+      if (pures.length === 0) return false;
       if (this.fractionPlatform && !this.fractionPlatform.broken) {
         return true;
       }
-      if (pures.length === 0) return false;
       if (this.worldKey === 'caatinga' || (this.electricShapes && this.electricShapes.length > 0)) {
-        return true;
+        const hasNonCircleShape =
+          this.pieces.some((p) => !p.broken && p.shape && p.shape !== 'circle') ||
+          (this.electricShapes || []).some((es) => es.shape && es.shape !== 'circle');
+        const hasEq = Boolean((this.pureEquation && !this.pureEquation.broken) || (this.shadowEquation && !this.shadowEquation.broken));
+        if (hasNonCircleShape || hasEq) {
+          return true;
+        }
+        const shadowCirclesNeeded = shadows.filter((s) => s.shape === 'circle').length;
+        const openCircleMolds = (this.electricShapes || []).filter((es) => !es.used && es.shape === 'circle').length;
+        const existingPureCircles = pures.filter((p) => p.shape === 'circle').length;
+        if (existingPureCircles + openCircleMolds < shadowCirclesNeeded) {
+          return false;
+        }
       }
 
       const pureOpals = pures.filter((p) => p.type === 'opal');

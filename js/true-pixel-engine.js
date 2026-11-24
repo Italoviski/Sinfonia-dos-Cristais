@@ -7840,12 +7840,19 @@
   function drawGhostHandHint(ctx, anim, t = 0) {
     if (!ctx || !anim) return;
     const dur = Math.max(0.2, anim.duration || (anim.kind === 'tap' ? 1.8 : 2.2));
-    const p = clamp((anim.t || 0) / dur, 0, 1);
-    if (p >= 1) return;
+    const isLoop = Boolean(anim.loop);
+    const p = isLoop ? (((anim.t || 0) % dur) / dur) : clamp((anim.t || 0) / dur, 0, 1);
+    if (!isLoop && p >= 1) return;
 
-    const fadeIn = p < 0.14 ? p / 0.14 : 1;
-    const fadeOut = p > 0.84 ? (1 - p) / 0.16 : 1;
-    const masterAlpha = clamp(fadeIn * fadeOut * 0.78, 0.05, 0.78);
+    let masterAlpha;
+    if (isLoop) {
+      const baseAlpha = anim.alpha !== undefined ? anim.alpha : 0.82;
+      masterAlpha = clamp(baseAlpha, 0.05, 0.88);
+    } else {
+      const fadeIn = p < 0.14 ? p / 0.14 : 1;
+      const fadeOut = p > 0.84 ? (1 - p) / 0.16 : 1;
+      masterAlpha = clamp(fadeIn * fadeOut * 0.78, 0.05, 0.78);
+    }
 
     const fromX = anim.fromX ?? 160;
     const fromY = anim.fromY ?? 100;
@@ -7858,7 +7865,7 @@
         const tap1 = p >= 0.24 && p <= 0.44;
         const tap2 = p >= 0.54 && p <= 0.74;
         const pressing = tap1 || tap2;
-        const bob = pressing ? 1 : Math.round(Math.sin(t * 7) * 1.5);
+        const bob = GameHUD.reducedMotion ? 0 : (pressing ? 1 : Math.round(Math.sin(t * 7) * 1.5));
 
         ctx.globalAlpha = masterAlpha * 0.72;
         const pulseR = 9 + Math.round(((p * 3) % 1) * 9);
@@ -7925,11 +7932,20 @@
           const style = GHOST_CRYSTAL_MAP[anim.pieceType] || GHOST_CRYSTAL_MAP.pure;
           ctx.globalAlpha = masterAlpha * 0.72;
           ctx.drawImage(style.spr, R(cx - 6), R(cy - 7));
-          const valCount = clamp(Math.abs(Math.round(anim.pieceValue || 1)), 1, 6);
-          const spacing = valCount > 3 ? 4 : 5;
-          const startOx = -((valCount - 1) * spacing) / 2;
-          for (let i = 0; i < valCount; i++) {
-            drawMiniOrb(ctx, R(cx + startOx + i * spacing), R(cy - 10), style.orb, style.rim);
+          const valCount = clamp(Math.abs(Math.round(anim.pieceValue || 1)), 1, 8);
+          const row1 = valCount <= 6 ? valCount : Math.ceil(valCount / 2);
+          const row2 = valCount - row1;
+          const spacing1 = row1 > 3 ? 4 : 5;
+          const startOx1 = -((row1 - 1) * spacing1) / 2;
+          for (let i = 0; i < row1; i++) {
+            drawMiniOrb(ctx, R(cx + startOx1 + i * spacing1), R(cy - 10), style.orb, style.rim);
+          }
+          if (row2 > 0) {
+            const spacing2 = row2 > 3 ? 4 : 5;
+            const startOx2 = -((row2 - 1) * spacing2) / 2;
+            for (let i = 0; i < row2; i++) {
+              drawMiniOrb(ctx, R(cx + startOx2 + i * spacing2), R(cy - 15), style.orb, style.rim);
+            }
           }
         }
 

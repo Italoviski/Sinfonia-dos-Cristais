@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-18T12:13:33.586Z",
+  "timestamp": "2026-11-24T22:08:30.348Z",
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "screensTested": [
     "home",
@@ -177,7 +177,5 @@
     "framesOver25ms": 0
   },
   "consoleErrors": [],
-  "pageErrors": [
-    "Uncaught"
-  ]
+  "pageErrors": []
 }
