@@ -254,8 +254,9 @@
       setTimeout(() => document.querySelector('.journey-node.current')?.focus(), 0);
     } else if (name === 'home') {
       updateProgressLabels();
-      const targetBtn = ($('continueButton') && hasSave) ? $('continueButton') : ($('newGameButton') || $('playButton'));
-      targetBtn?.focus();
+      if (document.activeElement && $('home')?.contains(document.activeElement)) {
+        document.activeElement.blur?.();
+      }
       window.CrystalMenuAudio?.play?.();
     }
   }
@@ -864,9 +865,6 @@
         this.openWizard('access');
       } else if (!characterCreated) {
         this.openCharacterCreation();
-      } else {
-        const targetBtn = ($('continueButton') && hasSave) ? $('continueButton') : ($('newGameButton') || $('playButton'));
-        targetBtn?.focus?.();
       }
     },
 

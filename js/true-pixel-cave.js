@@ -11,7 +11,7 @@
 
   const {
     W, H, SPRITE_FPS, SIM_HZ, bay, mulberry, c32, fromMap, silhouette,
-    P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, measurePixelText, drawParchmentBox,
+    P1, drawRing, drawStar, drawPixelText, drawPixelTextCentered, measurePixelText, drawJustifiedPixelText, drawParchmentBox,
     ActorAnimator, IrisTransition, DialogueBox, TutorialModal, GameHUD, StandardTutorialCards
   } = E;
   const R = Math.round;
@@ -5938,15 +5938,20 @@
       this._rafId = null;
       if (!this.running) return;
       this._inLoop = true;
-      const currentNow = typeof now === 'number' && Number.isFinite(now) ? now : (typeof performance !== 'undefined' ? performance.now() : Date.now());
-      const prevNow = typeof this.lastNow === 'number' && Number.isFinite(this.lastNow) ? this.lastNow : currentNow;
-      const dt = Math.min(0.1, Math.max(0.001, (currentNow - prevNow) / 1000));
-      this.lastNow = currentNow;
-      this.update(dt);
-      this.render();
-      this._inLoop = false;
-      if (this.running) {
-        this._rafId = requestAnimationFrame((n) => this.loop(n));
+      try {
+        const currentNow = typeof now === 'number' && Number.isFinite(now) ? now : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        const prevNow = typeof this.lastNow === 'number' && Number.isFinite(this.lastNow) ? this.lastNow : currentNow;
+        const dt = Math.min(0.1, Math.max(0.001, (currentNow - prevNow) / 1000));
+        this.lastNow = currentNow;
+        this.update(dt);
+        this.render();
+      } catch (err) {
+        console.error('[CaveChapter1.loop]', err);
+      } finally {
+        this._inLoop = false;
+        if (this.running) {
+          this._rafId = requestAnimationFrame((n) => this.loop(n));
+        }
       }
     }
   };

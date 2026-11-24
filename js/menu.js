@@ -290,7 +290,9 @@
   }
   buttons.forEach((btn, idx) => {
     btn.addEventListener('pointerenter', () => activateMenuHover(idx));
-    btn.addEventListener('focus', () => activateMenuHover(idx));
+    btn.addEventListener('focus', () => {
+      if (btn.matches?.(':focus-visible')) activateMenuHover(idx);
+    });
     btn.addEventListener('pointerleave', () => {
       if (hoveredChoice === idx) hoveredChoice = -1;
     });
@@ -381,23 +383,37 @@
   }
 
   function drawMenuSelector(f12) {
-    if (hoveredChoice < 0 || hoveredChoice > 4) return;
-    // Button vertical centers in 320x180 space matching .menu-choice tops (36.2%, 44.8%, 53.4%, 62.0%, 70.6% with height 6.8%)
-    const ys = [71, 87, 102, 118, 133];
+    if (hoveredChoice < 0 || hoveredChoice >= buttons.length) return;
+    const btn = buttons[hoveredChoice];
+    if (!btn) return;
+    const targetEl = btn.querySelector('.menu-btn-art') || btn;
+    const cRect = canvas.getBoundingClientRect();
+    const bRect = targetEl.getBoundingClientRect();
+    if (!cRect.width || !cRect.height || !bRect.width || !bRect.height) return;
+
+    const scaleX = W / cRect.width;
+    const scaleY = H / cRect.height;
+    const rawX = (bRect.left - cRect.left) * scaleX;
+    const rawY = (bRect.top - cRect.top) * scaleY;
+    const rawW = bRect.width * scaleX;
+    const rawH = bRect.height * scaleY;
+
     const cols = ['#a8ff66', '#5ef2ff', '#9ef0ff', '#ff8ae2', '#ffd35a'];
-    const bws = [76, 72, 60, 64, 46];
-    const cy = ys[hoveredChoice];
     const col = cols[hoveredChoice] || '#9ef0ff';
-    const bw = bws[hoveredChoice] || 72;
+    const bx = Math.max(12, Math.round(rawX - 3));
+    const by = Math.max(2, Math.round(rawY - 2));
+    const bw = Math.max(24, Math.round(rawW + 6));
+    const bh = Math.max(10, Math.round(rawH + 3));
+    const cy = Math.round(rawY + rawH * 0.5);
     const bob = [0, -1, 0, 1][f12 % 4];
     const shift = (f12 & 1) ? 1 : 0;
 
     // Seta luminosa em pixel art apontando para a opção sob o mouse com espaçamento elegante
-    dia(8 + shift, cy + bob, 2, '#ffffff', col);
-    P1(12 + shift, cy + bob, '#ffffff');
+    const arrowX = Math.max(4, bx - 10) + shift;
+    dia(arrowX, cy + bob, 2, '#ffffff', col);
+    P1(arrowX + 4, cy + bob, '#ffffff');
 
     // Colchetes de canto em pixel art + trilha energética sob o botão focado
-    const bx = 18, by = cy - 7, bh = 14;
     ctx.fillStyle = col;
     // Canto superior esquerdo e inferior esquerdo
     ctx.fillRect(bx, by, 5, 1);
@@ -410,10 +426,11 @@
     ctx.fillRect(bx + bw - 4, by + bh, 5, 1);
     ctx.fillRect(bx + bw, by + bh - 3, 1, 4);
 
-    // Linha de energia animada + estrelas nas pontas com distância confortável do texto
+    // Linha de energia animada + estrela na ponta direita
+    const trackSpan = Math.max(1, bw - 20);
     ctx.fillRect(bx + 4, by + bh, bw - 8, 1);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(bx + 6 + ((f12 * 5) % (bw - 20)), by + bh, 10, 1);
+    ctx.fillRect(bx + 6 + ((f12 * 5) % trackSpan), by + bh, Math.min(10, Math.max(4, bw - 12)), 1);
     star(bx + bw + 6 - shift, cy, (f12 & 1) ? 2 : 1, '#ffffff', col);
   }
 
@@ -428,7 +445,7 @@
     last = now;
     const reduced = document.body.classList.contains('reduce-motion') || motion.matches;
 
-    if (!home.hidden && !document.hidden && !document.querySelector('dialog[open]')) {
+    if (!home.hidden && !document.hidden) {
       if (reduced) {
         renderStaticFrame();
       } else {

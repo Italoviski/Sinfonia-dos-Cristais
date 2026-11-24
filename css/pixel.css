@@ -288,19 +288,20 @@ dialog {
   font-family: var(--game-font);
 }
 dialog::backdrop { background: #030720c9; backdrop-filter: blur(5px); }
-.settings-dialog { width: min(720px, 94vw); }
+.settings-dialog { width: min(680px, 92vw); }
 .settings-dialog.crystal-settings-dialog {
-  max-width: min(720px, 94vw);
+  max-width: min(680px, 92vw);
   width: 100%;
   max-height: 90vh;
   padding: 0;
-  border: 2px solid #68d8ff;
+  border: 2px solid rgba(168, 121, 255, 0.72);
   border-radius: 14px;
-  background: radial-gradient(circle at 50% 0%, #1e153f 0%, #0e0921 60%, #060312 100%);
+  background: linear-gradient(165deg, rgba(38, 23, 72, 0.92) 0%, rgba(20, 12, 44, 0.95) 55%, rgba(11, 7, 26, 0.97) 100%);
+  backdrop-filter: blur(10px);
   box-shadow:
-    0 0 0 3px rgba(124, 77, 255, 0.4),
-    0 20px 60px rgba(0, 0, 0, 0.92),
-    0 0 24px rgba(104, 216, 255, 0.22);
+    0 0 0 2px rgba(104, 216, 255, 0.28),
+    0 24px 64px rgba(0, 0, 0, 0.88),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   overflow: hidden;
 }
 .crystal-settings-card {
@@ -308,36 +309,39 @@ dialog::backdrop { background: #030720c9; backdrop-filter: blur(5px); }
   display: flex;
   flex-direction: column;
   max-height: 88vh;
-  padding: 16px 20px 16px;
-  gap: 12px;
+  padding: 16px 22px 16px;
+  gap: 0;
 }
 .crystal-settings-header {
   text-align: center;
-  border-bottom: 1px solid rgba(104, 216, 255, 0.3);
-  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(168, 121, 255, 0.32);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
 }
 .crystal-settings-title-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
+  gap: 8px;
 }
 .crystal-settings-title {
+  grid-column: 2;
   margin: 0;
-  font-size: clamp(20px, 3.2vw, 30px);
-  background: linear-gradient(90deg, #ffffff, #80d8ff, #ea80fc, #ffffff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 1px 1px #000;
+  font-size: clamp(22px, 3vw, 28px);
+  color: #ffffff;
+  text-shadow:
+    0 2px 0 #140a2e,
+    0 0 12px rgba(124, 77, 255, 0.55);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 .crystal-close-x {
-  background: #503887 !important;
+  grid-column: 3;
+  background: rgba(80, 56, 135, 0.88) !important;
   border: 1px solid #a879ff !important;
   color: #ffffff !important;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 20px;
   width: 32px;
   height: 32px;
@@ -346,10 +350,13 @@ dialog::backdrop { background: #030720c9; backdrop-filter: blur(5px); }
   align-items: center;
   justify-content: center;
   line-height: 1;
+  transition: background .15s, border-color .15s, transform .1s;
 }
-.crystal-close-x:hover {
+.crystal-close-x:hover,
+.crystal-close-x:focus-visible {
   background: #7c4dff !important;
   border-color: #d1b5ff !important;
+  transform: scale(1.05);
 }
 
 .panel-title {
@@ -374,50 +381,57 @@ dialog::backdrop { background: #030720c9; backdrop-filter: blur(5px); }
 
 .settings-tabs {
   display: flex;
-  padding: 4px 12px 0;
-  gap: 8px;
-  border-bottom: 2px solid rgba(104, 216, 255, 0.35);
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+  border-bottom: 2px solid rgba(168, 121, 255, 0.45);
+  box-sizing: border-box;
+  width: 100%;
 }
 .settings-tabs button {
   flex: 1;
-  border: 1px solid rgba(104, 216, 255, 0.35);
+  border: 1px solid rgba(168, 121, 255, 0.38);
   border-bottom: none;
   border-radius: 8px 8px 0 0;
-  background: linear-gradient(180deg, #1c1538, #120e26);
+  background: linear-gradient(180deg, rgba(38, 26, 74, 0.85), rgba(22, 15, 48, 0.92));
   padding: 10px 12px;
-  color: #80d8ff;
+  color: #c8b6ff;
   text-shadow: var(--txt-outline-sm);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-family: var(--game-font);
   cursor: pointer;
-  transition: all .16s ease;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
 }
 .settings-tabs button:hover,
 .settings-tabs button:focus-visible {
-  background: linear-gradient(180deg, #261c4d, #181335);
+  background: linear-gradient(180deg, rgba(56, 38, 108, 0.94), rgba(30, 20, 62, 0.96));
   color: #ffffff;
-  border-color: #92e8ff;
+  border-color: #a879ff;
   outline: none;
 }
 .settings-tabs button[aria-selected="true"] {
-  background: linear-gradient(180deg, #2e205f, #181235);
+  background: linear-gradient(180deg, rgba(72, 48, 134, 0.95), rgba(32, 21, 66, 0.96));
   color: #ffffff;
   border-color: #68d8ff;
-  box-shadow: 0 -2px 10px rgba(104, 216, 255, 0.28);
+  box-shadow: 0 -2px 12px rgba(104, 216, 255, 0.22);
   position: relative;
   top: 2px;
-  border-bottom: 2px solid #181235;
+  border-bottom: 2px solid #201542;
 }
 
 [role="tabpanel"] {
-  margin: 0 12px;
-  padding: 18px 20px;
-  border: 1px solid rgba(104, 216, 255, 0.35);
+  margin: 0;
+  padding: 16px 20px;
+  border: 1px solid rgba(168, 121, 255, 0.45);
   border-top: none;
   border-radius: 0 0 10px 10px;
-  background: linear-gradient(180deg, rgba(24, 18, 48, 0.88), rgba(14, 10, 30, 0.94));
-  min-height: 200px;
+  background: linear-gradient(180deg, rgba(32, 21, 66, 0.9), rgba(18, 12, 40, 0.94));
+  min-height: 204px;
+  max-height: 52vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 .setting-row {
   display: flex;
@@ -508,7 +522,7 @@ dialog::backdrop { background: #030720c9; backdrop-filter: blur(5px); }
 .crystal-settings-footer {
   display: flex;
   justify-content: center;
-  padding: 10px 12px 4px;
+  padding: 14px 0 2px;
 }
 .settings-footer { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 24px 28px; }
 .keyboard-guide {
