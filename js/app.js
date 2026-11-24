@@ -8,12 +8,21 @@
   let records = {};
   let current = 1;
   let hasSave = false;
+  let unlockedTutorials = [];
+  let lastViewedTutorialKey = null;
+  let guideIntroShown = false;
   let setupCompleted = false;
   let playerName = '';
   let playerGender = 'male';
   let characterCreated = false;
   let screen = 'home';
   let toastTimer = null;
+
+  function cleanTutorialKeys(list) {
+    return Array.isArray(list)
+      ? [...new Set(list.filter(k => typeof k === 'string' && k.trim().length > 0).map(k => k.trim()))]
+      : [];
+  }
 
   let save = null;
   try {
@@ -33,6 +42,11 @@
       records = loadedRecords;
       current = Math.min(21, Math.max(1, Number(save.current) || 1));
       hasSave = Boolean(save.hasSave || completed.length > 0 || current > 1 || Object.keys(records).length > 0);
+      unlockedTutorials = cleanTutorialKeys(save.unlockedTutorials);
+      lastViewedTutorialKey = (typeof save.lastViewedTutorialKey === 'string' && save.lastViewedTutorialKey.trim())
+        ? save.lastViewedTutorialKey.trim()
+        : null;
+      guideIntroShown = Boolean(save.guideIntroShown || completed.includes(1));
     }
   }
 
@@ -104,6 +118,9 @@
         current,
         records,
         hasSave,
+        unlockedTutorials,
+        lastViewedTutorialKey,
+        guideIntroShown,
         setupCompleted,
         playerName,
         playerGender,
@@ -113,6 +130,57 @@
     } catch {
       return false;
     }
+  }
+
+  function syncTutorialsToEngine() {
+    const hud = window.TruePixelEngine?.GameHUD;
+    if (hud && typeof hud.getTutorialKeysForCompleted === 'function') {
+      const fromCompleted = hud.getTutorialKeysForCompleted(completed);
+      if (fromCompleted.length) {
+        unlockedTutorials = cleanTutorialKeys([...unlockedTutorials, ...fromCompleted]);
+      }
+    }
+    hud?.syncTutorialProgress?.({
+      unlockedTutorials,
+      lastViewedTutorialKey,
+      guideIntroShown,
+      completed,
+      current
+    });
+  }
+
+  function recordTutorialViewed(key, fromEngine = false) {
+    if (typeof key !== 'string' || !key.trim()) return null;
+    const cleanKey = key.trim();
+    const hud = window.TruePixelEngine?.GameHUD;
+    const nextList = [...unlockedTutorials, cleanKey];
+    if (hud && typeof hud.getGuideCatalog === 'function') {
+      const cat = hud.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        for (const item of (cat[wKey]?.items || [])) {
+          if (Array.isArray(item.linkedKeys) && item.linkedKeys.includes(cleanKey)) {
+            nextList.push(item.key);
+          }
+        }
+      }
+    }
+    unlockedTutorials = cleanTutorialKeys(nextList);
+    lastViewedTutorialKey = cleanKey;
+    hasSave = true;
+    if (!fromEngine) {
+      syncTutorialsToEngine();
+    }
+    persist();
+    return cleanKey;
+  }
+
+  function markGuideIntroShown(fromEngine = false) {
+    guideIntroShown = true;
+    if (!fromEngine) {
+      syncTutorialsToEngine();
+    }
+    persist();
+    return true;
   }
 
   function updateProgressLabels() {
@@ -333,8 +401,14 @@
     records = {};
     current = 1;
     hasSave = true;
+    unlockedTutorials = [];
+    lastViewedTutorialKey = null;
+    guideIntroShown = false;
+    window.TruePixelEngine?.TutorialModal?.seenKeys?.clear?.();
     if (window.TruePixelEngine?.GameHUD) {
       window.TruePixelEngine.GameHUD.diamonds = 0;
+      window.TruePixelEngine.GameHUD.guideIntroActive = false;
+      window.TruePixelEngine.GameHUD.guideIntroOnDone = null;
     }
     if (window.TruePixelEngine?.DialogueBox?.sockets) {
       window.TruePixelEngine.DialogueBox.sockets.fairy = false;
@@ -343,6 +417,7 @@
       window.TruePixelEngine.DialogueBox.sockets.caatinga = false;
     }
     syncTruePixelSockets();
+    syncTutorialsToEngine();
     persist();
     updateProgressLabels();
     renderMap();
@@ -364,10 +439,16 @@
           records = loadedRecords;
           current = Math.min(21, Math.max(1, Number(savedRaw.current) || 1));
           hasSave = true;
+          unlockedTutorials = cleanTutorialKeys(savedRaw.unlockedTutorials);
+          lastViewedTutorialKey = (typeof savedRaw.lastViewedTutorialKey === 'string' && savedRaw.lastViewedTutorialKey.trim())
+            ? savedRaw.lastViewedTutorialKey.trim()
+            : null;
+          guideIntroShown = Boolean(savedRaw.guideIntroShown || completed.includes(1));
         }
       }
     } catch {}
     syncTruePixelSockets();
+    syncTutorialsToEngine();
     updateProgressLabels();
     goto('map');
     const done20 = completed.filter(id => id <= 20).length;
@@ -505,6 +586,7 @@
     }
     hasSave = true;
     syncTruePixelSockets();
+    syncTutorialsToEngine();
     persist();
     updateProgressLabels();
     if (screen === 'map') renderMap();
@@ -1066,6 +1148,7 @@
   }
 
   syncTruePixelSockets();
+  syncTutorialsToEngine();
   applySettings();
   if (window.TruePixelEngine?.GameHUD) {
     window.TruePixelEngine.GameHUD.onGodModeChange = (active) => {
@@ -1098,6 +1181,8 @@
     startNewGame,
     continueGame,
     syncProgress,
+    recordTutorialViewed,
+    markGuideIntroShown,
     notify,
     openSettings,
     openLevelList,
@@ -1117,6 +1202,7 @@
       }
       hasSave = true;
       syncTruePixelSockets();
+      syncTutorialsToEngine();
       persist();
       renderMap();
     },
@@ -1126,6 +1212,9 @@
         records: { ...records },
         current,
         hasSave,
+        unlockedTutorials: [...unlockedTutorials],
+        lastViewedTutorialKey,
+        guideIntroShown,
         setupCompleted,
         playerName: playerName || 'Protagonista',
         playerGender,

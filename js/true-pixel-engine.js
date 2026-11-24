@@ -238,7 +238,11 @@
     'º': ['###', '#.#', '###', '...', '###', '...', '...'],
     'ª': ['###', '#.#', '###', '...', '###', '...', '...'],
     '▶': ['#...', '##..', '###.', '####', '###.', '##..', '#...'],
-    '◀': ['...#', '..##', '.###', '####', '.###', '..##', '...#']
+    '◀': ['...#', '..##', '.###', '####', '.###', '..##', '...#'],
+    '✓': ['....#', '...#.', '..#..', '#.#..', '.#...', '.....', '.....'],
+    '×': ['.....', '#...#', '.#.#.', '..#..', '.#.#.', '#...#', '.....'],
+    '⚡': ['..##.', '.##..', '####.', '..##.', '.##..', '#....', '.....'],
+    '✋': ['.#.#.', '#####', '#####', '#####', '.###.', '.###.', '.....']
   };
 
   const ACCENT_MAP = {
@@ -8096,21 +8100,45 @@
     pageDuration: 3.5,
     lastRenderTime: null,
     practiceState: null,
+    practiceCompleted: false,
 
-    initPracticeState() {
-      const pr = { x: 34, y: 38, w: 252, h: 66 };
+    isInteractiveCard(card = this.cards[this.currentIndex]) {
+      return Boolean(card && card.interactivePractice);
+    },
+
+    markPracticeCompleted(msg = null) {
+      const firstTime = !this.practiceCompleted;
+      this.practiceCompleted = true;
+      if (this.practiceState) {
+        this.practiceState.completed = true;
+        this.practiceState.feedbackFlash = 0.7;
+        if (msg) this.practiceState.statusText = msg;
+      }
+      if (firstTime) {
+        GameHUD.playSfx('clink');
+      }
+    },
+
+    initPracticeState(preserveCompleted = false) {
+      const wasCompleted = preserveCompleted ? Boolean(this.practiceCompleted) : false;
+      const pr = { x: 34, y: 37, w: 252, h: 71 };
+      this.practiceCompleted = wasCompleted;
       this.practiceState = {
         practiceRect: pr,
-        resetBtnRect: { x: pr.x + 4, y: pr.y + 4, w: 48, h: 12 },
-        eq: { x: 204, y: pr.y + 34, expanded: false },
+        resetBtnRect: { x: pr.x + 4, y: pr.y + 3, w: 44, h: 11 },
+        eq: { x: 228, y: pr.y + 32, expanded: false },
         pieces: [
-          { id: 'p1', type: 'rose', value: 2, x: 76, y: pr.y + 30, inEq: false },
-          { id: 'p2', type: 'white', value: 1, x: 112, y: pr.y + 42, inEq: false },
-          { id: 'p3', type: 'rose', value: 1, x: 204, y: pr.y + 34, inEq: true }
+          { id: 'p1', type: 'rose', value: 2, x: 68, y: pr.y + 52, inEq: false },
+          { id: 'p2', type: 'white', value: 1, x: 116, y: pr.y + 52, inEq: false },
+          { id: 'p3', type: 'rose', value: 1, x: 228, y: pr.y + 32, inEq: true }
         ],
         dragPiece: null,
         eqTapStart: null,
-        statusText: 'Arraste um cristal para a Equação ou toque nela!'
+        completed: wasCompleted,
+        feedbackFlash: 0,
+        statusText: wasCompleted
+          ? 'Prática concluída! Continue testando ou avance!'
+          : 'Arraste 1 cristal p/ a Equação ou abra e organize!'
       };
       this.layoutPracticeEquation();
     },
@@ -8121,7 +8149,7 @@
       const inList = ps.pieces.filter(p => p.inEq);
       if (!inList.length) return;
       const eq = ps.eq;
-      const step = eq.expanded ? 18 : 11;
+      const step = eq.expanded ? 16 : 10;
       const startX = eq.x - ((inList.length - 1) * step) / 2;
       inList.forEach((p, idx) => {
         if (ps.dragPiece !== p) {
@@ -8137,7 +8165,7 @@
       const rb = ps.resetBtnRect;
       if (lx >= rb.x && lx <= rb.x + rb.w && ly >= rb.y && ly <= rb.y + rb.h) {
         GameHUD.playSfx('click');
-        this.initPracticeState();
+        this.initPracticeState(true);
         return true;
       }
       for (let i = ps.pieces.length - 1; i >= 0; i--) {
@@ -8145,11 +8173,12 @@
         if (p.inEq && !ps.eq.expanded) continue;
         if (Math.hypot(lx - p.x, ly - p.y) <= 13) {
           ps.dragPiece = p;
+          ps.feedbackFlash = 0.25;
           GameHUD.playSfx(p.type === 'rose' ? 'roseGrab' : 'quartzGrab');
           return true;
         }
       }
-      const rad = ps.eq.expanded ? 34 : 20;
+      const rad = ps.eq.expanded ? 28 : 19;
       if (Math.hypot(lx - ps.eq.x, ly - ps.eq.y) <= rad) {
         ps.eqTapStart = { x: lx, y: ly, origX: ps.eq.x, origY: ps.eq.y, moved: false };
         return true;
@@ -8163,14 +8192,16 @@
       const pr = ps.practiceRect;
       if (ps.dragPiece) {
         ps.dragPiece.x = clamp(lx, pr.x + 12, pr.x + pr.w - 12);
-        ps.dragPiece.y = clamp(ly, pr.y + 18, pr.y + pr.h - 10);
+        ps.dragPiece.y = clamp(ly, pr.y + 24, pr.y + pr.h - 10);
         return true;
       }
       if (ps.eqTapStart) {
         if (Math.hypot(lx - ps.eqTapStart.x, ly - ps.eqTapStart.y) >= 4) {
           ps.eqTapStart.moved = true;
-          ps.eq.x = clamp(ps.eqTapStart.origX + (lx - ps.eqTapStart.x), pr.x + 64, pr.x + pr.w - 28);
-          ps.eq.y = clamp(ps.eqTapStart.origY + (ly - ps.eqTapStart.y), pr.y + 24, pr.y + pr.h - 18);
+          const eqMinY = ps.eq.expanded ? (pr.y + 27) : (pr.y + 22);
+          const eqMaxY = ps.eq.expanded ? (pr.y + pr.h - 36) : (pr.y + pr.h - 27);
+          ps.eq.x = clamp(ps.eqTapStart.origX + (lx - ps.eqTapStart.x), pr.x + 70, pr.x + pr.w - 28);
+          ps.eq.y = clamp(ps.eqTapStart.origY + (ly - ps.eqTapStart.y), eqMinY, eqMaxY);
           this.layoutPracticeEquation();
         }
         return true;
@@ -8186,11 +8217,12 @@
         ps.eqTapStart = null;
         if (wasTap) {
           ps.eq.expanded = !ps.eq.expanded;
+          ps.feedbackFlash = 0.35;
           GameHUD.playSfx(ps.eq.expanded ? 'equationExpand' : 'equationCollapse');
           this.layoutPracticeEquation();
           ps.statusText = ps.eq.expanded
-            ? 'Expandida! Arraste p/ organizar ou remover!'
-            : 'Fechada! Toque para expandir novamente.';
+            ? 'Aberta! Arraste um cristal p/ organizar ou remover!'
+            : 'Fechada! Toque para abrir ou arraste um cristal!';
         } else {
           GameHUD.playSfx('quartzDrop');
         }
@@ -8199,20 +8231,20 @@
       if (ps.dragPiece) {
         const p = ps.dragPiece;
         ps.dragPiece = null;
-        const dropRad = ps.eq.expanded ? 34 : 22;
+        const dropRad = ps.eq.expanded ? 29 : 21;
         const overEq = Math.hypot(p.x - ps.eq.x, p.y - ps.eq.y) <= dropRad;
         if (overEq && !p.inEq) {
           p.inEq = true;
           GameHUD.playSfx('equationExpand');
-          ps.statusText = 'Cristal adicionado! Toque na Equação p/ expandir!';
+          this.markPracticeCompleted('Muito bem! Cristal adicionado à Equação!');
         } else if (!overEq && p.inEq) {
           p.inEq = false;
           GameHUD.playSfx('quartzDrop');
-          ps.statusText = 'Cristal removido da Equação!';
+          this.markPracticeCompleted('Ótimo! Cristal removido da Equação!');
         } else if (overEq && p.inEq) {
           ps.pieces.sort((a, b) => a.x - b.x);
           GameHUD.playSfx('quartzDrop');
-          ps.statusText = 'Ordem atualizada dentro da Equação!';
+          this.markPracticeCompleted('Ótimo! Ordem atualizada na Equação!');
         } else {
           GameHUD.playSfx('quartzDrop');
         }
@@ -8223,20 +8255,41 @@
     },
 
     renderEquationPractice(ctx, vx, vy, vw, vh, t) {
-      ctx.fillStyle = '#181c2b';
+      const ps = this.practiceState;
+      if (!ps) return;
+      ps.practiceRect = { x: vx, y: vy, w: vw, h: vh };
+      ps.resetBtnRect = { x: vx + 4, y: vy + 3, w: 44, h: 11 };
+
+      const reduced = Boolean(GameHUD.reducedMotion);
+      const pulse = reduced ? 0 : (Math.floor(t * 4) & 1);
+      const done = Boolean(this.practiceCompleted || ps.completed);
+      const flash = (ps.feedbackFlash || 0) > 0;
+
+      // Fundo da arena interativa
+      ctx.fillStyle = flash ? '#1c2842' : '#14192b';
       ctx.fillRect(vx, vy, vw, vh);
-      ctx.fillStyle = '#57688a';
+
+      // Borda ativa pulsante convidativa (destaca que o quadro é jogável)
+      const borderCol = done
+        ? (pulse ? '#86efac' : '#4ade80')
+        : (flash ? '#ffffff' : (pulse ? '#fbbf24' : '#38bdf8'));
+      ctx.fillStyle = borderCol;
       ctx.fillRect(vx, vy, vw, 1);
       ctx.fillRect(vx, vy + vh - 1, vw, 1);
       ctx.fillRect(vx, vy, 1, vh);
       ctx.fillRect(vx + vw - 1, vy, 1, vh);
+      // Cantos reforçados para evidenciar área interativa
+      ctx.fillStyle = done ? '#4ade80' : '#ffea31';
+      ctx.fillRect(vx + 1, vy + 1, 5, 1);
+      ctx.fillRect(vx + 1, vy + 1, 1, 5);
+      ctx.fillRect(vx + vw - 6, vy + 1, 5, 1);
+      ctx.fillRect(vx + vw - 2, vy + 1, 1, 5);
+      ctx.fillRect(vx + 1, vy + vh - 2, 5, 1);
+      ctx.fillRect(vx + 1, vy + vh - 6, 1, 5);
+      ctx.fillRect(vx + vw - 6, vy + vh - 2, 5, 1);
+      ctx.fillRect(vx + vw - 2, vy + vh - 6, 1, 5);
 
-      const ps = this.practiceState;
-      if (!ps) return;
-      ps.practiceRect = { x: vx, y: vy, w: vw, h: vh };
-      ps.resetBtnRect = { x: vx + 4, y: vy + 4, w: 48, h: 12 };
-
-      // Botão Limpar / Reiniciar Treino
+      // Botão Limpar / Reiniciar Treino (canto superior esquerdo)
       const rb = ps.resetBtnRect;
       ctx.fillStyle = '#14111c';
       ctx.fillRect(rb.x - 1, rb.y - 1, rb.w + 2, rb.h + 2);
@@ -8246,19 +8299,38 @@
       ctx.fillRect(rb.x, rb.y, rb.w, 1);
       drawPixelTextCentered(ctx, '↺ Reset', rb.x + rb.w / 2, rb.y + 2, '#ffffff', '#000000', rb.w - 4, 8);
 
-      drawPixelText(ctx, ps.statusText, vx + 58, vy + 6, '#92e8ff', '#000000', vw - 64, 8);
+      // Selo destacado "✋ PRÁTICA INTERATIVA" (bem visível, 1 linha limpa, sem colidir com o círculo da equação)
+      const badge = { x: vx + 52, y: vy + 3, w: 112, h: 11 };
+      GameHUD.drawInteractivePracticeBadge(ctx, badge, done, t);
 
-      // Aura da Equação Prática
+      // Mensagem de feedback imediato logo abaixo da barra superior (bem acima das bolinhas dos cristais)
+      drawPixelText(ctx, ps.statusText, vx + 6, vy + 18, done ? '#86efac' : '#92e8ff', '#000000', 158, 8);
+
+      // Seta tracejada convidativa enquanto ainda não praticou
+      if (!done) {
+        const shift = reduced ? 0 : (Math.floor(t * 6) % 6);
+        for (let sx = 140; sx <= 184; sx += 8) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(sx + shift, R(vy + 49), 3, 1);
+        }
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(190, R(vy + 47), 1, 5);
+        ctx.fillRect(191, R(vy + 48), 1, 3);
+        ctx.fillRect(192, R(vy + 49), 1, 1);
+      }
+
+      // Aura da Equação Prática (rótulo SEMPRE fora e abaixo da borda inferior do círculo)
       const eq = ps.eq;
-      const auraR = eq.expanded ? 30 : 18;
+      const auraR = eq.expanded ? 24 : 16;
       drawRing(ctx, R(eq.x), R(eq.y), auraR, eq.expanded ? '#f472b6' : '#cfa3c4');
       if (eq.expanded) {
-        drawRing(ctx, R(eq.x), R(eq.y), auraR + 2, 'rgba(244, 114, 182, 0.4)');
+        drawRing(ctx, R(eq.x), R(eq.y), auraR + 2, 'rgba(244, 114, 182, 0.45)');
       }
       const eqTag = eq.expanded ? 'ABERTA (arraste)' : 'TOQUE P/ ABRIR';
-      drawPixelTextCentered(ctx, eqTag, R(eq.x), R(eq.y + auraR - 1), eq.expanded ? '#4ade80' : '#fbbf24', '#000000', 110, 7);
+      const eqTagY = R(eq.y + auraR + 4);
+      drawPixelTextCentered(ctx, eqTag, R(eq.x), eqTagY, eq.expanded ? '#4ade80' : '#fbbf24', '#000000', 104, 7);
 
-      // Cristais do treino
+      // Cristais do treino (afastados para baixo, longe do botão ↺ Reset)
       for (const p of ps.pieces) {
         const spr = p.type === 'rose' ? SPR_ROSE : SPR_PURE;
         const orbCol = p.type === 'rose' ? '#ff99cc' : '#a8d8e6';
@@ -8283,11 +8355,16 @@
 
     isPageLocked() {
       if (GameHUD && GameHUD.godMode) return false;
+      const card = this.cards[this.currentIndex];
+      if (card && card.interactivePractice) {
+        return !this.practiceCompleted;
+      }
       return this.pageElapsed < this.pageDuration;
     },
 
     open(cards, onFinish = null, onlyNew = false) {
-      const list = (Array.isArray(cards) ? cards : [cards]).filter(c => {
+      const rawList = Array.isArray(cards) ? cards : [cards];
+      const list = rawList.filter(c => {
         if (!onlyNew || !c.id) return true;
         if (this.seenKeys.has(c.id)) return false;
         return true;
@@ -8304,12 +8381,14 @@
       this.pageElapsed = 0;
       this.pageDuration = this.calculatePageDuration(list[0]);
       this.lastRenderTime = null;
+      this.practiceCompleted = false;
       if (list[0].interactivePractice === 'equation_practice') {
-        this.initPracticeState();
+        this.initPracticeState(false);
       } else {
         this.practiceState = null;
       }
       if (list[0].id) this.seenKeys.add(list[0].id);
+      GameHUD?.recordTutorialViewed?.(rawList);
       GameHUD.playSfx('tutorialOpen');
     },
 
@@ -8320,6 +8399,7 @@
       this.pageElapsed = 0;
       this.lastRenderTime = null;
       this.practiceState = null;
+      this.practiceCompleted = false;
       this.onFinish = null;
       this.onDone = null;
     },
@@ -8333,8 +8413,9 @@
         this.pageElapsed = 0;
         this.pageDuration = this.calculatePageDuration(cur);
         this.lastRenderTime = null;
+        this.practiceCompleted = false;
         if (cur && cur.interactivePractice === 'equation_practice') {
-          this.initPracticeState();
+          this.initPracticeState(false);
         } else {
           this.practiceState = null;
         }
@@ -8345,6 +8426,7 @@
       this.pageElapsed = 0;
       this.lastRenderTime = null;
       this.practiceState = null;
+      this.practiceCompleted = false;
       GameHUD.playSfx('tutorialClose');
       const cb = this.onFinish || this.onDone;
       this.onFinish = null;
@@ -8367,7 +8449,16 @@
       const onCard = (lx >= 24 && lx <= 296 && ly >= 18 && ly <= 162);
       const allowCardTap = !(card && card.interactivePractice);
       if (onBtn || (allowCardTap && onCard)) {
-        if (this.isPageLocked()) return false;
+        if (this.isPageLocked()) {
+          if (card && card.interactivePractice) {
+            GameHUD.playSfx('error');
+            if (this.practiceState) {
+              this.practiceState.feedbackFlash = 0.45;
+              this.practiceState.statusText = 'Pratique 1× acima antes de avançar!';
+            }
+          }
+          return false;
+        }
         return this.nextStep();
       }
       return false;
@@ -8722,6 +8813,9 @@
         let dt = t - this.lastRenderTime;
         if (dt > 0 && dt < 0.5) {
           this.pageElapsed += dt;
+          if (this.practiceState && this.practiceState.feedbackFlash > 0) {
+            this.practiceState.feedbackFlash = Math.max(0, this.practiceState.feedbackFlash - dt);
+          }
         }
       }
       this.lastRenderTime = t;
@@ -8742,11 +8836,14 @@
       drawPixelText(ctx, card.title || 'Como Jogar', cx + 10, cy + 6, '#ffea31', '#000000', 168, 9);
       drawPixelText(ctx, stepLabel, cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
 
+      const isInteractive = Boolean(card.interactivePractice);
+      const isLocked = this.isPageLocked();
+
       // Suporte à etapa interativa de treino (Equação Cristalina) ou vinheta ampliada (Fração Cristalina)
       if (card.interactivePractice === 'equation_practice') {
-        if (!this.practiceState) this.initPracticeState();
-        this.renderEquationPractice(ctx, cx + 10, cy + 20, cw - 20, 66, t);
-        drawJustifiedPixelText(ctx, card.body || '', cx + 12, cy + 90, cw - 24, 10, '#ffea31', '#000000');
+        if (!this.practiceState) this.initPracticeState(false);
+        this.renderEquationPractice(ctx, cx + 10, cy + 19, cw - 20, 71, t);
+        drawJustifiedPixelText(ctx, card.body || '', cx + 12, cy + 93, cw - 24, 10, '#ffea31', '#000000');
       } else {
         const vigH = card.largeVignette ? 54 : 36;
         const bodyY = card.largeVignette ? (cy + 78) : (cy + 62);
@@ -8755,36 +8852,59 @@
         drawJustifiedPixelText(ctx, card.body || '', cx + 12, bodyY, cw - 24, bodyLH, '#ffea31', '#000000');
       }
 
-      // Barra de progresso de leitura infantil na base inferior esquerda
-      const barX = cx + 12;
-      const barY = cy + ch - 15;
-      const barW = cw - 108;
-      const barH = 5;
-      const duration = Math.max(0.1, this.pageDuration || 3.0);
-      const ratio = Math.max(0, Math.min(1, this.pageElapsed / duration));
-      const isLocked = this.isPageLocked();
+      if (isInteractive) {
+        // Páginas interativas: SEM barra de timer! Indicador de objetivo prático na base esquerda
+        const ob = { x: cx + 12, y: cy + ch - 20, w: cw - 108, h: 15 };
+        const done = Boolean(this.practiceCompleted);
+        const pulseOb = GameHUD.reducedMotion ? 0 : (Math.floor(t * 4) & 1);
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(ob.x - 1, ob.y - 1, ob.w + 2, ob.h + 2);
+        ctx.fillStyle = done ? '#0e3422' : (GameHUD.godMode ? '#281845' : '#1f1c36');
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.fillStyle = done ? '#4ade80' : (GameHUD.godMode ? '#ffea31' : (pulseOb ? '#fbbf24' : '#38bdf8'));
+        ctx.fillRect(ob.x, ob.y, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y + ob.h - 1, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y, 1, ob.h);
+        ctx.fillRect(ob.x + ob.w - 1, ob.y, 1, ob.h);
+        const obText = done
+          ? '✓ Prática concluída!'
+          : (GameHUD.godMode ? '⚡ God Mode: liberado' : 'Pratique 1× para liberar');
+        const obCol = done ? '#86efac' : (GameHUD.godMode ? '#ffea31' : '#ffe887');
+        drawPixelTextCentered(ctx, obText, ob.x + ob.w / 2, ob.y + 4, obCol, '#000000', ob.w - 6, 8);
+        if (done) {
+          drawStar(ctx, ob.x + 8, ob.y + 7, 2, '#ffffff', '#4ade80');
+        }
+      } else {
+        // Barra de progresso de leitura infantil na base inferior esquerda (cards de leitura)
+        const barX = cx + 12;
+        const barY = cy + ch - 15;
+        const barW = cw - 108;
+        const barH = 5;
+        const duration = Math.max(0.1, this.pageDuration || 3.0);
+        const ratio = Math.max(0, Math.min(1, this.pageElapsed / duration));
 
-      // Trilho da barra
-      ctx.fillStyle = '#0f1422';
-      ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
-      ctx.fillStyle = '#1c2438';
-      ctx.fillRect(barX, barY, barW, barH);
+        // Trilho da barra
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+        ctx.fillStyle = '#1c2438';
+        ctx.fillRect(barX, barY, barW, barH);
 
-      // Preenchimento animado suave
-      const fillW = Math.round(barW * ratio);
-      if (fillW > 0) {
-        ctx.fillStyle = ratio >= 1 ? '#fbbf24' : '#38bdf8';
-        ctx.fillRect(barX, barY, fillW, barH);
-        ctx.fillStyle = ratio >= 1 ? '#fff6a0' : '#a5f3fc';
-        ctx.fillRect(barX, barY, fillW, 1);
-        if (ratio < 1) {
-          // Centelha luminosa na ponta da barra
-          P1(ctx, barX + fillW - 1, barY + 1, '#ffffff');
-          P1(ctx, barX + fillW - 1, barY + 2, '#ffffff');
-          P1(ctx, barX + fillW - 1, barY + 3, '#ffffff');
-        } else {
-          // Brilho estelar de leitura concluída
-          drawStar(ctx, barX + fillW - 2, barY + 2, 2, '#ffffff', '#fbbf24');
+        // Preenchimento animado suave
+        const fillW = Math.round(barW * ratio);
+        if (fillW > 0) {
+          ctx.fillStyle = ratio >= 1 ? '#fbbf24' : '#38bdf8';
+          ctx.fillRect(barX, barY, fillW, barH);
+          ctx.fillStyle = ratio >= 1 ? '#fff6a0' : '#a5f3fc';
+          ctx.fillRect(barX, barY, fillW, 1);
+          if (ratio < 1) {
+            // Centelha luminosa na ponta da barra
+            P1(ctx, barX + fillW - 1, barY + 1, '#ffffff');
+            P1(ctx, barX + fillW - 1, barY + 2, '#ffffff');
+            P1(ctx, barX + fillW - 1, barY + 3, '#ffffff');
+          } else {
+            // Brilho estelar de leitura concluída
+            drawStar(ctx, barX + fillW - 2, barY + 2, 2, '#ffffff', '#fbbf24');
+          }
         }
       }
 
@@ -8894,6 +9014,12 @@
     guideItemIndex: 0,
     guideCardPage: 0,
     guideLayout: null,
+    unlockedTutorials: new Set(),
+    lastViewedTutorialKey: null,
+    guideIntroShown: false,
+    guideIntroActive: false,
+    guideIntroOnDone: null,
+    guideIntroBtnRect: { x: 202, y: 100, w: 72, h: 15 },
     _lastHideSteps: false,
     _abilitiesVisible: false,
     muted: false,
@@ -8936,42 +9062,258 @@
         caverna: {
           label: 'Caverna',
           items: [
-            { key: 'FASE1_INTRO', title: 'Cristais/Sombras', cards: StandardTutorialCards.FASE1_INTRO },
-            { key: 'FASE2_OPAL', title: 'Opala de Fogo', cards: StandardTutorialCards.FASE2_OPAL },
-            { key: 'FASE2_LEFTOVER', title: 'Sobras Cristais', cards: StandardTutorialCards.FASE2_LEFTOVER },
-            { key: 'FASE3_ROSE_AND_AURA', title: 'Quartzo Rosa', cards: StandardTutorialCards.FASE3_ROSE_AND_AURA },
-            { key: 'FASE3_EQUATION_AURA', title: 'Equação Crist.', cards: StandardTutorialCards.FASE3_EQUATION_AURA }
+            { key: 'FASE1_INTRO', title: 'Cristais/Sombras', unlockLevel: 1, cards: StandardTutorialCards.FASE1_INTRO },
+            { key: 'FASE2_OPAL', title: 'Opala de Fogo', unlockLevel: 2, cards: StandardTutorialCards.FASE2_OPAL },
+            { key: 'FASE2_LEFTOVER', title: 'Sobras Cristais', unlockLevel: 2, cards: StandardTutorialCards.FASE2_LEFTOVER },
+            { key: 'FASE3_ROSE_AND_AURA', title: 'Quartzo Rosa', unlockLevel: 3, cards: StandardTutorialCards.FASE3_ROSE_AND_AURA },
+            { key: 'FASE3_EQUATION_AURA', title: 'Equação Crist.', unlockLevel: 3, cards: StandardTutorialCards.FASE3_EQUATION_AURA }
           ]
         },
         floresta: {
           label: 'Floresta',
           items: [
-            { key: 'FOREST_EMERALD', title: 'Altar Esmeralda', cards: StandardTutorialCards.FOREST_EMERALD },
-            { key: 'FOREST_CITRINE', title: 'Citrino Solar', cards: StandardTutorialCards.FOREST_CITRINE },
-            { key: 'FOREST_SLICING_NINJA', title: 'Corte Cristalino', cards: StandardTutorialCards.FOREST_SLICING_NINJA }
+            { key: 'FOREST_EMERALD', title: 'Altar Esmeralda', unlockLevel: 6, cards: StandardTutorialCards.FOREST_EMERALD },
+            { key: 'FOREST_CITRINE', title: 'Citrino Solar', unlockLevel: 7, cards: StandardTutorialCards.FOREST_CITRINE },
+            { key: 'FOREST_SLICING_NINJA', title: 'Corte Cristalino', unlockLevel: 10, cards: StandardTutorialCards.FOREST_SLICING_NINJA }
           ]
         },
         rio: {
           label: 'Rio',
           items: [
-            { key: 'RIVER_FRACTION_PLATFORM', title: 'Fração Cristalina', cards: StandardTutorialCards.RIVER_FRACTION_PLATFORM },
-            { key: 'RIVER_AQUA', title: 'Água-Marinha', cards: StandardTutorialCards.RIVER_AQUA },
-            { key: 'RIVER_MELODY_SIMON', title: 'Sinfonia Águas', cards: StandardTutorialCards.RIVER_MELODY_SIMON }
+            { key: 'RIVER_FRACTION_PLATFORM', title: 'Fração Cristalina', unlockLevel: 11, cards: StandardTutorialCards.RIVER_FRACTION_PLATFORM },
+            { key: 'RIVER_AQUA', title: 'Água-Marinha', unlockLevel: 11, linkedKeys: ['RIVER_FRACTION_PLATFORM'], cards: StandardTutorialCards.RIVER_AQUA },
+            { key: 'RIVER_MELODY_SIMON', title: 'Sinfonia Águas', unlockLevel: 15, cards: StandardTutorialCards.RIVER_MELODY_SIMON }
           ]
         },
         caatinga: {
           label: 'Caatinga',
           items: [
-            { key: 'CAATINGA_CIRCLE', title: 'Círculo Elétr.', cards: StandardTutorialCards.CAATINGA_CIRCLE },
-            { key: 'CAATINGA_SQUARE', title: 'Quadrado/Ordem', cards: StandardTutorialCards.CAATINGA_SQUARE },
-            { key: 'CAATINGA_RECTANGLE', title: 'Retângulo El.', cards: StandardTutorialCards.CAATINGA_RECTANGLE },
-            { key: 'CAATINGA_TRAPEZOID', title: 'Trapézio El.', cards: StandardTutorialCards.CAATINGA_TRAPEZOID },
-            { key: 'CAATINGA_TESSELLATION', title: 'Arte Encaixe', cards: StandardTutorialCards.CAATINGA_TESSELLATION },
-            { key: 'CAATINGA_NESTED', title: 'Geom. Avançada', cards: StandardTutorialCards.CAATINGA_NESTED },
-            { key: 'CAATINGA_SHELL_GAME', title: 'Desafio Areias', cards: StandardTutorialCards.CAATINGA_SHELL_GAME }
+            { key: 'CAATINGA_CIRCLE', title: 'Círculo Elétr.', unlockLevel: 16, cards: StandardTutorialCards.CAATINGA_CIRCLE },
+            { key: 'CAATINGA_SQUARE', title: 'Quadrado/Ordem', unlockLevel: 17, cards: StandardTutorialCards.CAATINGA_SQUARE },
+            { key: 'CAATINGA_RECTANGLE', title: 'Retângulo El.', unlockLevel: 17, cards: StandardTutorialCards.CAATINGA_RECTANGLE },
+            { key: 'CAATINGA_TRAPEZOID', title: 'Trapézio El.', unlockLevel: 17, cards: StandardTutorialCards.CAATINGA_TRAPEZOID },
+            { key: 'CAATINGA_TESSELLATION', title: 'Arte Encaixe', unlockLevel: 18, cards: StandardTutorialCards.CAATINGA_TESSELLATION },
+            { key: 'CAATINGA_NESTED', title: 'Geom. Avançada', unlockLevel: 19, cards: StandardTutorialCards.CAATINGA_NESTED },
+            { key: 'CAATINGA_SHELL_GAME', title: 'Desafio Areias', unlockLevel: 20, cards: StandardTutorialCards.CAATINGA_SHELL_GAME }
           ]
         }
       };
+    },
+
+    findGuideEntryByKey(key) {
+      if (!key) return null;
+      const cat = this.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        const items = cat[wKey]?.items || [];
+        const idx = items.findIndex(it => it.key === key);
+        if (idx >= 0) return { worldKey: wKey, index: idx, item: items[idx] };
+      }
+      return null;
+    },
+
+    resolveTutorialKeyFromCards(cards) {
+      const list = Array.isArray(cards) ? cards : (cards ? [cards] : []);
+      if (!list.length) return null;
+      const ids = new Set(list.map(c => c?.id).filter(Boolean));
+      const cat = this.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        for (const item of (cat[wKey]?.items || [])) {
+          if (item.cards === cards) return item.key;
+          if (Array.isArray(item.cards) && item.cards.some(c => c?.id && ids.has(c.id))) {
+            return item.key;
+          }
+        }
+      }
+      return null;
+    },
+
+    getTutorialKeysForCompleted(completedList = []) {
+      const doneSet = new Set(Array.isArray(completedList) ? completedList : []);
+      const keys = [];
+      const cat = this.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        for (const item of (cat[wKey]?.items || [])) {
+          if (Number.isInteger(item.unlockLevel) && doneSet.has(item.unlockLevel)) {
+            keys.push(item.key);
+          }
+        }
+      }
+      return keys;
+    },
+
+    syncTutorialProgress(data = {}) {
+      if (Array.isArray(data.unlockedTutorials)) {
+        this.unlockedTutorials = new Set(data.unlockedTutorials.filter(k => typeof k === 'string' && k.trim()));
+      }
+      if (Array.isArray(data.completed)) {
+        for (const k of this.getTutorialKeysForCompleted(data.completed)) {
+          this.unlockedTutorials.add(k);
+        }
+      }
+      if ('lastViewedTutorialKey' in data) {
+        this.lastViewedTutorialKey = (typeof data.lastViewedTutorialKey === 'string' && data.lastViewedTutorialKey.trim())
+          ? data.lastViewedTutorialKey.trim()
+          : null;
+      }
+      if (typeof data.guideIntroShown === 'boolean') {
+        this.guideIntroShown = data.guideIntroShown;
+      }
+    },
+
+    recordTutorialViewed(keyOrCards) {
+      const key = typeof keyOrCards === 'string'
+        ? keyOrCards
+        : this.resolveTutorialKeyFromCards(keyOrCards);
+      if (!key) return null;
+      this.unlockedTutorials.add(key);
+      // Desbloqueia itens vinculados sem modal próprio (ex: Água-Marinha no Rio 1)
+      const cat = this.getGuideCatalog();
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        for (const item of (cat[wKey]?.items || [])) {
+          if (Array.isArray(item.linkedKeys) && item.linkedKeys.includes(key)) {
+            this.unlockedTutorials.add(item.key);
+          }
+        }
+      }
+      this.lastViewedTutorialKey = key;
+      if (typeof global.CrystalApp?.recordTutorialViewed === 'function') {
+        global.CrystalApp.recordTutorialViewed(key, true);
+      }
+      return key;
+    },
+
+    isTutorialUnlocked(key) {
+      if (this.godMode) return true;
+      if (!key) return false;
+      if (this.unlockedTutorials.has(key)) return true;
+      const entry = this.findGuideEntryByKey(key);
+      if (!entry) return false;
+      const item = entry.item;
+      if (Array.isArray(item.cards) && item.cards.some(c => c?.id && TutorialModal.seenKeys.has(c.id))) {
+        return true;
+      }
+      if (Array.isArray(item.linkedKeys) && item.linkedKeys.some(lk => this.unlockedTutorials.has(lk))) {
+        return true;
+      }
+      const completed = Array.isArray(global.CrystalApp?.state?.completed)
+        ? global.CrystalApp.state.completed
+        : [];
+      if (Number.isInteger(item.unlockLevel) && completed.includes(item.unlockLevel)) {
+        return true;
+      }
+      return false;
+    },
+
+    isWorldHasUnlockedTutorial(wKey) {
+      if (this.godMode) return true;
+      const cat = this.getGuideCatalog();
+      const items = cat[wKey]?.items || [];
+      return items.some(it => this.isTutorialUnlocked(it.key));
+    },
+
+    openGuideAtLastViewed() {
+      const completed = Array.isArray(global.CrystalApp?.state?.completed)
+        ? global.CrystalApp.state.completed
+        : [];
+      for (const k of this.getTutorialKeysForCompleted(completed)) {
+        this.unlockedTutorials.add(k);
+      }
+
+      if (this.lastViewedTutorialKey && this.isTutorialUnlocked(this.lastViewedTutorialKey)) {
+        const entry = this.findGuideEntryByKey(this.lastViewedTutorialKey);
+        if (entry) {
+          this.guideWorld = entry.worldKey;
+          this.guideItemIndex = entry.index;
+          this.guideCardPage = 0;
+          this.ensureGuideLayout();
+          return entry;
+        }
+      }
+
+      // Fallback: último tutorial desbloqueado na ordem da campanha
+      const cat = this.getGuideCatalog();
+      let lastUnlocked = null;
+      for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
+        const items = cat[wKey]?.items || [];
+        for (let i = 0; i < items.length; i++) {
+          if (this.isTutorialUnlocked(items[i].key)) {
+            lastUnlocked = { worldKey: wKey, index: i, item: items[i] };
+          }
+        }
+      }
+      if (lastUnlocked) {
+        this.guideWorld = lastUnlocked.worldKey;
+        this.guideItemIndex = lastUnlocked.index;
+      } else {
+        this.guideWorld = 'caverna';
+        this.guideItemIndex = 0;
+      }
+      this.guideCardPage = 0;
+      this.ensureGuideLayout();
+      return lastUnlocked;
+    },
+
+    openGuideIntro(onDone = null) {
+      if (this.guideIntroShown) {
+        if (typeof onDone === 'function') onDone();
+        return false;
+      }
+      this.guideIntroActive = true;
+      this.guideIntroOnDone = onDone;
+      this.playSfx('tutorialOpen');
+      return true;
+    },
+
+    dismissGuideIntro(openGuideAfter = false) {
+      if (!this.guideIntroActive) return false;
+      this.guideIntroActive = false;
+      this.guideIntroShown = true;
+      if (typeof global.CrystalApp?.markGuideIntroShown === 'function') {
+        global.CrystalApp.markGuideIntroShown(true);
+      }
+      const cb = this.guideIntroOnDone;
+      this.guideIntroOnDone = null;
+      if (typeof cb === 'function') cb();
+      if (openGuideAfter) {
+        this.settingsOpen = false;
+        this.paused = false;
+        this.guideOpen = true;
+        this.openGuideAtLastViewed();
+      }
+      return true;
+    },
+
+    drawMiniLock(ctx, x, y, col = '#8b829e') {
+      const lx = R(x), ly = R(y);
+      ctx.fillStyle = col;
+      ctx.fillRect(lx + 1, ly, 3, 1);
+      ctx.fillRect(lx + 1, ly + 1, 1, 2);
+      ctx.fillRect(lx + 3, ly + 1, 1, 2);
+      ctx.fillRect(lx, ly + 3, 5, 4);
+      ctx.fillStyle = '#141826';
+      ctx.fillRect(lx + 2, ly + 4, 1, 2);
+    },
+
+    drawInteractivePracticeBadge(ctx, rect, done = false, t = 0) {
+      if (!ctx || !rect) return;
+      const pulse = this.reducedMotion ? 0 : (Math.floor(t * 4) & 1);
+      const { x, y, w, h } = rect;
+      TextOverlay.clearLogicalRect(ctx, x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = '#0f1422';
+      ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = done ? '#14532d' : (pulse ? '#1e40af' : '#0f5e6e');
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = done ? '#4ade80' : '#fbbf24';
+      ctx.fillRect(x, y, w, 1);
+      ctx.fillRect(x, y + h - 1, w, 1);
+      ctx.fillRect(x, y, 1, h);
+      ctx.fillRect(x + w - 1, y, 1, h);
+      const label = done ? '✓ PRÁTICA INTERATIVA' : '✋ PRÁTICA INTERATIVA';
+      const col = done ? '#86efac' : '#ffe887';
+      const ty = y + Math.max(1, Math.floor((h - 7) / 2));
+      if (!renderHDCanvasLine(ctx, label, x + w / 2, ty, col, '#000000', w - 4, 7.2, 'center', { fontPx: 5.5, preserveColor: true })) {
+        drawPixelTextCentered(ctx, label, x + w / 2, ty, col, '#000000', Math.max(w - 4, 140), 7);
+      }
     },
 
     ensureGuideLayout() {
@@ -9246,6 +9588,8 @@
       this.paused = false;
       this.settingsOpen = false;
       this.guideOpen = false;
+      this.guideIntroActive = false;
+      this.guideIntroOnDone = null;
       this.restartFlashUntil = (typeof performance !== 'undefined' ? performance.now() : 0) + 280;
       this.resetAbilityCharges();
       this.playSfx('click');
@@ -9262,6 +9606,8 @@
       this.paused = false;
       this.settingsOpen = false;
       this.guideOpen = false;
+      this.guideIntroActive = false;
+      this.guideIntroOnDone = null;
       this._abilitiesVisible = false;
       if (typeof DialogueBox !== 'undefined' && typeof DialogueBox.close === 'function') DialogueBox.close();
       if (typeof TutorialModal !== 'undefined' && typeof TutorialModal.close === 'function') TutorialModal.close();
@@ -9292,7 +9638,7 @@
 
     isSpecialOrModalActive(hideSteps = false) {
       if (hideSteps) return true;
-      if (this.paused || this.settingsOpen || this.guideOpen) return true;
+      if (this.paused || this.settingsOpen || this.guideOpen || this.guideIntroActive) return true;
       if (typeof TutorialModal !== 'undefined' && TutorialModal.isOpen) return true;
 
       const cave = global.CaveChapter1;
@@ -9575,6 +9921,21 @@
     },
 
     handleClick(x, y) {
+      // Callout de apresentação do botão Guia (mostrado 1× após o 1º tutorial da Fase 1)
+      if (this.guideIntroActive) {
+        if (this.inRect(x, y, this.buttons.guide, 2)) {
+          this.playSfx('click');
+          this.dismissGuideIntro(true);
+          return true;
+        }
+        if (this.inRect(x, y, this.guideIntroBtnRect, 4) || (x >= 36 && x <= 284 && y >= 32 && y <= 122)) {
+          this.playSfx('tutorialClose');
+          this.dismissGuideIntro(false);
+          return true;
+        }
+        return true;
+      }
+
       if (this.inRect(x, y, this.buttons.map, 1)) {
         if (this.isMapLocked()) {
           this.playSfx('error');
@@ -9623,14 +9984,7 @@
         this.paused = false;
         this.guideOpen = !this.guideOpen;
         if (this.guideOpen) {
-          const wl = String(this.worldLabel || '').toLowerCase();
-          if (wl.includes('flor')) this.guideWorld = 'floresta';
-          else if (wl.includes('rio')) this.guideWorld = 'rio';
-          else if (wl.includes('caat')) this.guideWorld = 'caatinga';
-          else this.guideWorld = 'caverna';
-          this.guideItemIndex = 0;
-          this.guideCardPage = 0;
-          this.ensureGuideLayout();
+          this.openGuideAtLastViewed();
         }
         this.playSfx('click');
         this.syncAudio();
@@ -9649,7 +10003,14 @@
           const tr = gl.worldTabRects[wKey];
           if (tr && this.inRect(x, y, tr, 1)) {
             this.guideWorld = wKey;
-            this.guideItemIndex = 0;
+            const cat = this.getGuideCatalog();
+            const wItems = cat[wKey]?.items || [];
+            // Se o último tutorial visto pertence a esta aba e está desbloqueado, seleciona-o; senão, o 1º desbloqueado
+            const lastIdx = this.lastViewedTutorialKey
+              ? wItems.findIndex(it => it.key === this.lastViewedTutorialKey && this.isTutorialUnlocked(it.key))
+              : -1;
+            const firstUnlockedIdx = wItems.findIndex(it => this.isTutorialUnlocked(it.key));
+            this.guideItemIndex = lastIdx >= 0 ? lastIdx : (firstUnlockedIdx >= 0 ? firstUnlockedIdx : 0);
             this.guideCardPage = 0;
             this.ensureGuideLayout();
             this.playSfx('click');
@@ -9658,26 +10019,29 @@
         }
         for (const ir of gl.itemRects) {
           if (this.inRect(x, y, ir, 1)) {
+            const unlocked = this.isTutorialUnlocked(ir.item.key);
             this.guideItemIndex = ir.index;
             this.guideCardPage = 0;
-            this.playSfx('click');
+            this.playSfx(unlocked ? 'click' : 'error');
             return true;
           }
         }
         const cat = this.getGuideCatalog();
         const curWorld = cat[this.guideWorld] || cat.caverna;
         const curItem = (curWorld.items || [])[this.guideItemIndex] || curWorld.items[0];
-        const totalPages = (curItem && Array.isArray(curItem.cards)) ? curItem.cards.length : 1;
-        if (totalPages > 1) {
-          if (this.inRect(x, y, gl.prevPageRect, 2)) {
-            this.guideCardPage = (this.guideCardPage - 1 + totalPages) % totalPages;
-            this.playSfx('click');
-            return true;
-          }
-          if (this.inRect(x, y, gl.nextPageRect, 2)) {
-            this.guideCardPage = (this.guideCardPage + 1) % totalPages;
-            this.playSfx('click');
-            return true;
+        if (curItem && this.isTutorialUnlocked(curItem.key)) {
+          const totalPages = Array.isArray(curItem.cards) ? curItem.cards.length : 1;
+          if (totalPages > 1) {
+            if (this.inRect(x, y, gl.prevPageRect, 2)) {
+              this.guideCardPage = (this.guideCardPage - 1 + totalPages) % totalPages;
+              this.playSfx('click');
+              return true;
+            }
+            if (this.inRect(x, y, gl.nextPageRect, 2)) {
+              this.guideCardPage = (this.guideCardPage + 1) % totalPages;
+              this.playSfx('click');
+              return true;
+            }
           }
         }
         return true;
@@ -10053,23 +10417,41 @@
       for (const wKey of ['caverna', 'floresta', 'rio', 'caatinga']) {
         const tr = worldTabRects[wKey];
         const active = this.guideWorld === wKey;
+        const hasUnlocked = this.isWorldHasUnlockedTutorial(wKey);
         this.drawButtonBox(ctx, tr, active);
-        drawPixelTextCentered(ctx, cat[wKey].label, tr.x + tr.w / 2, tr.y + 3, active ? '#ffea31' : '#ffffff', '#000000', tr.w - 4, 8);
+        if (!hasUnlocked && !this.godMode) {
+          this.drawMiniLock(ctx, tr.x + 2, tr.y + 2, active ? '#cbd5e1' : '#7b879e');
+          drawPixelTextCentered(ctx, cat[wKey].label, tr.x + 4 + (tr.w - 4) / 2, tr.y + 3, active ? '#cbd5e1' : '#8b97ad', '#000000', tr.w - 8, 8);
+        } else {
+          drawPixelTextCentered(ctx, cat[wKey].label, tr.x + tr.w / 2, tr.y + 3, active ? '#ffea31' : '#ffffff', '#000000', tr.w - 4, 8);
+        }
       }
 
-      // Lista de tutoriais separados por mundo na coluna esquerda
+      // Lista de tutoriais separados por mundo na coluna esquerda (com desbloqueio gradual e sem spoilers)
       for (const ir of itemRects) {
         const selected = this.guideItemIndex === ir.index;
-        ctx.fillStyle = selected ? '#2b4a7a' : '#1d2438';
-        ctx.fillRect(ir.x, ir.y, ir.w, ir.h);
-        if (selected) {
-          ctx.fillStyle = '#fbbf24';
-          ctx.fillRect(ir.x, ir.y, 2, ir.h);
+        const unlocked = this.isTutorialUnlocked(ir.item.key);
+        if (unlocked) {
+          ctx.fillStyle = selected ? '#2b4a7a' : '#1d2438';
+          ctx.fillRect(ir.x, ir.y, ir.w, ir.h);
+          if (selected) {
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillRect(ir.x, ir.y, 2, ir.h);
+          }
+          drawPixelText(ctx, ir.item.title, ir.x + 5, ir.y + 3, selected ? '#ffe887' : '#d6e4ff', '#000000', ir.w - 7, 8);
+        } else {
+          ctx.fillStyle = selected ? '#212638' : '#151926';
+          ctx.fillRect(ir.x, ir.y, ir.w, ir.h);
+          if (selected) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(ir.x, ir.y, 2, ir.h);
+          }
+          this.drawMiniLock(ctx, ir.x + 4, ir.y + 3, selected ? '#94a3b8' : '#64748b');
+          drawPixelText(ctx, '???', ir.x + 13, ir.y + 3, selected ? '#94a3b8' : '#5b677d', '#000000', ir.w - 16, 8);
         }
-        drawPixelText(ctx, ir.item.title, ir.x + 5, ir.y + 3, selected ? '#ffe887' : '#d6e4ff', '#000000', ir.w - 7, 8);
       }
 
-      // Fundo da Coluna Direita (Card Completo do Tutorial Selecionado)
+      // Fundo da Coluna Direita (Card Completo do Tutorial Selecionado ou Tela Bloqueada sem spoilers)
       ctx.fillStyle = '#181c2b';
       ctx.fillRect(rr.x, rr.y, rr.w, rr.h);
       ctx.fillStyle = '#5577b2';
@@ -10081,7 +10463,52 @@
       const worldData = cat[this.guideWorld] || cat.caverna;
       const items = worldData.items || [];
       const curItem = items[this.guideItemIndex] || items[0];
-      const cards = (curItem && Array.isArray(curItem.cards) && curItem.cards.length) ? curItem.cards : [];
+      if (!curItem) return;
+
+      if (!this.isTutorialUnlocked(curItem.key)) {
+        drawPixelText(ctx, 'Tutorial Bloqueado', rr.x + 6, rr.y + 4, '#94a3b8', '#000000', rr.w - 12, 9);
+        // Quadro com cadeado grande em True Pixel Art (sem revelar mecânica futura)
+        const bx = rr.x + 5, by = rr.y + 18, bw = rr.w - 10, bh = 54;
+        ctx.fillStyle = '#111524';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(bx, by, bw, 1);
+        ctx.fillRect(bx, by + bh - 1, bw, 1);
+        ctx.fillRect(bx, by, 1, bh);
+        ctx.fillRect(bx + bw - 1, by, 1, bh);
+
+        const lx = R(bx + bw / 2), ly = R(by + bh / 2 + 2);
+        // Arco do cadeado grande
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(lx - 6, ly - 15, 12, 3);
+        ctx.fillRect(lx - 8, ly - 12, 3, 7);
+        ctx.fillRect(lx + 5, ly - 12, 3, 7);
+        // Corpo do cadeado grande
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(lx - 11, ly - 6, 22, 18);
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(lx - 10, ly - 5, 20, 16);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(lx - 10, ly - 5, 20, 2);
+        // Buraco da chave
+        ctx.fillStyle = '#111524';
+        ctx.fillRect(lx - 2, ly, 4, 4);
+        ctx.fillRect(lx - 1, ly + 4, 2, 4);
+
+        drawJustifiedPixelText(
+          ctx,
+          'Avance na jornada e descubra novas fases para {gold:desbloquear} este tutorial no seu {cyan:Guia}!',
+          rr.x + 8,
+          rr.y + 78,
+          rr.w - 16,
+          10,
+          '#cbd5e1',
+          '#000000'
+        );
+        return;
+      }
+
+      const cards = (Array.isArray(curItem.cards) && curItem.cards.length) ? curItem.cards : [];
       if (!cards.length) return;
 
       const pageIdx = clamp(this.guideCardPage, 0, cards.length - 1);
@@ -10101,12 +10528,73 @@
       drawJustifiedPixelText(ctx, card.body || '', rr.x + 6, rr.y + 64, rr.w - 12, 10, '#ffea31', '#000000');
     },
 
+    renderGuideIntroCallout(ctx, t = 0) {
+      const bguide = this.buttons.guide;
+      const pulse = this.reducedMotion ? 0 : (Math.floor(t * 4) & 1);
+      const bob = this.reducedMotion ? 0 : (pulse ? -1 : 0);
+
+      // Realce luminoso ao redor do botão GUIA na barra superior
+      ctx.fillStyle = pulse ? '#ffea31' : '#ffffff';
+      ctx.fillRect(bguide.x - 2, bguide.y - 2, bguide.w + 4, 1);
+      ctx.fillRect(bguide.x - 2, bguide.y + bguide.h + 1, bguide.w + 4, 1);
+      ctx.fillRect(bguide.x - 2, bguide.y - 2, 1, bguide.h + 4);
+      ctx.fillRect(bguide.x + bguide.w + 1, bguide.y - 2, 1, bguide.h + 4);
+      drawStar(ctx, bguide.x - 2, bguide.y + 1, 2, '#ffffff', '#ffea31');
+      drawStar(ctx, bguide.x + bguide.w + 1, bguide.y + bguide.h, 2, '#ffffff', '#92e8ff');
+
+      // Seta pixel art apontando diretamente para o botão Guia
+      const ax = R(bguide.x + bguide.w / 2);
+      const ay = 21 + bob;
+      ctx.fillStyle = '#0f1422';
+      ctx.fillRect(ax - 5, ay + 5, 11, 5);
+      ctx.fillStyle = '#ffea31';
+      ctx.fillRect(ax, ay, 1, 1);
+      ctx.fillRect(ax - 1, ay + 1, 3, 1);
+      ctx.fillRect(ax - 2, ay + 2, 5, 1);
+      ctx.fillRect(ax - 3, ay + 3, 7, 1);
+      ctx.fillRect(ax - 4, ay + 4, 9, 1);
+      ctx.fillRect(ax - 2, ay + 5, 5, 5);
+
+      // Card explicativo logo abaixo da seta
+      const cx = 36, cy = 32, cw = 248, ch = 88;
+      this.guideIntroBtnRect = { x: cx + cw - 82, y: cy + ch - 20, w: 72, h: 15 };
+      drawParchmentBox(ctx, cx, cy, cw, ch, { headerH: 15, headerBg: '#163b6c' });
+      drawPixelText(ctx, 'Dica: Seu Guia de Tutoriais', cx + 8, cy + 4, '#ffe887', '#000000', cw - 16, 9);
+
+      drawJustifiedPixelText(
+        ctx,
+        'Sempre que quiser rever uma mecânica, toque no botão {gold:Guia} lá em cima! Novos tutoriais são {green:desbloqueados} conforme você avança.',
+        cx + 10,
+        cy + 22,
+        cw - 20,
+        10,
+        '#ffea31',
+        '#000000'
+      );
+
+      // Botão "Entendi!"
+      const b = this.guideIntroBtnRect;
+      ctx.fillStyle = '#14111c';
+      ctx.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+      ctx.fillStyle = '#2b689c';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = pulse ? '#ffe887' : '#92e8ff';
+      ctx.fillRect(b.x, b.y, b.w, 1);
+      ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+      drawPixelTextCentered(ctx, 'Entendi!', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 9);
+    },
+
     renderModals(ctx, t = 0) {
-      if (!this.settingsOpen && !this.guideOpen) return;
+      if (!this.settingsOpen && !this.guideOpen && !this.guideIntroActive) return;
 
       ctx.fillStyle = 'rgba(10, 8, 6, 0.55)';
       ctx.fillRect(0, 20, W, H - 20);
       TextOverlay.dimLogicalRect(ctx, 0, 20, W, H - 20, 'rgba(10, 8, 6, 0.55)');
+
+      if (this.guideIntroActive) {
+        this.renderGuideIntroCallout(ctx, t);
+        return;
+      }
 
       if (this.guideOpen) {
         this.renderGuideModal(ctx, t);

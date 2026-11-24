@@ -5945,8 +5945,12 @@
         practiceSpawnTimer: 0.6,
         practiceBanner: null,
         practiceStrokeCuts: 0,
-        practiceStrokeCrystals: []
+        practiceStrokeCrystals: [],
+        practicePureCuts: 0,
+        practiceCompleted: false
       };
+
+      GameHUD.recordTutorialViewed?.('FOREST_SLICING_NINJA');
 
       if (typeof window !== 'undefined') {
         window.ForestCrystalNinja = this.forestNinja;
@@ -6198,6 +6202,9 @@
       }
 
       if (isPractice) {
+        fn.practicePureCuts = (fn.practicePureCuts || 0) + 1;
+        const firstUnlock = !fn.practiceCompleted;
+        fn.practiceCompleted = true;
         fn.practiceStrokeCuts = (fn.practiceStrokeCuts || 0) + 1;
         fn.practiceStrokeCrystals.push(crystal);
         if (fn.practiceStrokeCuts >= 2) {
@@ -6212,6 +6219,12 @@
             count: fn.practiceStrokeCuts
           };
           if (global.CrystalAudio?.comboChime) global.CrystalAudio.comboChime(fn.practiceStrokeCuts);
+        } else if (firstUnlock) {
+          fn.practiceBanner = {
+            text: '✓ Prática concluída! Desafio liberado!',
+            color: '#4ade80',
+            timer: 1.8
+          };
         }
         return true;
       }
@@ -6443,6 +6456,11 @@
       }
     },
 
+    isForestNinjaPracticeUnlocked() {
+      const fn = this.forestNinja;
+      return Boolean(GameHUD.godMode || fn?.practiceCompleted || (fn?.practicePureCuts || 0) >= 1);
+    },
+
     handleForestNinjaVignetteClick(x, y) {
       const fn = this.forestNinja;
       if (!fn || this.phase !== 'forest_ninja_vignette') return false;
@@ -6479,15 +6497,24 @@
           fn.practiceSpawnTimer = 0.4;
           return true;
         }
-        // 3. "Iniciar Desafio! ⚔"
+        // 3. "Iniciar Desafio! >" (bloqueado até fatiar pelo menos 1 cristal puro, exceto God Mode)
         const bStart = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
         if (x >= bStart.x && x <= bStart.x + bStart.w && y >= bStart.y && y <= bStart.y + bStart.h) {
+          if (!this.isForestNinjaPracticeUnlocked()) {
+            GameHUD.playSfx('error');
+            fn.practiceBanner = {
+              text: 'Corte pelo menos 1 cristal puro para liberar!',
+              color: '#fbbf24',
+              timer: 1.6
+            };
+            return true;
+          }
           this.startForestNinjaStage(1);
           return true;
         }
 
         // Toque na arena de treino (para cortar cristais)
-        const arena = { x: cx + 12, y: cy + 30, w: cw - 24, h: 88 };
+        const arena = { x: cx + 12, y: cy + 31, w: cw - 24, h: 74 };
         if (x >= arena.x && x <= arena.x + arena.w && y >= arena.y && y <= arena.y + arena.h) {
           fn.isSlicing = true;
           fn.lastStrokeX = x;
@@ -6932,21 +6959,53 @@
         ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1);
         drawPixelTextCentered(ctx, 'Praticar Corte >', b.x + b.w / 2, b.y + 3, '#ffffff', '#000000', b.w - 4, 8);
       } else {
-        // CARD 2: OPORTUNIDADE DE TESTAR / TREINO LIVRE
-        drawPixelText(ctx, 'Treino Livre', cx + 10, cy + 6, '#ffea31', '#000000', 120, 9);
-        drawPixelText(ctx, '2/2', cx + 10, cy + 6, '#ffffff', '#000000', cw - 20, 9, 'right');
+        // CARD 2: OPORTUNIDADE DE TESTAR / TREINO INTERATIVO DE CORTE
+        const practiceDone = Boolean(fn.practiceCompleted || (fn.practicePureCuts || 0) >= 1);
+        const isUnlocked = this.isForestNinjaPracticeUnlocked();
+        const pulse = GameHUD.reducedMotion ? 0 : (Math.floor(tq * 4) & 1);
 
-        drawPixelText(ctx, 'Arraste na área abaixo para testar cortes e combos:', cx + 14, cy + 21, '#ffea31', '#000000', cw - 28, 8);
+        drawPixelText(ctx, 'Treino de Corte', cx + 10, cy + 6, '#ffea31', '#000000', 120, 9);
 
-        // Arena interativa de teste
-        const arena = { x: cx + 12, y: cy + 32, w: cw - 24, h: 86 };
+        // Selo destacado "✋ PRÁTICA INTERATIVA" no cabeçalho direito
+        const badge = { x: cx + cw - 118, y: cy + 3, w: 110, h: 12 };
+        GameHUD.drawInteractivePracticeBadge(ctx, badge, practiceDone, tq);
+
+        drawPixelText(ctx, 'Arraste na arena destacada para fatiar os cristais:', cx + 14, cy + 21, '#ffea31', '#000000', cw - 28, 8);
+
+        // Arena interativa de teste com borda ativa pulsante
+        const arena = { x: cx + 12, y: cy + 31, w: cw - 24, h: 74 };
         ctx.fillStyle = '#0f2015';
         ctx.fillRect(arena.x, arena.y, arena.w, arena.h);
-        ctx.fillStyle = '#22543d';
+        const arenaBorder = practiceDone
+          ? (pulse ? '#86efac' : '#4ade80')
+          : (pulse ? '#fbbf24' : '#38bdf8');
+        ctx.fillStyle = arenaBorder;
         ctx.fillRect(arena.x, arena.y, arena.w, 1);
         ctx.fillRect(arena.x, arena.y + arena.h - 1, arena.w, 1);
         ctx.fillRect(arena.x, arena.y, 1, arena.h);
         ctx.fillRect(arena.x + arena.w - 1, arena.y, 1, arena.h);
+        // Cantos reforçados
+        ctx.fillStyle = practiceDone ? '#4ade80' : '#ffea31';
+        ctx.fillRect(arena.x + 1, arena.y + 1, 5, 1);
+        ctx.fillRect(arena.x + 1, arena.y + 1, 1, 5);
+        ctx.fillRect(arena.x + arena.w - 6, arena.y + 1, 5, 1);
+        ctx.fillRect(arena.x + arena.w - 2, arena.y + 1, 1, 5);
+        ctx.fillRect(arena.x + 1, arena.y + arena.h - 2, 5, 1);
+        ctx.fillRect(arena.x + 1, arena.y + arena.h - 6, 1, 5);
+        ctx.fillRect(arena.x + arena.w - 6, arena.y + arena.h - 2, 5, 1);
+        ctx.fillRect(arena.x + arena.w - 2, arena.y + arena.h - 6, 1, 5);
+
+        if (!practiceDone && !fn.activeComboBanner && !fn.practiceBanner) {
+          drawPixelTextCentered(ctx, 'DESLIZE AQUI PARA CORTAR!', 160, arena.y + 5, '#7dd3fc', '#000000', 180, 7);
+        }
+
+        // Recorta cristais, metades e rastro estritamente dentro da arena interativa
+        ctx.save();
+        if (typeof ctx.beginPath === 'function' && typeof ctx.rect === 'function' && typeof ctx.clip === 'function') {
+          ctx.beginPath();
+          ctx.rect(arena.x + 1, arena.y + 1, arena.w - 2, arena.h - 2);
+          ctx.clip();
+        }
 
         // Cristais de treino no ar
         for (const c of fn.practiceCrystals) {
@@ -7000,14 +7059,40 @@
           }
           ctx.restore();
         }
+        ctx.restore();
 
         // Aviso / Combo no treino
         if (fn.activeComboBanner) {
           drawParchmentBox(ctx, 110, arena.y + 6, 100, 15);
           drawPixelTextCentered(ctx, fn.activeComboBanner.text, 160, arena.y + 9, '#15803d', null, 90, 8);
         } else if (fn.practiceBanner) {
-          drawPixelTextCentered(ctx, fn.practiceBanner.text, 160, arena.y + 8, fn.practiceBanner.color, null, 180, 8);
+          drawPixelTextCentered(ctx, fn.practiceBanner.text, 160, arena.y + 8, fn.practiceBanner.color, '#000000', 220, 8);
         }
+
+        // Indicador de objetivo prático (SEM barra de timer!) logo abaixo da arena
+        const ob = { x: cx + 12, y: cy + 109, w: cw - 24, h: 14 };
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(ob.x - 1, ob.y - 1, ob.w + 2, ob.h + 2);
+        ctx.fillStyle = practiceDone ? '#0e3422' : (GameHUD.godMode ? '#281845' : '#1f1c36');
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.fillStyle = practiceDone ? '#4ade80' : (GameHUD.godMode ? '#ffea31' : (pulse ? '#fbbf24' : '#38bdf8'));
+        ctx.fillRect(ob.x, ob.y, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y + ob.h - 1, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y, 1, ob.h);
+        ctx.fillRect(ob.x + ob.w - 1, ob.y, 1, ob.h);
+        const obText = practiceDone
+          ? '✓ Prática concluída! Pode iniciar o desafio!'
+          : (GameHUD.godMode ? '⚡ God Mode: liberado para iniciar' : 'Pratique 1×: corte 1 cristal puro para liberar');
+        drawPixelTextCentered(
+          ctx,
+          obText,
+          ob.x + ob.w / 2,
+          ob.y + 3,
+          practiceDone ? '#86efac' : (GameHUD.godMode ? '#ffea31' : '#ffe887'),
+          '#000000',
+          ob.w - 8,
+          8
+        );
 
         // Botões do Card 2:
         // 1. "< Vídeo"
@@ -7032,16 +7117,27 @@
         ctx.fillRect(bReset.x, bReset.y + bReset.h - 1, bReset.w, 1);
         drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#1e3a8a', bReset.w - 4, 8);
 
-        // 3. "Iniciar Desafio! >"
+        // 3. "Iniciar Desafio! >" (bloqueado até fatiar 1 cristal puro, exceto God Mode)
         const bStart = { x: cx + cw - 96, y: cy + ch - 18, w: 86, h: 14 };
-        ctx.fillStyle = '#142918';
-        ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
-        ctx.fillStyle = '#15803d';
-        ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
-        ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
-        drawPixelTextCentered(ctx, 'Iniciar Desafio! >', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#142918', bStart.w - 4, 8);
+        if (!isUnlocked) {
+          ctx.fillStyle = '#0f1422';
+          ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+          ctx.fillStyle = '#1b2334';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+          ctx.fillStyle = '#2d3b54';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+          ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+          drawPixelTextCentered(ctx, 'Iniciar Desafio! >', bStart.x + bStart.w / 2, bStart.y + 3, '#6b7d9b', '#000000', bStart.w - 4, 8);
+        } else {
+          ctx.fillStyle = '#142918';
+          ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+          ctx.fillStyle = '#15803d';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+          ctx.fillStyle = pulse ? '#fde047' : '#86efac';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+          ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+          drawPixelTextCentered(ctx, 'Iniciar Desafio! >', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#142918', bStart.w - 4, 8);
+        }
       }
     },
 
@@ -7856,6 +7952,12 @@
 
         if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (GameHUD.guideIntroActive) {
+            e.preventDefault();
+            GameHUD.playSfx('tutorialClose');
+            GameHUD.dismissGuideIntro(false);
+            return;
+          }
           if (DialogueBox.isOpen) {
             e.preventDefault();
             GameHUD.playSfx('click');

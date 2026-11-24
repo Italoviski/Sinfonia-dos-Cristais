@@ -2093,6 +2093,9 @@
 
           if (isPractice) {
             this.practiceHits++;
+            if (typeof CaveChapter1 !== 'undefined') {
+              CaveChapter1.vignettePracticeDone = true;
+            }
           }
           return hit;
         }
@@ -2666,6 +2669,8 @@
     skipMusicalBtnRect: { x: 74, y: 2, w: 44, h: 16 },
     vignetteCard: 1,
     vignettePracticeTime: 0,
+    vignettePracticeDone: false,
+    vignetteLockFeedbackTimer: 0,
     isHoldingSpace: false,
 
     pieces: [],
@@ -3292,6 +3297,12 @@
 
         if (e.code === 'Space' || e.key === ' ' || e.code === 'Enter' || e.key === 'Enter') {
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (GameHUD.guideIntroActive) {
+            e.preventDefault();
+            GameHUD.playSfx('tutorialClose');
+            GameHUD.dismissGuideIntro(false);
+            return;
+          }
           if (DialogueBox.isOpen) {
             e.preventDefault();
             GameHUD.playSfx('click');
@@ -3326,12 +3337,20 @@
               if (!GameHUD.godMode && this.phaseTime < 3.6) return;
               this.vignetteCard = 2;
               this.vignettePracticeTime = 0;
+              this.vignettePracticeDone = false;
+              this.vignetteLockFeedbackTimer = 0;
+              CaveRhythmKaraoke.practiceHits = 0;
               CaveRhythmKaraoke.resetPractice();
               GameHUD.playSfx('click');
               return;
             }
             if (this.vignetteCard === 2) {
               if (e.code === 'Enter' || e.key === 'Enter') {
+                if (!this.isRhythmPracticeUnlocked()) {
+                  this.vignetteLockFeedbackTimer = 1.6;
+                  GameHUD.playSfx('error');
+                  return;
+                }
                 this.startMusicalShow();
                 return;
               }
@@ -3800,12 +3819,18 @@
       this.openMusicalVignette();
     },
 
+    isRhythmPracticeUnlocked() {
+      return Boolean(GameHUD.godMode || this.vignettePracticeDone || (CaveRhythmKaraoke.practiceHits || 0) >= 1);
+    },
+
     openMusicalVignette() {
       this.currentLevel = 5;
       this.phase = 'musical_vignette';
       this.phaseTime = 0;
       this.vignetteCard = 1;
       this.vignettePracticeTime = 0;
+      this.vignettePracticeDone = false;
+      this.vignetteLockFeedbackTimer = 0;
       this.isHoldingSpace = false;
       this.protag.x = 46;
       this.protag.y = 142;
@@ -3818,6 +3843,7 @@
       this.musicalTime = 0;
       this._lastAudioTime = null;
       this._lastAudioPerf = null;
+      CaveRhythmKaraoke.practiceHits = 0;
       CaveRhythmKaraoke.resetPractice();
       IrisTransition.start('in', 160, 90, 0.45);
 
@@ -3838,18 +3864,26 @@
           GameHUD.playSfx('click');
           this.vignetteCard = 2;
           this.vignettePracticeTime = 0;
+          this.vignettePracticeDone = false;
+          this.vignetteLockFeedbackTimer = 0;
+          CaveRhythmKaraoke.practiceHits = 0;
           CaveRhythmKaraoke.resetPractice();
         }
       } else {
-        const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
+        const bReset = { x: cx + 10, y: cy + ch - 20, w: 68, h: 15 };
         if (x >= bReset.x && x <= bReset.x + bReset.w && y >= bReset.y && y <= bReset.y + bReset.h) {
           GameHUD.playSfx('click');
           this.vignettePracticeTime = 0;
           CaveRhythmKaraoke.resetPractice();
           return;
         }
-        const bStart = { x: cx + cw - 124, y: cy + ch - 20, w: 114, h: 15 };
+        const bStart = { x: cx + cw - 98, y: cy + ch - 20, w: 88, h: 15 };
         if (x >= bStart.x && x <= bStart.x + bStart.w && y >= bStart.y && y <= bStart.y + bStart.h) {
+          if (!this.isRhythmPracticeUnlocked()) {
+            this.vignetteLockFeedbackTimer = 1.6;
+            GameHUD.playSfx('error');
+            return;
+          }
           GameHUD.playSfx('start');
           this.startMusicalShow();
           return;
@@ -3967,13 +4001,30 @@
           drawPixelTextCentered(ctx, 'Treinar >', b.x + b.w / 2, b.y + 4, '#ffffff', '#000000', b.w - 4, 8);
         }
       } else {
-        drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#ffea31', '#000000', 160, 9);
-        drawPixelText(ctx, 'Página 2/2 • Sem penalidade', cx + 10, cy + 6, '#fff66b', '#000000', cw - 20, 9, 'right');
+        const practiceDone = Boolean(this.vignettePracticeDone || (CaveRhythmKaraoke.practiceHits || 0) >= 1);
+        const isUnlocked = this.isRhythmPracticeUnlocked();
+        const pulse = GameHUD.reducedMotion ? 0 : (Math.floor(tq * 4) & 1);
 
-        drawPixelText(ctx, 'Experimente o salto! Aperte ESPAÇO ou o Botão:', cx + 12, cy + 24, '#ffea31', '#000000', cw - 24, 9);
+        drawPixelText(ctx, 'Treino Livre de Ritmo', cx + 10, cy + 6, '#ffea31', '#000000', 142, 9);
 
-        const practiceBox = { x: cx + 12, y: cy + 40, w: cw - 24, h: 32 };
+        // Selo destacado de Prática Interativa no cabeçalho direito
+        const badge = { x: cx + cw - 118, y: cy + 3, w: 110, h: 12 };
+        GameHUD.drawInteractivePracticeBadge(ctx, badge, practiceDone, tq);
+
+        drawPixelText(ctx, 'Experimente o salto! Aperte ESPAÇO ou TOQUE aqui:', cx + 12, cy + 23, '#ffea31', '#000000', cw - 24, 9);
+
+        const practiceBox = { x: cx + 12, y: cy + 39, w: cw - 24, h: 32 };
         CaveRhythmKaraoke.render(ctx, this.vignettePracticeTime, true, practiceBox);
+
+        // Borda ativa pulsante convidativa ao redor do palco interativo
+        const boxRim = practiceDone
+          ? (pulse ? '#86efac' : '#4ade80')
+          : (this.vignetteLockFeedbackTimer > 0 ? '#f87171' : (pulse ? '#fbbf24' : '#38bdf8'));
+        ctx.fillStyle = boxRim;
+        ctx.fillRect(practiceBox.x - 1, practiceBox.y - 1, practiceBox.w + 2, 1);
+        ctx.fillRect(practiceBox.x - 1, practiceBox.y + practiceBox.h, practiceBox.w + 2, 1);
+        ctx.fillRect(practiceBox.x - 1, practiceBox.y - 1, 1, practiceBox.h + 2);
+        ctx.fillRect(practiceBox.x + practiceBox.w, practiceBox.y - 1, 1, practiceBox.h + 2);
 
         drawPixelTextCentered(
           ctx,
@@ -4040,7 +4091,8 @@
           drawPixelText(ctx, demo.label, cx + 114, cy + 95, activeCol, '#000000', cw - 126, 9);
         }
 
-        const bReset = { x: cx + 10, y: cy + ch - 20, w: 88, h: 15 };
+        // Rodapé do Card 2: [↺ Recomeçar] [Indicador de objetivo prático] [♪ Iniciar Show!]
+        const bReset = { x: cx + 10, y: cy + ch - 20, w: 68, h: 15 };
         ctx.fillStyle = '#14111c';
         ctx.fillRect(bReset.x - 1, bReset.y - 1, bReset.w + 2, bReset.h + 2);
         ctx.fillStyle = '#324b81';
@@ -4048,17 +4100,55 @@
         ctx.fillStyle = '#92e8ff';
         ctx.fillRect(bReset.x, bReset.y, bReset.w, 1);
         ctx.fillRect(bReset.x, bReset.y + bReset.h - 1, bReset.w, 1);
-        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 3, '#ffffff', '#000000', bReset.w - 4, 8);
+        drawPixelTextCentered(ctx, '↺ Recomeçar', bReset.x + bReset.w / 2, bReset.y + 4, '#ffffff', '#000000', bReset.w - 4, 8);
 
-        const bStart = { x: cx + cw - 124, y: cy + ch - 20, w: 114, h: 15 };
-        ctx.fillStyle = '#14111c';
-        ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
-        ctx.fillStyle = '#2b689c';
-        ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
-        ctx.fillStyle = '#92e8ff';
-        ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
-        ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
-        drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 3, '#ffffff', '#000000', bStart.w - 4, 8);
+        // Indicador de objetivo prático (SEM barra de timer!)
+        const ob = { x: cx + 82, y: cy + ch - 20, w: 88, h: 15 };
+        ctx.fillStyle = '#0f1422';
+        ctx.fillRect(ob.x - 1, ob.y - 1, ob.w + 2, ob.h + 2);
+        ctx.fillStyle = practiceDone ? '#0e3422' : (GameHUD.godMode ? '#281845' : '#1f1c36');
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        ctx.fillStyle = practiceDone
+          ? '#4ade80'
+          : (this.vignetteLockFeedbackTimer > 0 ? '#f87171' : (GameHUD.godMode ? '#ffea31' : (pulse ? '#fbbf24' : '#38bdf8')));
+        ctx.fillRect(ob.x, ob.y, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y + ob.h - 1, ob.w, 1);
+        ctx.fillRect(ob.x, ob.y, 1, ob.h);
+        ctx.fillRect(ob.x + ob.w - 1, ob.y, 1, ob.h);
+        const obLabel = practiceDone
+          ? '✓ Prática ok!'
+          : (GameHUD.godMode ? '⚡ God Mode' : 'Acerte 1 nota!');
+        drawPixelTextCentered(
+          ctx,
+          obLabel,
+          ob.x + ob.w / 2,
+          ob.y + 4,
+          practiceDone ? '#86efac' : (this.vignetteLockFeedbackTimer > 0 ? '#fecaca' : '#ffe887'),
+          '#000000',
+          ob.w - 4,
+          8
+        );
+
+        const bStart = { x: cx + cw - 98, y: cy + ch - 20, w: 88, h: 15 };
+        if (!isUnlocked) {
+          ctx.fillStyle = '#0f1422';
+          ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+          ctx.fillStyle = '#1b2334';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+          ctx.fillStyle = '#2d3b54';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+          ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+          drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 4, '#6b7d9b', '#000000', bStart.w - 4, 8);
+        } else {
+          ctx.fillStyle = '#14111c';
+          ctx.fillRect(bStart.x - 1, bStart.y - 1, bStart.w + 2, bStart.h + 2);
+          ctx.fillStyle = '#2b689c';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, bStart.h);
+          ctx.fillStyle = pulse ? '#ffe887' : '#92e8ff';
+          ctx.fillRect(bStart.x, bStart.y, bStart.w, 1);
+          ctx.fillRect(bStart.x, bStart.y + bStart.h - 1, bStart.w, 1);
+          drawPixelTextCentered(ctx, '♪ Iniciar Show!', bStart.x + bStart.w / 2, bStart.y + 4, '#ffffff', '#000000', bStart.w - 4, 8);
+        }
       }
     },
 
@@ -5180,9 +5270,16 @@
         this.phase = 'tutorial';
         this.setupLevelStep(1, 1);
         TutorialModal.open(StandardTutorialCards.FASE1_INTRO, () => {
-          this.phase = 'gameplay';
-          this.phaseTime = 0;
-          this.startFase1IntroGuide();
+          const beginGameplay = () => {
+            this.phase = 'gameplay';
+            this.phaseTime = 0;
+            this.startFase1IntroGuide();
+          };
+          if (!GameHUD.guideIntroShown && typeof GameHUD.openGuideIntro === 'function') {
+            GameHUD.openGuideIntro(beginGameplay);
+          } else {
+            beginGameplay();
+          }
         });
       });
     },
@@ -5334,6 +5431,9 @@
       this.updateOpalProximity(dt);
 
       if (this.phase === 'musical_vignette') {
+        if (this.vignetteLockFeedbackTimer > 0) {
+          this.vignetteLockFeedbackTimer = Math.max(0, this.vignetteLockFeedbackTimer - dt);
+        }
         if (this.vignetteCard === 2) {
           this.vignettePracticeTime += dt;
           if (this.vignettePracticeTime >= 7.2) {

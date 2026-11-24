@@ -33,6 +33,10 @@
       E.TutorialModal.nextStep(true);
       steps++;
     }
+    if (E?.GameHUD?.guideIntroActive) {
+      E.GameHUD.dismissGuideIntro(false);
+      steps++;
+    }
     return steps > 0;
   }
 
@@ -60,6 +64,9 @@
       E.GameHUD.paused = false;
       E.GameHUD.settingsOpen = false;
       E.GameHUD.guideOpen = false;
+      if (E.GameHUD.guideIntroActive) {
+        E.GameHUD.dismissGuideIntro(false);
+      }
     }
   }
 
@@ -95,6 +102,11 @@
         paused: Boolean(E?.GameHUD?.paused),
         muted: Boolean(E?.GameHUD?.muted),
         settingsOpen: Boolean(E?.GameHUD?.settingsOpen),
+        guideOpen: Boolean(E?.GameHUD?.guideOpen),
+        guideWorld: E?.GameHUD?.guideWorld || 'caverna',
+        guideItemIndex: E?.GameHUD?.guideItemIndex ?? 0,
+        guideIntroActive: Boolean(E?.GameHUD?.guideIntroActive),
+        lastViewedTutorialKey: E?.GameHUD?.lastViewedTutorialKey || null,
         godMode: Boolean(E?.GameHUD?.godMode),
         mapLocked: Boolean(E?.GameHUD?.isMapLocked?.())
       },

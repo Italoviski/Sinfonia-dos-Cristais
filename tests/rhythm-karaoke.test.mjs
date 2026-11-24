@@ -246,9 +246,15 @@ test('CaveChapter1: vinheta da Fase 5 (Cards 1 e 2), transição para música e 
   Cave.update(0.1);
   assert.ok(Cave.vignettePracticeTime > 0, 'Tempo de treino deve avançar no update');
 
-  // 4. Inicia música real a partir do Card 2 (botão "♪ Iniciar Show!" em x: 240, y: 155)
+  // 4. Sem praticar ainda, clicar em "♪ Iniciar Show!" permanece bloqueado no Card 2
   Cave.handleVignetteClick(240, 155);
-  assert.equal(Cave.phase, 'musical_part1_shadows', 'Deve entrar no Ato 1 da música (Teatro de Sombras)');
+  assert.equal(Cave.phase, 'musical_vignette', 'Botão Iniciar Show deve permanecer bloqueado antes de praticar 1 nota');
+
+  // 4b. Pratica 1 nota válida no ritmo (t=0.8 -> palavra "Era") e então inicia a música real
+  Cave.vignettePracticeTime = 0.8;
+  Cave.handleVignetteClick(150, 60);
+  Cave.handleVignetteClick(240, 155);
+  assert.equal(Cave.phase, 'musical_part1_shadows', 'Deve entrar no Ato 1 da música (Teatro de Sombras) após praticar 1 nota');
   assert.equal(Cave.currentLevel, 5, 'Deve permanecer na Fase 5');
 
   // 5. Reinicia fase durante a música (pressionando R ou chamando restartCurrentPhase)
