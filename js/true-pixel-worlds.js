@@ -1127,50 +1127,139 @@
     }
   }
 
-  function drawAncientSanctuaryGate(ctx, sealRatio, openRatio, t) {
+  const SANCTUARY_GATE = Object.freeze({
+    gx: 274,
+    gy: 26,
+    gw: 61,
+    gh: 116,
+    frameX: 244,
+    frameY: 26,
+    frameW: 61,
+    frameH: 116,
+    lintelX: 246,
+    lintelY: 28,
+    lintelW: 57,
+    lintelH: 11,
+    innerX: 248,
+    innerY: 39,
+    innerW: 53,
+    innerH: 103
+  });
+
+  const SANCTUARY_DOOR_SOCKETS = Object.freeze({
+    forest:   { x: 256, y: 33, col: '#69f0ae', hi: '#b9f6ca', dark: '#1b5e20', label: 'Esmeralda', threshold: 0.25 },
+    river:    { x: 268, y: 32, col: '#40c4ff', hi: '#b3e5fc', dark: '#01579b', label: 'Turmalina Paraíba', threshold: 0.50 },
+    caatinga: { x: 280, y: 32, col: '#ff9100', hi: '#ffe082', dark: '#bf360c', label: 'Opala de Fogo', threshold: 0.75 },
+    fairy:    { x: 292, y: 33, col: '#e040fb', hi: '#f3e5f5', dark: '#6a1b9a', label: 'Gema da Ordem', threshold: 0.99 }
+  });
+
+  function drawBeginningCaveInteriorClipped(ctx, t) {
     const f12 = Math.floor(t * SPRITE_FPS);
-    const gx = 274, gy = 26, gw = 58, gh = 116;
+    const { gx, innerX, innerY, innerW, innerH } = SANCTUARY_GATE;
 
-    // Se o portão está se abrindo, revela o Panorama Radiante dos 4 Biomas ao fundo!
-    if (openRatio > 0.02) {
-      drawNextBiomePanorama(ctx, 'kingdom', openRatio, t, gx - 30, gy + 6, gw + 48, gh - 6);
+    // Interior mostra exatamente o INÍCIO DA CAVERNA (feixe de luz vertical da queda inicial + musgo da Fase 1)
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(innerX, innerY, innerW, innerH);
+    ctx.fillStyle = 'rgba(158, 240, 255, 0.28)';
+    ctx.fillRect(gx - 12, innerY, 24, innerH - 8);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fillRect(gx - 5, innerY, 10, innerH - 10);
+
+    // Base de pedra e musgo da entrada inicial da caverna dentro do vão
+    ctx.fillStyle = '#2d2428';
+    ctx.fillRect(innerX, innerY + innerH - 8, innerW, 8);
+    ctx.fillStyle = '#3e7338';
+    ctx.fillRect(innerX, innerY + innerH - 12, innerW, 5);
+    ctx.fillStyle = '#7ec456';
+    ctx.fillRect(innerX, innerY + innerH - 12, innerW, 2);
+
+    // Poeira cristalina na fresta de luz inicial
+    ctx.fillStyle = '#9ef0ff';
+    for (let i = 0; i < 4; i++) {
+      ctx.fillRect(gx - 9 + i * 6, innerY + 12 + ((f12 + i * 5) % 48), 2, 2);
     }
+  }
 
-    const split = R(easeInOut(clamp(openRatio, 0, 1)) * 24);
-    // Moldura monumental do Portão das Gemas
+  function drawAncientSanctuaryGate(ctx, sealRatio, openRatio, t, customSockets = null, useCaveInterior = false) {
+    const f12 = Math.floor(t * SPRITE_FPS);
+    const {
+      gx, frameX, frameY, frameW, frameH,
+      lintelX, lintelY, lintelW, lintelH,
+      innerX, innerY, innerW, innerH
+    } = SANCTUARY_GATE;
+
+    // Moldura monumental simétrica do Portão das Gemas (x = 244..304, y = 26..142)
     ctx.fillStyle = '#1f1816';
-    ctx.fillRect(gx - 30, gy, 60, gh);
-    ctx.fillStyle = '#4a3a31';
-    ctx.fillRect(gx - 28, gy + 2, 56, 10);
+    ctx.fillRect(frameX, frameY, frameW, frameH);
+    // Pilares laterais esculpidos
+    ctx.fillStyle = '#3d302a';
+    ctx.fillRect(frameX + 1, innerY, 3, innerH);
+    ctx.fillRect(frameX + frameW - 4, innerY, 3, innerH);
 
-    // Folhas duplas de pedra ancestral que deslizam para os lados ao abrir
-    const leafW = Math.max(2, 25 - split);
-    for (const side of [-1, 1]) {
-      const lx = side < 0 ? (gx - 26) : (gx + 26 - leafW);
-      ctx.fillStyle = '#382d29';
-      ctx.fillRect(lx, gy + 12, leafW, gh - 12);
-      ctx.fillStyle = '#574740';
-      ctx.fillRect(lx + 1, gy + 13, Math.max(1, leafW - 2), gh - 14);
-      ctx.fillStyle = '#bfa36f';
-      ctx.fillRect(side < 0 ? lx + leafW - 2 : lx, gy + 12, 2, gh - 12);
+    // Se o portão está se abrindo, revela o interior exatamente recortado ao vão interno da porta
+    const clampedOpen = clamp(openRatio, 0, 1);
+    if (clampedOpen > 0.02) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(innerX, innerY, innerW, innerH);
+      ctx.clip();
+      if (useCaveInterior) {
+        drawBeginningCaveInteriorClipped(ctx, t);
+      } else {
+        drawNextBiomePanorama(ctx, 'kingdom', clampedOpen, t, innerX, innerY, innerW, innerH);
+      }
+      ctx.restore();
     }
 
-    // Os 4 Relicários Primordiais cravados no arco superior do Portão
-    const gems = [
-      [gx - 18, gy + 7, '#68b8c4', sealRatio >= 0.25],
-      [gx - 6,  gy + 6, '#7ec456', sealRatio >= 0.50],
-      [gx + 6,  gy + 6, '#57bbc9', sealRatio >= 0.75],
-      [gx + 18, gy + 7, '#e68a49', sealRatio >= 0.99]
-    ];
-    for (let i = 0; i < gems.length; i++) {
-      const [rx, ry, col, unlocked] = gems[i];
+    // Folhas duplas de pedra ancestral que deslizam para os lados ao abrir (sempre dentro do vão)
+    const split = R(easeInOut(clampedOpen) * 24);
+    const leafW = Math.max(2, 26 - split);
+    for (const side of [-1, 1]) {
+      const lx = side < 0 ? innerX : (innerX + innerW - leafW);
+      ctx.fillStyle = '#382d29';
+      ctx.fillRect(lx, innerY, leafW, innerH);
+      ctx.fillStyle = '#574740';
+      ctx.fillRect(lx + 1, innerY + 1, Math.max(1, leafW - 2), innerH - 2);
+      ctx.fillStyle = '#bfa36f';
+      ctx.fillRect(side < 0 ? lx + leafW - 2 : lx, innerY, 2, innerH);
+    }
+
+    // Verga superior do Portão (desenhada acima das folhas, abrigando os 4 relicários)
+    ctx.fillStyle = '#4a3a31';
+    ctx.fillRect(lintelX, lintelY, lintelW, lintelH);
+    ctx.fillStyle = '#635045';
+    ctx.fillRect(lintelX, lintelY, lintelW, 1);
+    ctx.fillStyle = '#2c221e';
+    ctx.fillRect(lintelX, lintelY + lintelH - 1, lintelW, 1);
+
+    // Único conjunto dos 4 Relicários Primordiais perfeitamente cravados na verga superior
+    const entries = Object.entries(SANCTUARY_DOOR_SOCKETS);
+    for (let i = 0; i < entries.length; i++) {
+      const [key, s] = entries[i];
+      const rx = s.x;
+      const ry = s.y;
+      const unlocked = customSockets ? Boolean(customSockets[key]) : (sealRatio >= s.threshold);
+
+      ctx.fillStyle = '#241a17';
+      ctx.fillRect(rx - 4, ry - 4, 9, 9);
       ctx.fillStyle = '#d9bf86';
       ctx.fillRect(rx - 3, ry - 3, 7, 7);
-      ctx.fillStyle = unlocked ? col : '#2b211d';
-      ctx.fillRect(rx - 2, ry - 2, 5, 5);
+      P1(ctx, rx - 3, ry - 3, '#fff3c4');
+
       if (unlocked) {
+        ctx.fillStyle = s.dark;
+        ctx.fillRect(rx - 2, ry - 2, 5, 5);
+        ctx.fillStyle = s.col;
+        ctx.fillRect(rx - 2, ry - 2, 4, 4);
+        ctx.fillStyle = s.hi;
+        ctx.fillRect(rx - 2, ry - 2, 2, 2);
         P1(ctx, rx - 1, ry - 1, '#ffffff');
-        if (((f12 + i) & 3) === 0) drawStar(ctx, rx, ry - 4, 2, '#ffffff', col);
+        if (((f12 + i) & 3) === 0) drawStar(ctx, rx, ry - 5, 2, '#ffffff', s.col);
+      } else {
+        ctx.fillStyle = '#2b211d';
+        ctx.fillRect(rx - 2, ry - 2, 5, 5);
+        ctx.fillStyle = '#1a1310';
+        ctx.fillRect(rx - 2, ry - 2, 5, 1);
       }
     }
   }
@@ -1411,7 +1500,10 @@
     }
 
     // Afloramentos cristalinos acesos do ambiente (iluminação da Parte 1 do musical!)
-    for (const [cx, cy, ch] of [[38, 282, 22], [62, 284, 15], [586, 282, 20], [608, 284, 14]]) {
+    const ambientClusters = biomeKey === 'sanctuary'
+      ? [[16, 284, 16], [626, 284, 16]]
+      : [[38, 282, 22], [62, 284, 15], [586, 282, 20], [608, 284, 14]];
+    for (const [cx, cy, ch] of ambientClusters) {
       for (let dy = 0; dy < ch; dy++) {
         const hw = Math.max(1, Math.round((1 - dy / ch) * 6));
         for (let dx = -hw; dx <= hw; dx++) {
@@ -5516,9 +5608,13 @@
       sg.totalRounds = sg.rounds.length;
       const rDef = sg.rounds[sg.roundIndex];
       const count = rDef.cups;
-      const spacing = count <= 2 ? 56 : (count === 3 ? 46 : (count === 4 ? 38 : 32));
-      const startX = R(160 - ((count - 1) * spacing) * 0.5);
-      const baseY = 104;
+      const isSanctuary = this.worldKey === 'sanctuary';
+      const spacing = isSanctuary
+        ? (count <= 2 ? 48 : (count === 3 ? 40 : (count === 4 ? 32 : 28)))
+        : (count <= 2 ? 56 : (count === 3 ? 46 : (count === 4 ? 38 : 32)));
+      const centerX = isSanctuary ? 166 : 160;
+      const startX = R(centerX - ((count - 1) * spacing) * 0.5);
+      const baseY = isSanctuary ? 90 : 104;
 
       sg.winningCup = sg.roundIndex % count;
       sg.opalCupIdx = sg.winningCup;
@@ -5745,23 +5841,32 @@
       });
     },
 
+    getShellCalmBtnRect() {
+      return this.worldKey === 'sanctuary'
+        ? { x: 6, y: 23, w: 86, h: 14 }
+        : this.shellCalmBtnRect;
+    },
+
     drawShellGame(ctx, tq) {
       const sg = this.shellGame;
       if (!sg) return;
       const f12 = Math.floor(tq * SPRITE_FPS);
       const rDef = sg.rounds[sg.roundIndex] || sg.rounds[0];
+      const isSanctuary = this.worldKey === 'sanctuary';
 
       if (this.phase === 'shell_game_victory') {
         // A Opala de Fogo Primordial levita ao centro irradiando onda solar, mandacarus em flor de rubi e água cristalina brotando!
-        const gy = R(82 + Math.sin(tq * 4) * 3);
-        drawRing(ctx, 160, gy, 16 + (f12 & 1) * 3, '#FBBF24');
-        drawRing(ctx, 160, gy, 24 + (f12 & 1) * 4, '#FEF3C7');
+        const opalX = isSanctuary ? 174 : 160;
+        const gy = R((isSanctuary ? 78 : 82) + Math.sin(tq * 4) * 3);
+        drawRing(ctx, opalX, gy, 16 + (f12 & 1) * 3, '#FBBF24');
+        drawRing(ctx, opalX, gy, 24 + (f12 & 1) * 4, '#FEF3C7');
         const spr = GEM_SPRITES.opal_pure;
-        ctx.drawImage(spr, RH(160 - spr.width * 0.25), RH(gy - spr.height * 0.25), spr.width * 0.5, spr.height * 0.5);
-        drawStar(ctx, 160, gy - 14, 4, '#ffffff', '#FBBF24');
+        ctx.drawImage(spr, RH(opalX - spr.width * 0.25), RH(gy - spr.height * 0.25), spr.width * 0.5, spr.height * 0.5);
+        drawStar(ctx, opalX, gy - 14, 4, '#ffffff', '#FBBF24');
 
         // Mandacarus florescendo com flores de rubi e filetes de água cristalina brotando do solo rochoso
-        for (const mx of [84, 122, 198, 236]) {
+        const cactiXs = isSanctuary ? [136, 174, 212] : [84, 122, 198, 236];
+        for (const mx of cactiXs) {
           ctx.fillStyle = '#3e7338';
           ctx.fillRect(mx - 2, 118, 5, 22);
           ctx.fillRect(mx - 6, 124, 4, 8);
@@ -5770,25 +5875,45 @@
           ctx.fillStyle = '#6cd9e6';
           ctx.fillRect(mx - 8, 138, 16, 2);
         }
-        drawParchmentBox(ctx, 48, 26, 224, 20);
-        drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial despertou a Caatinga!', 160, 32, '#ffea31', '#000000', 212, 9);
+        if (isSanctuary) {
+          drawParchmentBox(ctx, 8, 24, 230, 18);
+          drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial brilhou no Portão!', 123, 29, '#ffea31', '#000000', 218, 8);
+        } else {
+          drawParchmentBox(ctx, 48, 26, 224, 20);
+          drawPixelTextCentered(ctx, 'A Opala de Fogo Primordial despertou a Caatinga!', 160, 32, '#ffea31', '#000000', 212, 9);
+        }
         return;
       }
 
       // Cabeçalho da Rodada + Botão Modo Calmo (Acessibilidade sem penalização)
-      drawParchmentBox(ctx, 110, 23, 148, 15);
-      drawPixelTextCentered(
-        ctx,
-        `Desafio das Areias - Rodada ${rDef.round}/6`,
-        184,
-        27,
-        '#ffffff',
-        '#000000',
-        140,
-        8
-      );
+      const totalRounds = sg.rounds.length || 6;
+      if (isSanctuary) {
+        drawParchmentBox(ctx, 96, 23, 142, 14);
+        drawPixelTextCentered(
+          ctx,
+          `Desafio das Areias - Rodada ${rDef.round}/${totalRounds}`,
+          167,
+          27,
+          '#ffffff',
+          '#000000',
+          134,
+          8
+        );
+      } else {
+        drawParchmentBox(ctx, 110, 23, 148, 15);
+        drawPixelTextCentered(
+          ctx,
+          `Desafio das Areias - Rodada ${rDef.round}/${totalRounds}`,
+          184,
+          27,
+          '#ffffff',
+          '#000000',
+          140,
+          8
+        );
+      }
 
-      const cb = this.shellCalmBtnRect;
+      const cb = this.getShellCalmBtnRect();
       ctx.fillStyle = '#2c221e';
       ctx.fillRect(cb.x - 1, cb.y - 1, cb.w + 2, cb.h + 2);
       ctx.fillStyle = sg.calmMode ? '#3e7338' : '#4a3830';
@@ -5807,18 +5932,25 @@
       );
 
       // Tapete de areia dourada do altar
-      ctx.fillStyle = '#D97706';
-      ctx.fillRect(54, 112, 212, 6);
-      ctx.fillStyle = '#FEF3C7';
-      ctx.fillRect(58, 112, 204, 1);
+      if (isSanctuary) {
+        ctx.fillStyle = '#D97706';
+        ctx.fillRect(100, 98, 132, 6);
+        ctx.fillStyle = '#FEF3C7';
+        ctx.fillRect(104, 98, 124, 1);
+      } else {
+        ctx.fillStyle = '#D97706';
+        ctx.fillRect(54, 112, 212, 6);
+        ctx.fillStyle = '#FEF3C7';
+        ctx.fillRect(58, 112, 204, 1);
+      }
 
       // Desenha a Opala de Fogo Primordial sob a cúpula vencedora quando o copo está erguido
       const winCup = sg.cups[sg.winningCup];
       if (winCup && winCup.liftY > 2) {
         const spr = GEM_SPRITES.opal_pure;
         const gw = spr.width * 0.5, gh = spr.height * 0.5;
-        ctx.drawImage(spr, RH(winCup.x - gw / 2), RH(104 - gh / 2), gw, gh);
-        drawStar(ctx, R(winCup.x), 92, 3, '#ffffff', '#FBBF24');
+        ctx.drawImage(spr, RH(winCup.x - gw / 2), RH(winCup.y - gh / 2), gw, gh);
+        drawStar(ctx, R(winCup.x), R(winCup.y - 12), 3, '#ffffff', '#FBBF24');
       }
 
       // Desenha as cúpulas de arenito e quartzo dourado
@@ -5859,12 +5991,13 @@
         }
       }
 
+      const bannerBox = isSanctuary ? { x: 20, y: 150, w: 208, h: 15, cx: 124, ty: 154, sz: 8 } : { x: 56, y: 124, w: 208, h: 16, cx: 160, ty: 128, sz: 9 };
       if (this.phase === 'shell_game_show') {
-        drawParchmentBox(ctx, 56, 124, 208, 16);
-        drawPixelTextCentered(ctx, 'Memorize onde está a Opala de Fogo!', 160, 128, '#ffea31', '#000000', 198, 9);
+        drawParchmentBox(ctx, bannerBox.x, bannerBox.y, bannerBox.w, bannerBox.h);
+        drawPixelTextCentered(ctx, 'Memorize onde está a Opala de Fogo!', bannerBox.cx, bannerBox.ty, '#ffea31', '#000000', 198, bannerBox.sz);
       } else if (this.phase === 'shell_game_pick') {
-        drawParchmentBox(ctx, 56, 124, 208, 16);
-        drawPixelTextCentered(ctx, 'Toque na cúpula onde está a Opala de Fogo!', 160, 128, '#ffea31', '#000000', 198, 9);
+        drawParchmentBox(ctx, bannerBox.x, bannerBox.y, bannerBox.w, bannerBox.h);
+        drawPixelTextCentered(ctx, 'Toque na cúpula onde está a Opala de Fogo!', bannerBox.cx, bannerBox.ty, '#ffea31', '#000000', 198, bannerBox.sz);
       }
     },
 
@@ -6089,13 +6222,21 @@
     drawRiverMelodyGame(ctx, tq) {
       const rm = this.riverMelody;
       if (!rm) return;
+      const isSanctuary = this.worldKey === 'sanctuary';
 
       // Cabeçalho compacto à esquerda, sem sobrepor o botão Modo Calmo nem o cristal gigante central (x=148..204)
       const titleRect = { x: 6, y: 22, w: 138, h: 14 };
       drawParchmentBox(ctx, titleRect.x, titleRect.y, titleRect.w, titleRect.h);
+      let melLabel = `Sinfonia das Águas - Melodia ${rm.roundIndex + 1}/5`;
+      if (rm.finalMaxRound !== undefined) {
+        const startR = rm.finalStartRound ?? 1;
+        const dispRound = Math.max(1, rm.roundIndex - startR + 1);
+        const dispTotal = Math.max(1, rm.finalMaxRound - startR + 1);
+        melLabel = `Sinfonia das Águas - Melodia ${dispRound}/${dispTotal}`;
+      }
       drawPixelTextCentered(
         ctx,
-        `Sinfonia das Águas - Melodia ${rm.roundIndex + 1}/5`,
+        melLabel,
         titleRect.x + titleRect.w / 2,
         titleRect.y + 3,
         '#ffffff',
@@ -6123,9 +6264,11 @@
         7
       );
 
-      // Selo GOD MODE compacto no canto superior direito (sem invadir o cristal gigante central)
+      // Selo GOD MODE compacto (no Santuário fica à esquerda da Porta Ancestral para não cobrir os encaixes)
       if (GameHUD.godMode) {
-        const gm = { x: 256, y: 22, w: 58, h: 12 };
+        const gm = isSanctuary
+          ? { x: 150, y: 23, w: 58, h: 12 }
+          : { x: 256, y: 22, w: 58, h: 12 };
         ctx.fillStyle = 'rgba(24, 14, 42, 0.88)';
         ctx.fillRect(gm.x, gm.y, gm.w, gm.h);
         ctx.fillStyle = '#ffea31';
@@ -6181,11 +6324,12 @@
       }
 
       if (rm.phase === 'demo') {
-        drawParchmentBox(ctx, 64, 134, 192, 15);
+        const db = isSanctuary ? { x: 44, y: 150, w: 186, cx: 137, ty: 154 } : { x: 64, y: 134, w: 192, cx: 160, ty: 138 };
+        drawParchmentBox(ctx, db.x, db.y, db.w, 15);
         const demoLabel = (rm.demoIndex === 0 && rm.demoTimer > 0)
           ? 'Observe o cristal de referência...'
           : 'Ouça com atenção a melodia...';
-        drawPixelTextCentered(ctx, demoLabel, 160, 138, '#ffea31', '#000000', 184, 8);
+        drawPixelTextCentered(ctx, demoLabel, db.cx, db.ty, '#ffea31', '#000000', db.w - 8, 8);
       } else if (rm.phase === 'player_input' && (rm.inputIdleTimer || 0) >= 4.5) {
         const idleElapsed = (rm.inputIdleTimer || 0) - 4.5;
         const hintAlpha = clamp(idleElapsed / 0.6, 0, 1);
@@ -6193,8 +6337,9 @@
         // Aviso suave apenas após inatividade prolongada (>= 4.5s)
         ctx.save();
         ctx.globalAlpha = hintAlpha;
-        drawParchmentBox(ctx, 74, 134, 172, 15);
-        drawPixelTextCentered(ctx, 'Toque os cristais na ordem!', 160, 138, '#ffea31', '#000000', 164, 8);
+        const hb = isSanctuary ? { x: 50, y: 150, w: 174, cx: 137, ty: 154 } : { x: 74, y: 134, w: 172, cx: 160, ty: 138 };
+        drawParchmentBox(ctx, hb.x, hb.y, hb.w, 15);
+        drawPixelTextCentered(ctx, 'Toque os cristais na ordem!', hb.cx, hb.ty, '#ffea31', '#000000', hb.w - 8, 8);
         ctx.restore();
 
         // Se o atraso acontecer no primeiro cristal da sequência, anima a mãozinha clicando sobre o cristal correto
@@ -6401,20 +6546,33 @@
       const g = 135; // px/s² gravidade
       const speedMult = fn.calmMode ? 0.88 : 1.0;
 
+      const isSanctuary = this.worldKey === 'sanctuary' && !isPractice;
       const makeCrystal = (isShadow, preferredType = null) => {
         const types = ['emerald', 'white', 'citrine', 'aqua', 'rose'];
         const type = isShadow ? 'shadow_bomb' : (preferredType || types[Math.floor(Math.random() * types.length)]);
-        const startX = R(55 + Math.random() * 210);
+        const startX = isSanctuary
+          ? R(54 + Math.random() * 164)
+          : R(55 + Math.random() * 210);
         const startY = 186; // Começa imediatamente abaixo da tela (180px)
 
-        // Vértice do salto rigorosamente entre 32px e 64px para NUNCA cruzar o topo
-        const targetApexY = R(32 + Math.random() * 32);
-        const deltaH = startY - targetApexY; // 122 a 154 px
+        // Vértice do salto rigorosamente abaixo da barra do desafio para nunca cruzar o topo
+        const targetApexY = isSanctuary
+          ? R(46 + Math.random() * 24)
+          : R(32 + Math.random() * 32);
+        const deltaH = startY - targetApexY; // 116 a 154 px
         const vy = -Math.sqrt(2 * g * deltaH) * speedMult;
 
-        // Velocidade horizontal direcionada suavemente ao centro da tela
+        // Velocidade horizontal direcionada suavemente ao centro da arena
         let vx = 0;
-        if (startX < 120) {
+        if (isSanctuary) {
+          if (startX < 105) {
+            vx = (12 + Math.random() * 22) * speedMult;
+          } else if (startX > 170) {
+            vx = (-12 - Math.random() * 22) * speedMult;
+          } else {
+            vx = (-16 + Math.random() * 32) * speedMult;
+          }
+        } else if (startX < 120) {
           vx = (15 + Math.random() * 25) * speedMult;
         } else if (startX > 200) {
           vx = (-15 - Math.random() * 25) * speedMult;
@@ -7154,28 +7312,35 @@
 
       ctx.restore();
 
-      // 4. Barra Superior do Desafio: Etapa / Tempo 20s / Pontuação / Indicador de Combo em Destaque
-      const barBox = { x: 24, y: 22, w: 272, h: 16 };
+      const isSanctuary = this.worldKey === 'sanctuary';
+
+      // 4. Barra Superior do Desafio: Etapa / Tempo / Pontuação / Indicador de Combo em Destaque
+      const barBox = isSanctuary
+        ? { x: 6, y: 22, w: 232, h: 16 }
+        : { x: 24, y: 22, w: 272, h: 16 };
       drawParchmentBox(ctx, barBox.x, barBox.y, barBox.w, barBox.h);
 
-      // Etapa (1 a 4)
-      drawPixelText(ctx, `Etapa ${fn.currentStage}/4`, barBox.x + 6, barBox.y + 4, '#ffffff', '#000000', 50, 8);
-
-      // Tempo de 20 segundos
       const secLeft = Math.max(0, Math.ceil(fn.stageTimeRemaining));
       const timeCol = secLeft <= 4 ? '#ff4d4d' : '#ffea31';
-      drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 104, barBox.y + 4, timeCol, '#000000', 58, 8);
-
-      // Barra fina de progresso dos 20s
       const timeFrac = clamp(fn.stageTimeRemaining / fn.stageDuration, 0, 1);
-      ctx.fillStyle = '#4ade80';
-      ctx.fillRect(80, barBox.y + 13, R(48 * timeFrac), 2);
 
-      // Exibição visível da pontuação da criança
-      drawPixelText(ctx, `Pts: ${fn.score}`, 148, barBox.y + 4, '#92e8ff', '#000000', 48, 8);
-
-      // Indicador/Contador de Sequência (Streak) contínuo no Canto Superior Direito (x: 228..294, sem limite de 4)
-      this.forestNinjaComboBadgeRect = { x: 228, y: barBox.y + 1, w: 66, h: 14 };
+      if (isSanctuary) {
+        const targetCuts = fn.targetPureCuts || 8;
+        drawPixelText(ctx, `Cortes: ${fn.pureCuts}/${targetCuts}`, 11, barBox.y + 4, '#ffffff', '#000000', 58, 8);
+        drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 96, barBox.y + 4, timeCol, '#000000', 52, 8);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(74, barBox.y + 13, R(44 * timeFrac), 2);
+        drawPixelText(ctx, `Pts: ${fn.score}`, 126, barBox.y + 4, '#92e8ff', '#000000', 46, 8);
+        this.forestNinjaComboBadgeRect = { x: 178, y: barBox.y + 1, w: 56, h: 14 };
+      } else {
+        // Etapa (1 a 4)
+        drawPixelText(ctx, `Etapa ${fn.currentStage}/4`, barBox.x + 6, barBox.y + 4, '#ffffff', '#000000', 50, 8);
+        drawPixelTextCentered(ctx, `Tempo: ${secLeft}s`, 104, barBox.y + 4, timeCol, '#000000', 58, 8);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillRect(80, barBox.y + 13, R(48 * timeFrac), 2);
+        drawPixelText(ctx, `Pts: ${fn.score}`, 148, barBox.y + 4, '#92e8ff', '#000000', 48, 8);
+        this.forestNinjaComboBadgeRect = { x: 228, y: barBox.y + 1, w: 66, h: 14 };
+      }
       const cbRect = this.forestNinjaComboBadgeRect;
       const streakVal = Math.max(0, Math.floor(fn.streak || 0));
       const pulseGlow = fn.streakGlowTimer > 0 && ((Math.floor(tq * 16) & 1) === 0);
@@ -7231,7 +7396,7 @@
       // 5. Combo de Multi-Corte (em 1 golpe): texto flutuante limpo, compacto e SEM caixa opaca
       if (fn.activeComboBanner) {
         const cb = fn.activeComboBanner;
-        const cxB = clamp(R(cb.x), 36, W - 36);
+        const cxB = clamp(R(cb.x), 36, isSanctuary ? 204 : W - 36);
         const cyB = clamp(R(cb.y), 44, H - 18);
         ctx.save();
         ctx.globalAlpha = clamp(cb.timer / 0.35, 0, 1);
@@ -7249,8 +7414,13 @@
       // 6. Banner flutuante de avisos de etapa / penalidade (-2s)
       if (fn.floatingBanner) {
         const fb = fn.floatingBanner;
-        drawParchmentBox(ctx, 40, fb.y, 240, 18);
-        drawPixelTextCentered(ctx, fb.text, 160, fb.y + 5, fb.color || '#ffea31', '#000000', 230, 9);
+        if (isSanctuary) {
+          drawParchmentBox(ctx, 8, fb.y, 230, 18);
+          drawPixelTextCentered(ctx, fb.text, 123, fb.y + 5, fb.color || '#ffea31', '#000000', 218, 8);
+        } else {
+          drawParchmentBox(ctx, 40, fb.y, 240, 18);
+          drawPixelTextCentered(ctx, fb.text, 160, fb.y + 5, fb.color || '#ffea31', '#000000', 230, 9);
+        }
       }
     },
 
@@ -7875,7 +8045,7 @@
         }
 
         if (this.phase && this.phase.startsWith('shell_game_') && this.shellGame) {
-          const cb = this.shellCalmBtnRect;
+          const cb = this.getShellCalmBtnRect();
           if (cb && x >= cb.x && x <= cb.x + cb.w && y >= cb.y && y <= cb.y + cb.h) {
             GameHUD.playSfx('click');
             this.shellGame.calmMode = !this.shellGame.calmMode;
@@ -8909,7 +9079,14 @@
       const spec = this.getSpec();
 
       if (this.worldKey === 'sanctuary') {
-        drawAncientSanctuaryGate(ctx, this.obstacleDecay, this.gateOpenRatio, tq);
+        drawAncientSanctuaryGate(
+          ctx,
+          this.obstacleDecay,
+          this.gateOpenRatio,
+          tq,
+          this.finalDoorSockets || null,
+          Boolean(this._finalPhaseInstalled)
+        );
       } else if (this.phase === 'post_musical_dlg' || this.phase === 'world_celebrate_complete' || this.phase === 'walk_to_world_exit') {
         drawNextBiomePanorama(ctx, spec.nextBiome, 1.0, tq);
       } else if (this.isWorldFinale()) {
@@ -8956,7 +9133,9 @@
         ? VictoryChoreography.getCelebrationJumpOffset(this.phaseTime, Boolean(GameHUD.reducedMotion), 0.2)
         : 0;
 
-      ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y + protagJumpY, tq);
+      if (!(this.worldKey === 'sanctuary' && this.phase === 'final_wall_thanks')) {
+        ActorAnimator.drawActor(ctx, 'protagonist', this.protag.state, this.protag.x, this.protag.y + protagJumpY, tq);
+      }
       if (this.ordemCompanion.visible) {
         ActorAnimator.drawActor(ctx, 'ordem', this.ordemCompanion.state, this.ordemCompanion.x, this.ordemCompanion.y + ordemJumpY, tq, {
           flipX: Boolean(this.ordemCompanion.flipX)
@@ -8993,6 +9172,9 @@
         ActorAnimator.drawActor(ctx, 'araci', st, 126, 142 + qJump1, tq, { flipX: false });
         ActorAnimator.drawActor(ctx, 'irece', st, 156, 142 + qJump2, tq, { flipX: true });
         ActorAnimator.drawActor(ctx, 'jurema', st, 184, 142 + qJump3, tq, { flipX: true });
+      }
+      if (this.worldKey === 'sanctuary' && typeof this.renderSanctuaryWorldLayer === 'function') {
+        this.renderSanctuaryWorldLayer(ctx, tq);
       }
 
       if (this.phase === 'step_resolving') {
@@ -9043,6 +9225,9 @@
       }
       if (this.phase === 'forest_ninja_game' || (this.phase && this.phase.startsWith('forest_ninja_') && this.phase !== 'forest_ninja_vignette')) {
         this.drawForestNinjaGame(ctx, tq);
+      }
+      if (this.worldKey === 'sanctuary' && typeof this.renderSanctuaryPuzzleLayer === 'function') {
+        this.renderSanctuaryPuzzleLayer(ctx, tq);
       }
 
       if (
@@ -9123,15 +9308,19 @@
 
       ctx.setTransform(2, 0, 0, 2, 0, 0);
       const inMusical = this.phase === 'musical_part1_shadows' || this.phase === 'musical_part2_bright';
-      const inSpecialMinigame = inMusical ||
-        Boolean(this.forestNinja) ||
-        Boolean(this.riverMelody) ||
-        Boolean(this.shellGame) ||
-        Boolean(this.phase && (
-          this.phase.startsWith('forest_ninja_') ||
-          this.phase === 'river_melody_game' ||
-          this.phase.startsWith('shell_game_')
-        ));
+      const inSpecialMinigame = this.worldKey === 'sanctuary'
+        ? false
+        : (
+            inMusical ||
+            Boolean(this.forestNinja) ||
+            Boolean(this.riverMelody) ||
+            Boolean(this.shellGame) ||
+            Boolean(this.phase && (
+              this.phase.startsWith('forest_ninja_') ||
+              this.phase === 'river_melody_game' ||
+              this.phase.startsWith('shell_game_')
+            ))
+          );
       const hudCustomTitle = spec.customHudTitle || (
         this.phase && this.phase.startsWith('shell_game_')
           ? 'Caatinga - O Desafio das Areias'
@@ -9201,5 +9390,8 @@
   };
 
   TruePixelWorlds.GEM_PALETTES = GEM_PALETTES;
+  TruePixelWorlds.SANCTUARY_GATE = SANCTUARY_GATE;
+  TruePixelWorlds.SANCTUARY_DOOR_SOCKETS = SANCTUARY_DOOR_SOCKETS;
+  TruePixelWorlds.drawAncientSanctuaryGate = drawAncientSanctuaryGate;
   global.TruePixelWorlds = TruePixelWorlds;
 })(typeof window !== 'undefined' ? window : globalThis);

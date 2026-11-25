@@ -1,0 +1,87 @@
+[
+  {
+    "op": "set_position",
+    "clip": "t1",
+    "x": 0,
+    "y": 415
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t1",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "set_position",
+    "clip": "t2",
+    "x": 0,
+    "y": -335
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t2",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "set_position",
+    "clip": "t3",
+    "x": 0,
+    "y": 420
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t3",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "set_position",
+    "clip": "t4",
+    "x": 0,
+    "y": 420
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t4",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "set_position",
+    "clip": "t5",
+    "x": 0,
+    "y": 420
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t5",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "set_position",
+    "clip": "t6",
+    "x": 0,
+    "y": -285
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "t6",
+    "parent_kind": "video_clip",
+    "property": "opacity",
+    "default_value": 1
+  },
+  {
+    "op": "add_keyframe_lane",
+    "parent": "a18",
+    "parent_kind": "audio_clip",
+    "property": "volume",
+    "default_value": 1
+  }
+]

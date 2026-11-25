@@ -1,0 +1,156 @@
+{
+  "as": "editor-sinfonia",
+  "changed": true,
+  "created": [
+    {
+      "id": "B1",
+      "kind": "audio_bus"
+    },
+    {
+      "id": "B2",
+      "kind": "audio_bus"
+    },
+    {
+      "id": "B3",
+      "kind": "audio_bus"
+    },
+    {
+      "id": "a1",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c1",
+      "kind": "clip"
+    },
+    {
+      "id": "a2",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c2",
+      "kind": "clip"
+    },
+    {
+      "id": "a3",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c3",
+      "kind": "clip"
+    },
+    {
+      "id": "a4",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c4",
+      "kind": "clip"
+    },
+    {
+      "id": "a5",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c5",
+      "kind": "clip"
+    },
+    {
+      "id": "a6",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c6",
+      "kind": "clip"
+    },
+    {
+      "id": "a7",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c7",
+      "kind": "clip"
+    },
+    {
+      "id": "a8",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c8",
+      "kind": "clip"
+    },
+    {
+      "id": "a9",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c9",
+      "kind": "clip"
+    },
+    {
+      "id": "a10",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c10",
+      "kind": "clip"
+    },
+    {
+      "id": "a11",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c11",
+      "kind": "clip"
+    },
+    {
+      "id": "a12",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c12",
+      "kind": "clip"
+    },
+    {
+      "id": "a13",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c13",
+      "kind": "clip"
+    },
+    {
+      "id": "a14",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "c14",
+      "kind": "clip"
+    },
+    {
+      "id": "c15",
+      "kind": "clip"
+    },
+    {
+      "id": "a15",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "a16",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "a17",
+      "kind": "audio_clip"
+    },
+    {
+      "id": "a18",
+      "kind": "audio_clip"
+    }
+  ],
+  "next": "`invideo edit capture` shows frames of the result. Tell the user what changed, with timecodes. `invideo edit export` renders it once it is done.",
+  "revision": 31,
+  "state_token": "cilQvkNCH7TsbO1786ZlFrar28jXIHeE8cUS14ufInE",
+  "status": "applied",
+  "timeline_id": "T1",
+  "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/tree/main/seq-1.1"
+}

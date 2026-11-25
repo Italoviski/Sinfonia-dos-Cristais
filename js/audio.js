@@ -557,6 +557,74 @@
   finale() {
    cue([261.6, 329.6, 392, 523.3, 659.3, 784], 0.1, 'triangle', 0.12, 0.22);
   },
+  _lastBrinqueIntro: null,
+  brinqueIntro() {
+   const hud = (typeof window !== 'undefined') ? window.TruePixelEngine?.GameHUD : null;
+   if ((hud && (hud.muted || hud.sfxVol <= 0)) || !enabled || volume <= 0) return false;
+   const entry = { calledAt: Date.now(), played: false };
+   this._lastBrinqueIntro = entry;
+   const ac = ensure();
+   if (!ac) return false;
+
+   let playedThisCall = false;
+   const playScheduledJingle = () => {
+    if (playedThisCall || !enabled || volume <= 0) return;
+    playedThisCall = true;
+    const t = ac.currentTime || 0;
+    const hops = [
+     { delay: 0.06, popStart: 310, popEnd: 620, freq: 523.25 },
+     { delay: 0.20, popStart: 390, popEnd: 780, freq: 659.25 },
+     { delay: 0.34, popStart: 460, popEnd: 920, freq: 783.99 }
+    ];
+    hops.forEach((h) => {
+     const ht = t + h.delay;
+     tone(h.popStart, ht, 0.065, 'sine', 0.075, h.popEnd);
+     tone(h.freq, ht + 0.012, 0.20, 'triangle', 0.12, h.freq * 1.01);
+     tone(h.freq * 2, ht + 0.016, 0.16, 'sine', 0.06, h.freq * 2);
+    });
+    tone(880.0, t + 0.52, 0.13, 'triangle', 0.11, 885);
+    tone(1760.0, t + 0.524, 0.10, 'sine', 0.05);
+    tone(783.99, t + 0.62, 0.13, 'triangle', 0.11, 788);
+    tone(1567.98, t + 0.624, 0.10, 'sine', 0.05);
+
+    [523.25, 659.25, 783.99, 1046.5, 1174.66].forEach((f, i) => {
+     const nt = t + 0.74 + i * 0.018;
+     tone(f, nt, 0.30, 'triangle', 0.10);
+     tone(f * 2, nt + 0.006, 0.22, 'sine', 0.045);
+    });
+    tone(1567.98, t + 0.84, 0.24, 'sine', 0.065);
+    tone(2093.0, t + 0.92, 0.24, 'sine', 0.065);
+    entry.played = true;
+   };
+
+   if (ac.state === 'suspended' && typeof ac.resume === 'function') {
+    ac.resume().then(() => {
+     if (typeof window !== 'undefined' && window.CrystalOnboarding && !window.CrystalOnboarding.brinqueSplashActive) return;
+     playScheduledJingle();
+    }).catch(() => {});
+    return true;
+   }
+   playScheduledJingle();
+   return true;
+  },
+  brinqueChime() {
+   const hud = (typeof window !== 'undefined') ? window.TruePixelEngine?.GameHUD : null;
+   if ((hud && (hud.muted || hud.sfxVol <= 0)) || !enabled || volume <= 0) return false;
+   const ac = ensure();
+   if (!ac) return false;
+   const t = ac.currentTime || 0;
+   tone(440, t, 0.05, 'sine', 0.07, 880);
+   [523.25, 659.25, 1046.5].forEach((f, i) => {
+    tone(f, t + i * 0.045, 0.20, 'triangle', 0.11);
+    tone(f * 2, t + i * 0.045 + 0.005, 0.14, 'sine', 0.05);
+   });
+   this._lastBrinqueIntro = {
+    ...(this._lastBrinqueIntro || { calledAt: Date.now() }),
+    played: true,
+    chime: true
+   };
+   return true;
+  },
   stopAllMusic(except = null) {
    if (menuTrack && menuTrack !== except) {
     clearFadeTimer(menuTrack);
@@ -755,6 +823,9 @@
   const events = ['click', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown'];
   const handler = () => {
    ensure();
+   if (typeof window !== 'undefined' && window.CrystalOnboarding?.brinqueSplashActive) {
+    return;
+   }
    if (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') {
     if (menuTrack && menuTrack.paused) {
      window.CrystalAudio?.stopAllMusic?.(menuTrack);
@@ -825,13 +896,14 @@
     if (!menuTrack._fadingIn) {
      menuTrack.volume = menuVol;
     }
-    if (menuVol > 0 && menuTrack.paused && typeof document !== 'undefined' && (!document.body?.dataset?.screen || document.body.dataset.screen === 'home')) {
+    if (menuVol > 0 && menuTrack.paused && typeof document !== 'undefined' && (!document.body?.dataset?.screen || document.body.dataset.screen === 'home') && !(typeof window !== 'undefined' && window.CrystalOnboarding?.brinqueSplashActive)) {
      startMenuTrackWithFade().catch(() => {});
     }
    }
   },
   autoStart() {
    if (!menuTrack) return;
+   if (typeof window !== 'undefined' && window.CrystalOnboarding?.brinqueSplashActive) return;
    const p = startMenuTrackWithFade();
    if (p && typeof p.catch === 'function') {
     p.catch(() => {

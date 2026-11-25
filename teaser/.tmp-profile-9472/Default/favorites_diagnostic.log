@@ -1,0 +1,17 @@
+2026-11-25 03:07:05.927: [INFO] CurrentProfilePath: C:\Users\heito\OneDrive\Documentos\GitHub\Sinfonia-dos-Cristais\teaser\.tmp-profile-9472\Default
+2026-11-25 03:07:05.927: [INFO] Profiles total count: 1
+2026-11-25 03:07:05.927: [INFO] Profile: name=Perfil 1 path=C:\Users\heito\OneDrive\Documentos\GitHub\Sinfonia-dos-Cristais\teaser\.tmp-profile-9472\Default lastActive=null
+2026-11-25 03:07:05.927: [INFO] LastUsedProfileDir: C:\Users\heito\OneDrive\Documentos\GitHub\Sinfonia-dos-Cristais\teaser\.tmp-profile-9472\Default
+2026-11-25 03:07:05.927: [INFO] VisibilityChanged: 0
+2026-11-25 03:07:05.950: [INFO] OnDoneLoading sync enabled: 0
+2026-11-25 03:07:05.950: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-25 03:07:05.950: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-25 03:07:05.950: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-25 03:07:06.004: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-25 03:07:06.834: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-25 03:07:06.838: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-25 03:07:06.841: [INFO] Primary account changed.
+2026-11-25 03:07:06.841: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-25 03:07:06.857: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-25 03:07:06.870: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-11-25 03:07:11.048: [INFO] Sync initialization duration: 4053ms

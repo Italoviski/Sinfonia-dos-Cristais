@@ -1,0 +1,8 @@
+[
+  { "op": "set_position", "clip": "t1", "x": 0, "y": 445 },
+  { "op": "set_position", "clip": "t2", "x": 0, "y": 445 },
+  { "op": "set_position", "clip": "t3", "x": 0, "y": 445 },
+  { "op": "set_position", "clip": "t4", "x": 0, "y": 445 },
+  { "op": "set_position", "clip": "t5", "x": 0, "y": 445 },
+  { "op": "set_position", "clip": "t6", "x": 0, "y": -180 }
+]

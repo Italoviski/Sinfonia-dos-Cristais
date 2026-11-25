@@ -1,0 +1,40 @@
+{
+  "as": "editor-sinfonia",
+  "changed": true,
+  "created": [
+    {
+      "id": "feadef4c-1762-4c3a-b147-d9db91797158",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "726e64c8-5471-4e70-a8df-bd0b218684d8",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "dadb982b-9162-42f4-b153-5caff30ac6bf",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "72ebf8e2-8721-40c8-94eb-893e584f3143",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "144c7e90-b0f1-41ea-b2f8-750b9475bfde",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "b97670da-0e39-4db4-95e2-edac6e9c4bce",
+      "kind": "keyframe_lane"
+    },
+    {
+      "id": "3fc0ce3b-ad0d-432e-9635-906f60c79480",
+      "kind": "keyframe_lane"
+    }
+  ],
+  "next": "`invideo edit capture` shows frames of the result. Tell the user what changed, with timecodes. `invideo edit export` renders it once it is done.",
+  "revision": 33,
+  "state_token": "YjqlCMVbxOvGAgc8vS56Jdls7risp6dFl8jnSjcNHDg",
+  "status": "applied",
+  "timeline_id": "T1",
+  "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/tree/main/seq-1.1"
+}

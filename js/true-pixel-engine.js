@@ -9677,6 +9677,7 @@
       if (worlds && typeof worlds.isActiveGame === 'function' && worlds.isActiveGame()) {
         const wp = String(worlds.phase || '');
         if (
+          worlds.worldKey === 'sanctuary' ||
           worlds.forestNinja ||
           worlds.riverMelody ||
           worlds.shellGame ||
@@ -9690,6 +9691,8 @@
           wp === 'world_celebrate_complete' ||
           wp === 'game_over' ||
           wp === 'walk_to_world_exit' ||
+          wp === 'final_intro_mystery' ||
+          wp === 'final_guardian_enter' ||
           wp === 'final_last_dance' ||
           wp === 'final_wall_thanks' ||
           wp === 'final_musical_order_puzzle' ||

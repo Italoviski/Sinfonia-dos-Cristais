@@ -1,0 +1,853 @@
+{
+  "as": "editor-sinfonia",
+  "byte_budget": 65536,
+  "main_limiter": {
+    "id": "f83be463-f75f-51a7-981d-521c57afb646",
+    "kind": "audio_effect",
+    "properties": {
+      "effect": "limiter",
+      "parameters": {
+        "ceiling": -1,
+        "release": 168
+      }
+    },
+    "resolved_default": true,
+    "scope": "project"
+  },
+  "main_output": {
+    "id": "565eb2c9-1c9e-5999-83af-7ab7c3e33286",
+    "kind": "audio_bus",
+    "properties": {
+      "name": "MAIN"
+    },
+    "resolved_default": true,
+    "scope": "project"
+  },
+  "main_timeline_id": "T1",
+  "mode": "window",
+  "next": "`invideo edit change <edit-url> --timeline … --token …` changes it; `invideo edit catalog <edit-url> --ops …` gives the operations' fields. Give the user the URL to watch.",
+  "objects": [
+    {
+      "id": "V1",
+      "kind": "track",
+      "order": 0,
+      "properties": {
+        "name": "Gameplay",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "clip_type": "video",
+      "end_f": 360,
+      "id": "c1",
+      "kind": "clip",
+      "order": 1,
+      "properties": {
+        "asset_id": "m7",
+        "available_range": {
+          "end_f": 435.12,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 49.98298343551738,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "8d4a66d2-d3cf-5c9d-b639-00d7d92acd56",
+        "name": "01-menu-porta.mp4",
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 0,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 480,
+      "id": "c2",
+      "kind": "clip",
+      "order": 2,
+      "properties": {
+        "asset_id": "m9",
+        "available_range": {
+          "end_f": 396.9,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "3b8bf628-780d-569a-b7c2-7ed6d8f90731",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 12,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 360,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 636,
+      "id": "c3",
+      "kind": "clip",
+      "order": 3,
+      "properties": {
+        "asset_id": "m11",
+        "available_range": {
+          "end_f": 515.7,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 57.928646985287045,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "a05cf40a-5296-501b-84bc-83f756a6a92a",
+        "name": "03-caverna-mecanicas.mp4",
+        "src_in_f": 12,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 480,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 792,
+      "id": "c4",
+      "kind": "clip",
+      "order": 4,
+      "properties": {
+        "asset_id": "m11",
+        "available_range": {
+          "end_f": 515.7,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 57.928646985287045,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "90733288-09d3-5da3-8340-810ec6e68cf4",
+        "name": "03-caverna-mecanicas.mp4",
+        "src_in_f": 312,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 636,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 948,
+      "id": "c5",
+      "kind": "clip",
+      "order": 5,
+      "properties": {
+        "asset_id": "m12",
+        "available_range": {
+          "end_f": 392.46,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 56.495741246459495,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "f8fa73b9-d2dd-507a-ba7c-a72d5e459e25",
+        "name": "04-caverna-fada-ritmo.mp4",
+        "src_in_f": 210,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 792,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 1068,
+      "id": "c6",
+      "kind": "clip",
+      "order": 6,
+      "properties": {
+        "asset_id": "m9",
+        "available_range": {
+          "end_f": 396.9,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "f3394869-3596-5e9d-bc39-3ff85082bcd6",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 168,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 948,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 1260,
+      "id": "c7",
+      "kind": "clip",
+      "order": 7,
+      "properties": {
+        "asset_id": "m8",
+        "available_range": {
+          "end_f": 489.48,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.37238337684238,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "89a119cb-9da4-5668-b96d-b0e85afb292a",
+        "name": "05-floresta-corte.mp4",
+        "src_in_f": 12,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1068,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 1524,
+      "id": "c8",
+      "kind": "clip",
+      "order": 8,
+      "properties": {
+        "asset_id": "m8",
+        "available_range": {
+          "end_f": 489.48,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.37238337684238,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "333d7576-fbd1-5278-aa8a-ad9ada6d3ff4",
+        "name": "05-floresta-corte.mp4",
+        "src_in_f": 222,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1260,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 1608,
+      "id": "c9",
+      "kind": "clip",
+      "order": 9,
+      "properties": {
+        "asset_id": "m9",
+        "available_range": {
+          "end_f": 396.9,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "77002924-f8c0-5385-aa88-8cad30469899",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 288,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1524,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 1848,
+      "id": "c10",
+      "kind": "clip",
+      "order": 10,
+      "properties": {
+        "asset_id": "m10",
+        "available_range": {
+          "end_f": 545.22,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.54532347383483,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "216eaeb1-aafd-5082-adc0-4859742f5624",
+        "name": "06-rio-melodia.mp4",
+        "src_in_f": 12,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1608,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 2124,
+      "id": "c11",
+      "kind": "clip",
+      "order": 11,
+      "properties": {
+        "asset_id": "m10",
+        "available_range": {
+          "end_f": 545.22,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.54532347383483,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "a6e767e9-ee5a-566b-b145-d9ab24a4ca7f",
+        "name": "06-rio-melodia.mp4",
+        "src_in_f": 264,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1848,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 2352,
+      "id": "c12",
+      "kind": "clip",
+      "order": 12,
+      "properties": {
+        "asset_id": "m13",
+        "available_range": {
+          "end_f": 725.58,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.06467486242445,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "60b4c523-c9dc-56a9-9037-b320837eda62",
+        "name": "07-caatinga-areias.mp4",
+        "src_in_f": 12,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2124,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 2772,
+      "id": "c13",
+      "kind": "clip",
+      "order": 13,
+      "properties": {
+        "asset_id": "m13",
+        "available_range": {
+          "end_f": 725.58,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 58.06467486242445,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "faded6c2-a209-5aef-8b43-97e0bcb95ca2",
+        "name": "07-caatinga-areias.mp4",
+        "src_in_f": 300,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2352,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "video",
+      "end_f": 3300,
+      "id": "c14",
+      "kind": "clip",
+      "order": 14,
+      "properties": {
+        "asset_id": "m14",
+        "available_range": {
+          "end_f": 563.46,
+          "start_f": 0
+        },
+        "fit": "fill",
+        "fps": 31.212271855692066,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "234bda88-3d51-5c43-a87a-97491c96afce",
+        "name": "08-porta-final-climax.mp4",
+        "src_in_f": 24,
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2772,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "image",
+      "end_f": 3600,
+      "id": "c15",
+      "kind": "clip",
+      "order": 15,
+      "properties": {
+        "asset_id": "m1",
+        "fit": "fit",
+        "has_audio": false,
+        "height": 1080,
+        "name": "encerramento-uneb.png",
+        "track_id": "V1",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 3300,
+      "timeline_id": "T1"
+    },
+    {
+      "id": "V2",
+      "kind": "track",
+      "order": 16,
+      "properties": {
+        "name": "Overlays",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "id": "V3",
+      "kind": "track",
+      "order": 17,
+      "properties": {
+        "name": "Titles",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "id": "A1",
+      "kind": "audio_track",
+      "order": 18,
+      "properties": {
+        "name": "Voiceover",
+        "role": "voice_over",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "id": "A2",
+      "kind": "audio_track",
+      "order": 19,
+      "properties": {
+        "name": "Music_Medley",
+        "role": "background_music",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 948,
+      "id": "a15",
+      "kind": "audio_clip",
+      "order": 20,
+      "properties": {
+        "asset_id": "m3",
+        "has_audio": true,
+        "name": "era-uma-vez-ato1-amatore.mp3",
+        "src_in_f": 532,
+        "track_id": "A2"
+      },
+      "properties_complete": true,
+      "start_f": 0,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1524,
+      "id": "a16",
+      "kind": "audio_clip",
+      "order": 21,
+      "properties": {
+        "asset_id": "m4",
+        "has_audio": true,
+        "name": "musica-floresta-especial.mp3",
+        "src_in_f": 488,
+        "track_id": "A2"
+      },
+      "properties_complete": true,
+      "start_f": 948,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 2124,
+      "id": "a17",
+      "kind": "audio_clip",
+      "order": 22,
+      "properties": {
+        "asset_id": "m5",
+        "has_audio": true,
+        "name": "musica-rio-especial.mp3",
+        "src_in_f": 1105,
+        "track_id": "A2"
+      },
+      "properties_complete": true,
+      "start_f": 1524,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 3600,
+      "id": "a18",
+      "kind": "audio_clip",
+      "order": 23,
+      "properties": {
+        "asset_id": "m6",
+        "has_audio": true,
+        "name": "musica-caatinga-especial.mp3",
+        "src_in_f": 620,
+        "track_id": "A2"
+      },
+      "properties_complete": true,
+      "start_f": 2124,
+      "timeline_id": "T1"
+    },
+    {
+      "id": "A3",
+      "kind": "audio_track",
+      "order": 24,
+      "properties": {
+        "name": "SFX_Gameplay",
+        "role": "sound_fx",
+        "timeline_id": "T1"
+      },
+      "properties_complete": true
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 360,
+      "id": "a1",
+      "kind": "audio_clip",
+      "order": 25,
+      "properties": {
+        "asset_id": "m7",
+        "fps": 49.98298343551738,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "8d4a66d2-d3cf-5c9d-b639-00d7d92acd56",
+        "name": "01-menu-porta.mp4",
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 0,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 480,
+      "id": "a2",
+      "kind": "audio_clip",
+      "order": 26,
+      "properties": {
+        "asset_id": "m9",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "3b8bf628-780d-569a-b7c2-7ed6d8f90731",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 12,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 360,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 636,
+      "id": "a3",
+      "kind": "audio_clip",
+      "order": 27,
+      "properties": {
+        "asset_id": "m11",
+        "fps": 57.928646985287045,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "a05cf40a-5296-501b-84bc-83f756a6a92a",
+        "name": "03-caverna-mecanicas.mp4",
+        "src_in_f": 12,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 480,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 792,
+      "id": "a4",
+      "kind": "audio_clip",
+      "order": 28,
+      "properties": {
+        "asset_id": "m11",
+        "fps": 57.928646985287045,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "90733288-09d3-5da3-8340-810ec6e68cf4",
+        "name": "03-caverna-mecanicas.mp4",
+        "src_in_f": 312,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 636,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 948,
+      "id": "a5",
+      "kind": "audio_clip",
+      "order": 29,
+      "properties": {
+        "asset_id": "m12",
+        "fps": 56.495741246459495,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "f8fa73b9-d2dd-507a-ba7c-a72d5e459e25",
+        "name": "04-caverna-fada-ritmo.mp4",
+        "src_in_f": 210,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 792,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1068,
+      "id": "a6",
+      "kind": "audio_clip",
+      "order": 30,
+      "properties": {
+        "asset_id": "m9",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "f3394869-3596-5e9d-bc39-3ff85082bcd6",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 168,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 948,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1260,
+      "id": "a7",
+      "kind": "audio_clip",
+      "order": 31,
+      "properties": {
+        "asset_id": "m8",
+        "fps": 58.37238337684238,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "89a119cb-9da4-5668-b96d-b0e85afb292a",
+        "name": "05-floresta-corte.mp4",
+        "src_in_f": 12,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1068,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1524,
+      "id": "a8",
+      "kind": "audio_clip",
+      "order": 32,
+      "properties": {
+        "asset_id": "m8",
+        "fps": 58.37238337684238,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "333d7576-fbd1-5278-aa8a-ad9ada6d3ff4",
+        "name": "05-floresta-corte.mp4",
+        "src_in_f": 222,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1260,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1608,
+      "id": "a9",
+      "kind": "audio_clip",
+      "order": 33,
+      "properties": {
+        "asset_id": "m9",
+        "fps": 57.5833008427556,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "77002924-f8c0-5385-aa88-8cad30469899",
+        "name": "02-mapa-jornada.mp4",
+        "src_in_f": 288,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1524,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 1848,
+      "id": "a10",
+      "kind": "audio_clip",
+      "order": 34,
+      "properties": {
+        "asset_id": "m10",
+        "fps": 58.54532347383483,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "216eaeb1-aafd-5082-adc0-4859742f5624",
+        "name": "06-rio-melodia.mp4",
+        "src_in_f": 12,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1608,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 2124,
+      "id": "a11",
+      "kind": "audio_clip",
+      "order": 35,
+      "properties": {
+        "asset_id": "m10",
+        "fps": 58.54532347383483,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "a6e767e9-ee5a-566b-b145-d9ab24a4ca7f",
+        "name": "06-rio-melodia.mp4",
+        "src_in_f": 264,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 1848,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 2352,
+      "id": "a12",
+      "kind": "audio_clip",
+      "order": 36,
+      "properties": {
+        "asset_id": "m13",
+        "fps": 58.06467486242445,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "60b4c523-c9dc-56a9-9037-b320837eda62",
+        "name": "07-caatinga-areias.mp4",
+        "src_in_f": 12,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2124,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 2772,
+      "id": "a13",
+      "kind": "audio_clip",
+      "order": 37,
+      "properties": {
+        "asset_id": "m13",
+        "fps": 58.06467486242445,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "faded6c2-a209-5aef-8b43-97e0bcb95ca2",
+        "name": "07-caatinga-areias.mp4",
+        "src_in_f": 300,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2352,
+      "timeline_id": "T1"
+    },
+    {
+      "clip_type": "audio",
+      "end_f": 3300,
+      "id": "a14",
+      "kind": "audio_clip",
+      "order": 38,
+      "properties": {
+        "asset_id": "m14",
+        "fps": 31.212271855692066,
+        "has_audio": true,
+        "height": 1080,
+        "link_group": "234bda88-3d51-5c43-a87a-97491c96afce",
+        "name": "08-porta-final-climax.mp4",
+        "src_in_f": 24,
+        "track_id": "A3",
+        "width": 1920
+      },
+      "properties_complete": true,
+      "start_f": 2772,
+      "timeline_id": "T1"
+    }
+  ],
+  "page": {
+    "complete": true,
+    "limit": 100,
+    "offset": 0,
+    "returned": 39,
+    "total": 39
+  },
+  "revision": 31,
+  "snapshot": "e2a1c96a20c4d74f2c167e3cfe049f872c5cd2c308fba32276648704b28b3384",
+  "state_token": "cilQvkNCH7TsbO1786ZlFrar28jXIHeE8cUS14ufInE",
+  "time": {
+    "interval": "half_open"
+  },
+  "timeline_id": "T1",
+  "total_objects": 117,
+  "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/tree/main/seq-1.1"
+}

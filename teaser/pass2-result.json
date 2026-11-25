@@ -1,0 +1,80 @@
+{
+  "as": "editor-sinfonia",
+  "changed": true,
+  "created": [
+    {
+      "id": "x1",
+      "kind": "transition"
+    },
+    {
+      "id": "x2",
+      "kind": "transition"
+    },
+    {
+      "id": "x3",
+      "kind": "transition"
+    },
+    {
+      "id": "x4",
+      "kind": "transition"
+    },
+    {
+      "id": "x5",
+      "kind": "transition"
+    },
+    {
+      "id": "gp1",
+      "kind": "gap"
+    },
+    {
+      "id": "t1",
+      "kind": "clip"
+    },
+    {
+      "id": "gp2",
+      "kind": "gap"
+    },
+    {
+      "id": "t2",
+      "kind": "clip"
+    },
+    {
+      "id": "gp3",
+      "kind": "gap"
+    },
+    {
+      "id": "t3",
+      "kind": "clip"
+    },
+    {
+      "id": "gp4",
+      "kind": "gap"
+    },
+    {
+      "id": "t4",
+      "kind": "clip"
+    },
+    {
+      "id": "gp5",
+      "kind": "gap"
+    },
+    {
+      "id": "t5",
+      "kind": "clip"
+    },
+    {
+      "id": "gp6",
+      "kind": "gap"
+    },
+    {
+      "id": "t6",
+      "kind": "clip"
+    }
+  ],
+  "next": "`invideo edit capture` shows frames of the result. Tell the user what changed, with timecodes. `invideo edit export` renders it once it is done.",
+  "revision": 32,
+  "state_token": "6WDysuktCHL7ZDAMbD9X5bHGG7uAD253LToOi_xbXvA",
+  "status": "applied",
+  "timeline_id": "T1",
+  "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/tree/main/seq-1.1"
+}

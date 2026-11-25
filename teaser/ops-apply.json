@@ -1,0 +1,251 @@
+[
+  {
+    "op": "set_name",
+    "target": "V1",
+    "name": "Gameplay"
+  },
+  {
+    "op": "set_name",
+    "target": "V2",
+    "name": "Overlays"
+  },
+  {
+    "op": "set_name",
+    "target": "V3",
+    "name": "Titles"
+  },
+  {
+    "op": "set_name",
+    "target": "A1",
+    "name": "Voiceover"
+  },
+  {
+    "op": "set_name",
+    "target": "A2",
+    "name": "Music_Medley"
+  },
+  {
+    "op": "set_name",
+    "target": "A3",
+    "name": "SFX_Gameplay"
+  },
+  {
+    "op": "create_audio_bus",
+    "timeline": "T1",
+    "name": "Dialogue_Bus"
+  },
+  {
+    "op": "create_audio_bus",
+    "timeline": "T1",
+    "name": "Music_Bus"
+  },
+  {
+    "op": "create_audio_bus",
+    "timeline": "T1",
+    "name": "SFX_Bus"
+  },
+  {
+    "op": "place_media",
+    "asset": "m7",
+    "track": "V1",
+    "at_f": 0,
+    "source_start_seconds": 0,
+    "source_end_seconds": 6,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m9",
+    "track": "V1",
+    "at_f": 360,
+    "source_start_seconds": 0.2,
+    "source_end_seconds": 2.2,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m11",
+    "track": "V1",
+    "at_f": 480,
+    "source_start_seconds": 0.2,
+    "source_end_seconds": 2.8,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m11",
+    "track": "V1",
+    "at_f": 636,
+    "source_start_seconds": 5.2,
+    "source_end_seconds": 7.8,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m12",
+    "track": "V1",
+    "at_f": 792,
+    "source_start_seconds": 3.5,
+    "source_end_seconds": 6.1,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m9",
+    "track": "V1",
+    "at_f": 948,
+    "source_start_seconds": 2.8,
+    "source_end_seconds": 4.8,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m8",
+    "track": "V1",
+    "at_f": 1068,
+    "source_start_seconds": 0.2,
+    "source_end_seconds": 3.4,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m8",
+    "track": "V1",
+    "at_f": 1260,
+    "source_start_seconds": 3.7,
+    "source_end_seconds": 8.1,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m9",
+    "track": "V1",
+    "at_f": 1524,
+    "source_start_seconds": 4.8,
+    "source_end_seconds": 6.2,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m10",
+    "track": "V1",
+    "at_f": 1608,
+    "source_start_seconds": 0.2,
+    "source_end_seconds": 4.2,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m10",
+    "track": "V1",
+    "at_f": 1848,
+    "source_start_seconds": 4.4,
+    "source_end_seconds": 9,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m13",
+    "track": "V1",
+    "at_f": 2124,
+    "source_start_seconds": 0.2,
+    "source_end_seconds": 4,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m13",
+    "track": "V1",
+    "at_f": 2352,
+    "source_start_seconds": 5,
+    "source_end_seconds": 12,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m14",
+    "track": "V1",
+    "at_f": 2772,
+    "source_start_seconds": 0.4,
+    "source_end_seconds": 9.2,
+    "mode": "overwrite",
+    "linked_audio": true,
+    "audio_track": "A3"
+  },
+  {
+    "op": "place_media",
+    "asset": "m1",
+    "track": "V1",
+    "at_f": 3300,
+    "source_start_seconds": 0,
+    "source_end_seconds": 5,
+    "mode": "overwrite",
+    "linked_audio": false
+  },
+  {
+    "op": "place_media",
+    "asset": "m3",
+    "track": "A2",
+    "at_f": 0,
+    "source_start_seconds": 8.86,
+    "source_end_seconds": 24.66,
+    "mode": "overwrite",
+    "linked_audio": false
+  },
+  {
+    "op": "place_media",
+    "asset": "m4",
+    "track": "A2",
+    "at_f": 948,
+    "source_start_seconds": 8.14,
+    "source_end_seconds": 17.74,
+    "mode": "overwrite",
+    "linked_audio": false
+  },
+  {
+    "op": "place_media",
+    "asset": "m5",
+    "track": "A2",
+    "at_f": 1524,
+    "source_start_seconds": 18.42,
+    "source_end_seconds": 28.42,
+    "mode": "overwrite",
+    "linked_audio": false
+  },
+  {
+    "op": "place_media",
+    "asset": "m6",
+    "track": "A2",
+    "at_f": 2124,
+    "source_start_seconds": 10.34,
+    "source_end_seconds": 34.94,
+    "mode": "overwrite",
+    "linked_audio": false
+  }
+]

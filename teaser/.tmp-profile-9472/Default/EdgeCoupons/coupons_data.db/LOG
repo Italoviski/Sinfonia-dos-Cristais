@@ -1,0 +1,5 @@
+2026/11/25-00:07:08.287 18cc Creating DB C:\Users\heito\OneDrive\Documentos\GitHub\Sinfonia-dos-Cristais\teaser\.tmp-profile-9472\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/11/25-00:07:08.307 18cc Reusing MANIFEST C:\Users\heito\OneDrive\Documentos\GitHub\Sinfonia-dos-Cristais\teaser\.tmp-profile-9472\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/25-00:07:08.477 41e8 Level-0 table #5: started
+2026/11/25-00:07:08.487 41e8 Level-0 table #5: 683273 bytes OK
+2026/11/25-00:07:08.491 41e8 Delete type=0 #3

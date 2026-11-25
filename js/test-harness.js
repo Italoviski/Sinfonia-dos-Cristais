@@ -48,6 +48,8 @@
     const pre = document.getElementById('preloaderScreen');
     if (pre) pre.remove();
     window.CrystalOnboarding?.skipAll?.();
+    const brinqueSplash = document.getElementById('brinqueSplashScreen');
+    if (brinqueSplash) brinqueSplash.hidden = true;
     const splash = document.getElementById('unebSplashScreen');
     if (splash) splash.hidden = true;
     const wizard = document.getElementById('setupWizardScreen');

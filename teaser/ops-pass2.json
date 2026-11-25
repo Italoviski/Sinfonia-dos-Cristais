@@ -1,0 +1,243 @@
+[
+  {
+    "op": "set_audio_routing",
+    "target": "A1",
+    "bus": "B1"
+  },
+  {
+    "op": "set_audio_routing",
+    "target": "A2",
+    "bus": "B2"
+  },
+  {
+    "op": "set_audio_routing",
+    "target": "A3",
+    "bus": "B3"
+  },
+  {
+    "op": "set_audio_gain",
+    "target": "a15",
+    "gain_db": -4
+  },
+  {
+    "op": "set_audio_gain",
+    "target": "a16",
+    "gain_db": 4
+  },
+  {
+    "op": "set_audio_gain",
+    "target": "a17",
+    "gain_db": 2
+  },
+  {
+    "op": "set_audio_gain",
+    "target": "a18",
+    "gain_db": 4
+  },
+  {
+    "op": "set_audio_gain",
+    "target": "A3",
+    "gain_db": -4.5
+  },
+  {
+    "op": "apply_audio_crossfade",
+    "outgoing": "a15",
+    "incoming": "a16",
+    "curve": "equal_power",
+    "duration_seconds": 0.6,
+    "alignment": "center",
+    "trim_to_fit": true
+  },
+  {
+    "op": "apply_audio_crossfade",
+    "outgoing": "a16",
+    "incoming": "a17",
+    "curve": "equal_power",
+    "duration_seconds": 0.6,
+    "alignment": "center",
+    "trim_to_fit": true
+  },
+  {
+    "op": "apply_audio_crossfade",
+    "outgoing": "a17",
+    "incoming": "a18",
+    "curve": "equal_power",
+    "duration_seconds": 0.6,
+    "alignment": "center",
+    "trim_to_fit": true
+  },
+  {
+    "op": "set_audio_fade",
+    "clip": "a15",
+    "direction": "in",
+    "duration_seconds": 0.25,
+    "curve": "equal_power"
+  },
+  {
+    "op": "set_audio_fade",
+    "clip": "a18",
+    "direction": "out",
+    "duration_seconds": 1.8,
+    "curve": "equal_power"
+  },
+  {
+    "op": "add_transition",
+    "left_clip": "c5",
+    "right_clip": "c6",
+    "type": "fade",
+    "in_f": 8,
+    "out_f": 8
+  },
+  {
+    "op": "add_transition",
+    "left_clip": "c8",
+    "right_clip": "c9",
+    "type": "fade",
+    "in_f": 8,
+    "out_f": 8
+  },
+  {
+    "op": "add_transition",
+    "left_clip": "c11",
+    "right_clip": "c12",
+    "type": "fade",
+    "in_f": 8,
+    "out_f": 8
+  },
+  {
+    "op": "add_transition",
+    "left_clip": "c13",
+    "right_clip": "c14",
+    "type": "flash",
+    "in_f": 6,
+    "out_f": 8
+  },
+  {
+    "op": "add_transition",
+    "left_clip": "c14",
+    "right_clip": "c15",
+    "type": "fade",
+    "in_f": 12,
+    "out_f": 12
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 150,
+    "end_f": 330,
+    "text": "4 BIOMAS  •  21 FASES",
+    "style": {
+      "align": "center",
+      "color": "#9ef0ff",
+      "background_color": "#0b0722d8",
+      "font_size": 46,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 510,
+    "end_f": 780,
+    "text": "MATEMÁTICA 100% VISUAL",
+    "style": {
+      "align": "center",
+      "color": "#ffffff",
+      "background_color": "#0b0722d8",
+      "font_size": 46,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 1092,
+    "end_f": 1428,
+    "text": "FLORESTA  •  CORTE CRISTALINO",
+    "style": {
+      "align": "center",
+      "color": "#86efac",
+      "background_color": "#0b0722d8",
+      "font_size": 44,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 1710,
+    "end_f": 2040,
+    "text": "RIO ENCANTADO  •  FRAÇÕES E MELODIA",
+    "style": {
+      "align": "center",
+      "color": "#7aeaff",
+      "background_color": "#0b0722d8",
+      "font_size": 44,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 2310,
+    "end_f": 2640,
+    "text": "CAATINGA  •  BAIÃO DA OPALA DE FOGO",
+    "style": {
+      "align": "center",
+      "color": "#ffd35a",
+      "background_color": "#0b0722d8",
+      "font_size": 44,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  },
+  {
+    "op": "add_text",
+    "track": "V3",
+    "start_f": 3048,
+    "end_f": 3288,
+    "text": "SINFONIA DOS CRISTAIS\nTRUE PIXEL ART  •  ACESSÍVEL A TODOS",
+    "style": {
+      "align": "center",
+      "color": "#ffffff",
+      "background_color": "#0b0722d8",
+      "font_size": 48,
+      "font_weight": 700,
+      "shadow": true,
+      "shadow_blur": 8,
+      "shadow_color": "#000000dd",
+      "stroke": true,
+      "stroke_color": "#160d3d",
+      "stroke_width": 3
+    }
+  }
+]

@@ -1,0 +1,156 @@
+[
+  {
+    "op": "add_keyframes",
+    "lane": "feadef4c-1762-4c3a-b147-d9db91797158",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 2.8,
+        "value": 1
+      },
+      {
+        "time_seconds": 3,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "726e64c8-5471-4e70-a8df-bd0b218684d8",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 4.3,
+        "value": 1
+      },
+      {
+        "time_seconds": 4.5,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "dadb982b-9162-42f4-b153-5caff30ac6bf",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.4,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.6,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "72ebf8e2-8721-40c8-94eb-893e584f3143",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.3,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.5,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "144c7e90-b0f1-41ea-b2f8-750b9475bfde",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.3,
+        "value": 1
+      },
+      {
+        "time_seconds": 5.5,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "b97670da-0e39-4db4-95e2-edac6e9c4bce",
+    "points": [
+      {
+        "time_seconds": 0,
+        "value": 0
+      },
+      {
+        "time_seconds": 0.2,
+        "value": 1
+      },
+      {
+        "time_seconds": 3.8,
+        "value": 1
+      },
+      {
+        "time_seconds": 4,
+        "value": 0
+      }
+    ]
+  },
+  {
+    "op": "add_keyframes",
+    "lane": "3fc0ce3b-ad0d-432e-9635-906f60c79480",
+    "points": [
+      {
+        "time_seconds": 10,
+        "value": 1
+      },
+      {
+        "time_seconds": 10.35,
+        "value": 0.35
+      },
+      {
+        "time_seconds": 10.65,
+        "value": 0.35
+      },
+      {
+        "time_seconds": 10.85,
+        "value": 1
+      }
+    ]
+  }
+]

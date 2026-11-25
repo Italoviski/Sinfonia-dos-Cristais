@@ -1,0 +1,12 @@
+{
+  "prompt": "One continuous shot, no cuts. Slow forward camera push inside a dark bioluminescent crystal cavern rendered in crisp 16-bit true pixel art, glowing cyan and magenta crystal clusters from @Image1 reflecting softly on subterranean water toward the grand blue-cobalt stone Ancestral Door with golden filigree frames awakening with subtle cyan light. Soft cavern luminescence, sharp pixel edges. Preserve: @Image1 composition, cobalt-cyan-magenta palette, butterfly-shaped Fairy Gem crest at the top of the door, and authentic pixel art aesthetic without any text.",
+  "duration": "5",
+  "aspect_ratio": "16:9",
+  "resolution": "1080p",
+  "bitrate_mode": "high",
+  "output_format": "mp4",
+  "generate_audio": false,
+  "reference_images": [
+    "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.3"
+  ]
+}

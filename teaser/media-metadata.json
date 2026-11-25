@@ -1,0 +1,718 @@
+{
+  "seq-1.2": {
+    "as": "editor-sinfonia",
+    "container_format": "png_pipe",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "media_type": "image",
+    "mime_type": "image/png",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 1841577,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.2"
+  },
+  "seq-1.3": {
+    "as": "editor-sinfonia",
+    "container_format": "png_pipe",
+    "dimension": {
+      "height": 941,
+      "width": 1672
+    },
+    "media_type": "image",
+    "mime_type": "image/png",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 1693196,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.3"
+  },
+  "seq-1.4": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 320000,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "mp3",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -10.516642,
+        "lra_lu": 5.78594,
+        "true_peak_dbtp": -0.048291735
+      },
+      "profile": null,
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "mp3",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 320402,
+    "container_format": "mp3",
+    "dimension": {
+      "height": null,
+      "width": null
+    },
+    "duration": 51.96,
+    "media_type": "audio",
+    "mime_type": "audio/mpeg",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 2079405,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.4"
+  },
+  "seq-1.5": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 192000,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "mp3",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -15.538535,
+        "lra_lu": 11.303298,
+        "true_peak_dbtp": -3.2456164
+      },
+      "profile": null,
+      "sample_rate": 44100,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "mp3",
+          "index": 0,
+          "sample_rate": 44100
+        }
+      ]
+    },
+    "bit_rate": 191999,
+    "container_format": "mp3",
+    "dimension": {
+      "height": null,
+      "width": null
+    },
+    "duration": 57.182,
+    "media_type": "audio",
+    "mime_type": "audio/mpeg",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 1372369,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.5"
+  },
+  "seq-1.6": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 192000,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "mp3",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -13.555416,
+        "lra_lu": 3.9240196,
+        "true_peak_dbtp": -3.180567
+      },
+      "profile": null,
+      "sample_rate": 44100,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "mp3",
+          "index": 0,
+          "sample_rate": 44100
+        }
+      ]
+    },
+    "bit_rate": 191999,
+    "container_format": "mp3",
+    "dimension": {
+      "height": null,
+      "width": null
+    },
+    "duration": 58.096,
+    "media_type": "audio",
+    "mime_type": "audio/mpeg",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 1394311,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.6"
+  },
+  "seq-1.7": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 192000,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "mp3",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -16.120531,
+        "lra_lu": 7.0243316,
+        "true_peak_dbtp": -3.103714
+      },
+      "profile": null,
+      "sample_rate": 44100,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "mp3",
+          "index": 0,
+          "sample_rate": 44100
+        }
+      ]
+    },
+    "bit_rate": 192000,
+    "container_format": "mp3",
+    "dimension": {
+      "height": null,
+      "width": null
+    },
+    "duration": 57.364,
+    "media_type": "audio",
+    "mime_type": "audio/mpeg",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 1376757,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.7"
+  },
+  "seq-1.8": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 79892,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -120,
+        "lra_lu": 0,
+        "true_peak_dbtp": -90.30873
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 21212793,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 7.252,
+    "fps": 49.98298343551738,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 19229784,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.8",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 23345843,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.9": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 94389,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -28.098955,
+        "lra_lu": 1.2048095,
+        "true_peak_dbtp": -8.424204
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 13801386,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 8.158,
+    "fps": 58.37238337684238,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 14074597,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.9",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 13591060,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.10": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 79889,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -120,
+        "lra_lu": 0,
+        "true_peak_dbtp": -90.30873
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 21874646,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 6.615,
+    "fps": 57.5833008427556,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 18089422,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.10",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 21613377,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.11": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 98187,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -25.750834,
+        "lra_lu": 1.2815771,
+        "true_peak_dbtp": -8.105233
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 12318934,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 9.087,
+    "fps": 58.54532347383483,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 13992873,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.11",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 12121480,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.12": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 97618,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -30.254717,
+        "lra_lu": 2.3320274,
+        "true_peak_dbtp": -12.068879
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 13022357,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 8.595,
+    "fps": 57.928646985287045,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 13991926,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.12",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 12812041,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.13": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 85602,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -34.636803,
+        "lra_lu": 6.659614,
+        "true_peak_dbtp": -16.617752
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 14591101,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 6.541,
+    "fps": 56.495741246459495,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 11931386,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.13",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 14441541,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.14": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 95939,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -30.255259,
+        "lra_lu": 14.22537,
+        "true_peak_dbtp": -11.049985
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 1,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 9152927,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 12.093,
+    "fps": 58.06467486242445,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 13836175,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.14",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 8974715,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  },
+  "seq-1.15": {
+    "as": "editor-sinfonia",
+    "audio": {
+      "bit_depth": null,
+      "bit_rate": 86588,
+      "channel_layout": "stereo",
+      "channels": 2,
+      "codec": "aac",
+      "cover_art": false,
+      "layout": "single",
+      "loudness": {
+        "integrated_lufs": -22.81848,
+        "lra_lu": 17.28762,
+        "true_peak_dbtp": -8.00102
+      },
+      "profile": "1",
+      "sample_rate": 48000,
+      "tracks": [
+        {
+          "audio_index": 0,
+          "channel_layout": "stereo",
+          "channels": 2,
+          "codec": "aac",
+          "index": 0,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    "bit_rate": 9588113,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "dimension": {
+      "height": 1080,
+      "width": 1920
+    },
+    "duration": 9.391,
+    "fps": 31.212271855692066,
+    "media_type": "video",
+    "mime_type": "video/mp4",
+    "next": "Derived facts and frames only. `invideo edit change` places media by its bin asset id, a sequence URL or a project file URL.",
+    "size": 11255526,
+    "source_time_unit": "seconds",
+    "url": "https://invideo.io/@givercys-workspace/sinfonia-dos-cristais-teaser-universitario-60s/notebook/seq-1.15",
+    "video": {
+      "bit_depth": 8,
+      "bit_rate": 9539346,
+      "codec": "h264",
+      "color": {
+        "declared": null,
+        "detected": {
+          "confidence": "none",
+          "profile": "rec709",
+          "source": "default",
+          "version": 2
+        }
+      },
+      "color_primaries": "bt709",
+      "color_range": "tv",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "level": 40,
+      "pix_fmt": "yuv420p",
+      "profile": "100",
+      "vendor": null
+    }
+  }
+}

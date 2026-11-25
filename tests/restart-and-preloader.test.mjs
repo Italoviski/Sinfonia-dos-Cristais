@@ -663,8 +663,11 @@ test('Menu Principal: Novo Jogo zera o progresso e inicia a Fase 1; Continuar pr
 
   await import('../js/app.js');
   const App = globalThis.CrystalApp;
+  const Onb = globalThis.CrystalOnboarding;
   const E = globalThis.TruePixelEngine;
+  Onb?.skipAll?.();
   assert.ok(App, 'CrystalApp deve ser inicializado');
+  assert.ok(Onb, 'CrystalOnboarding deve ser inicializado');
   assert.equal(typeof App.startNewGame, 'function', 'startNewGame deve existir em CrystalApp');
   assert.equal(typeof App.continueGame, 'function', 'continueGame deve existir em CrystalApp');
 
@@ -681,9 +684,27 @@ test('Menu Principal: Novo Jogo zera o progresso e inicia a Fase 1; Continuar pr
   assert.equal(App.state.current, 11, 'Continuar deve preservar a fase atual 11');
   assert.equal(journeyRenderedOpts?.current, 11, 'Mapa deve posicionar a Fada no nó 11 ao continuar');
 
-  // 3. Clicar em "Novo Jogo" (#newGameButton) reseta todo o progresso, persiste no localStorage e inicia a Fase 1
+  // 3. Clicar em "Novo Jogo" (#newGameButton) abre o seletor de personagem com nome padrão 'Alex' sem apagar o save ainda
   E.GameHUD.diamonds = 5;
+  App.goto('home');
   getEl('newGameButton').onclick();
+  assert.equal(Onb.characterScreenActive, true, 'Clicar em Novo Jogo deve abrir o seletor de personagem');
+  assert.equal(getEl('characterCreationScreen').hidden, false, '#characterCreationScreen deve ficar visível ao clicar em Novo Jogo');
+  assert.equal(getEl('playerNameInput').value, 'Alex', 'Nome padrão masculino preselecionado deve ser Alex');
+  assert.deepEqual(App.state.completed, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'Abrir seletor pelo Novo Jogo ainda não deve apagar o save');
+
+  // 3b. Clicar em Voltar (#characterBackBtn) fecha o seletor, volta ao menu inicial e preserva o save
+  getEl('characterBackBtn').onclick();
+  assert.equal(Onb.characterScreenActive, false, 'Voltar do seletor deve fechar o seletor de personagem');
+  assert.equal(getEl('characterCreationScreen').hidden, true, '#characterCreationScreen deve ocultar ao voltar');
+  assert.equal(App.state.screen, 'home', 'Voltar do seletor aberto via Novo Jogo deve retornar ao menu inicial');
+  assert.deepEqual(App.state.completed, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'Voltar do seletor deve preservar o progresso salvo');
+
+  // 3c. Confirmar personagem no seletor zera todo o progresso, persiste no localStorage e inicia a Fase 1
+  getEl('newGameButton').onclick();
+  assert.equal(Onb.characterScreenActive, true, 'Seletor deve reabrir ao clicar em Novo Jogo novamente');
+  assert.equal(getEl('characterConfirmBtn').onclick(), true, 'Confirmação com nome padrão Alex deve ser aceita');
+  Onb.completeLoadingTransition();
   assert.deepEqual(App.state.completed, [], 'Novo Jogo deve zerar a lista de fases concluídas');
   assert.deepEqual(App.state.records, {}, 'Novo Jogo deve zerar os recordes de estrelas/pontos');
   assert.equal(App.state.current, 1, 'Novo Jogo deve definir a fase atual como 1');
@@ -706,6 +727,7 @@ test('Menu Principal: Novo Jogo zera o progresso e inicia a Fase 1; Continuar pr
   assert.equal(App.state.current, 3, 'Continuar deve manter a fase atual 3');
   assert.equal(journeyRenderedOpts?.unlocked, 3, 'Nó 3 deve ser o próximo desbloqueado no mapa');
 
+  Onb?.skipAll?.();
   globalThis.CaveChapter1.startCutsceneAndFase1 = origStartCutscene;
   globalThis.document.getElementById = origGetById;
 });
@@ -1863,12 +1885,23 @@ test('Prompt #03: Splash Screen da UNEB e Wizard de Configurações Rápidas (Et
 
     assert.ok(Onb, 'window.CrystalOnboarding deve existir');
     assert.equal(Onb.splashActive, true, 'Splash Screen deve iniciar ativa ao abrir o site');
+    assert.equal(Onb.brinqueSplashActive, true, 'Intro Projeto Brinque e Aprenda deve iniciar antes da intro da UNEB');
+    assert.equal(Onb.splashStep, 'brinque', 'splashStep inicial deve ser brinque');
     assert.ok(['fade-in', 'hold', 'fade-out'].includes(Onb.splashPhase), 'splashPhase inicial deve estar em fade-in/hold/fade-out');
-    assert.equal(getEl('unebSplashScreen').hidden, false, 'Splash da UNEB deve iniciar visível');
+    assert.equal(getEl('brinqueSplashScreen').hidden, false, 'Splash Brinque e Aprenda deve iniciar visível');
+    assert.equal(getEl('unebSplashScreen').hidden, true, 'Splash da UNEB deve aguardar o término da intro Brinque e Aprenda');
 
-    // Conclui fade-out da Splash no primeiro acesso -> abre Wizard na Etapa A (Acessibilidade)
+    // Conclui intro Brinque e Aprenda -> inicia Splash da UNEB
+    Onb.finishBrinqueSplash();
+    assert.equal(Onb.brinqueSplashActive, false, 'brinqueSplashActive deve ficar false após finishBrinqueSplash()');
+    assert.equal(Onb.splashStep, 'uneb', 'splashStep deve avançar para uneb');
+    assert.equal(getEl('brinqueSplashScreen').hidden, true, '#brinqueSplashScreen deve ficar hidden após finishBrinqueSplash()');
+    assert.equal(getEl('unebSplashScreen').hidden, false, 'Splash da UNEB deve ficar visível logo após a intro Brinque e Aprenda');
+
+    // Conclui fade-out da Splash da UNEB no primeiro acesso -> abre Wizard na Etapa A (Acessibilidade)
     Onb.finishSplash();
     assert.equal(Onb.splashActive, false, 'splashActive deve ficar false após finishSplash()');
+    assert.equal(Onb.splashStep, 'done', 'splashStep deve ser done após finishSplash()');
     assert.equal(Onb.splashPhase, 'done', 'splashPhase deve ser done após finishSplash()');
     assert.equal(getEl('unebSplashScreen').hidden, true, '#unebSplashScreen deve ficar hidden após fade-out');
 
@@ -1989,6 +2022,7 @@ test('Prompt #04: Tela de Identificação da Criança (Nome e Gênero), Substitu
 
   const origStorage = globalThis.localStorage;
   const origGetById = globalThis.document.getElementById;
+  const origActiveElement = globalThis.document.activeElement;
   const origApp = globalThis.CrystalApp;
   const origOnboarding = globalThis.CrystalOnboarding;
   const origStartCutscene = globalThis.CaveChapter1?.startCutsceneAndFase1;
@@ -2091,6 +2125,166 @@ test('Prompt #04: Tela de Identificação da Criança (Nome e Gênero), Substitu
     globalThis.CrystalAssetsReady = origAssetsReady;
     globalThis.localStorage = origStorage;
     globalThis.document.getElementById = origGetById;
+    globalThis.document.activeElement = origActiveElement;
+    globalThis.CrystalApp = origApp;
+    globalThis.CrystalOnboarding = origOnboarding;
+  }
+});
+
+test('Seletor de Personagem: Nomes padrão Alex (Menino) / Marina (Menina), limpar ao focar, preservar digitado e reabrir no Novo Jogo', async () => {
+  setupNodeDOM();
+  await import('../js/true-pixel-engine.js');
+  await import('../js/true-pixel-cave.js');
+
+  const fs = await import('fs');
+  const indexHtml = fs.readFileSync('index.html', 'utf8');
+  assert.ok(indexHtml.includes('value="Alex"'), 'index.html deve pré-preencher Alex no input de nome');
+  assert.ok(indexHtml.includes('Alex') && indexHtml.includes('Marina'), 'index.html deve exibir os nomes padrão Alex e Marina');
+
+  const E = globalThis.TruePixelEngine;
+  const origStorage = globalThis.localStorage;
+  const origGetById = globalThis.document.getElementById;
+  const origActiveElement = globalThis.document.activeElement;
+  const origApp = globalThis.CrystalApp;
+  const origOnboarding = globalThis.CrystalOnboarding;
+  const origStartCutscene = globalThis.CaveChapter1?.startCutsceneAndFase1;
+  const origAssetsReady = globalThis.CrystalAssetsReady;
+
+  globalThis.document.activeElement = null;
+
+  const storage = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+    setItem: (k, v) => storage.set(k, String(v)),
+    removeItem: (k) => storage.delete(k)
+  };
+
+  let nameInputFocusCalls = 0;
+  const elements = new Map();
+  const getEl = (id) => {
+    if (!elements.has(id)) {
+      const el = globalThis.document.createElement('div');
+      el.id = id;
+      el.hidden = id !== 'home';
+      el.contains = () => false;
+      el.focus = () => {
+        if (id === 'playerNameInput') nameInputFocusCalls++;
+        globalThis.document.activeElement = el;
+      };
+      elements.set(id, el);
+    }
+    return elements.get(id);
+  };
+  globalThis.document.getElementById = (id) => getEl(id);
+  globalThis.CrystalAssetsReady = true;
+
+  let startedCaveFase1 = 0;
+  if (globalThis.CaveChapter1) {
+    globalThis.CaveChapter1.startCutsceneAndFase1 = () => { startedCaveFase1++; };
+  }
+
+  try {
+    // Caso 1: Primeiro acesso -> nomes padrão Alex / Marina e comportamento de clique/foco
+    await import(`../js/app.js?charDefaults1=${Date.now()}`);
+    let App = globalThis.CrystalApp;
+    let Onb = globalThis.CrystalOnboarding;
+
+    Onb.finishSplash();
+    getEl('wizardNextToAudioBtn').onclick();
+    getEl('wizardFinishBtn').onclick();
+
+    const nameInput = getEl('playerNameInput');
+    assert.equal(Onb.characterScreenActive, true, 'Seletor deve abrir após concluir Wizard');
+    assert.equal(Onb.selectedGender, 'male', 'Seletor deve iniciar com masculino selecionado');
+    assert.equal(nameInput.value, 'Alex', 'Nome preselecionado para Menino deve ser Alex');
+    assert.equal(nameInputFocusCalls, 0, 'openCharacterCreation não deve chamar focus() automaticamente no campo de nome');
+
+    // Alternar entre Menina e Menino atualiza o nome padrão antes de o jogador digitar
+    getEl('genderGirlBtn').onclick();
+    assert.equal(Onb.selectedGender, 'female', 'Clicar em Menina deve selecionar female');
+    assert.equal(nameInput.value, 'Marina', 'Alternar para Menina deve preselecionar Marina');
+
+    getEl('genderBoyBtn').onclick();
+    assert.equal(Onb.selectedGender, 'male', 'Clicar em Menino deve voltar para male');
+    assert.equal(nameInput.value, 'Alex', 'Alternar para Menino deve preselecionar Alex');
+
+    // Focar campo com nome padrão limpa o input; desfocar sem digitar restaura o padrão
+    nameInput.onfocus();
+    assert.equal(nameInput.value, '', 'Focar o campo de nome deve limpar o padrão para permitir digitar');
+    nameInput.onblur();
+    assert.equal(nameInput.value, 'Alex', 'Desfocar sem digitar deve restaurar o padrão Alex');
+
+    // Confirmar sem digitar salva Marina ao selecionar Menina e substitui nos diálogos
+    getEl('genderGirlBtn').onclick();
+    assert.equal(nameInput.value, 'Marina', 'Padrão ao escolher Menina deve ser Marina');
+    assert.equal(getEl('characterConfirmBtn').onclick(), true, 'Confirmar com nome padrão Marina deve funcionar');
+    assert.equal(App.state.playerName, 'Marina', 'CrystalApp.state.playerName deve ser Marina');
+    assert.equal(App.state.playerGender, 'female', 'CrystalApp.state.playerGender deve ser female');
+
+    E.DialogueBox.open([{ speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Protagonista pronta!' }]);
+    assert.equal(E.DialogueBox.queue[0].speaker, 'Marina', 'DialogueBox deve usar Marina como speaker');
+    assert.equal(E.DialogueBox.queue[0].text, 'Marina pronta!', 'DialogueBox deve substituir Protagonista por Marina no texto');
+    E.DialogueBox.close();
+    Onb.completeLoadingTransition();
+    assert.equal(startedCaveFase1, 1, 'Deve iniciar Fase 1 após confirmação com nome padrão');
+
+    // Digitar nome personalizado deve ser preservado ao alternar gênero e ao focar novamente
+    App.goto('home');
+    getEl('newGameButton').onclick();
+    assert.equal(Onb.characterScreenActive, true, 'Clicar em Novo Jogo deve reabrir o seletor');
+    assert.equal(nameInput.value, 'Marina', 'Com gênero female salvo, Novo Jogo deve iniciar com Marina');
+
+    nameInput.onfocus();
+    assert.equal(nameInput.value, '', 'Focar deve limpar o padrão antes de digitar');
+    nameInput.value = 'Sofia';
+    nameInput.oninput();
+    getEl('genderBoyBtn').onclick();
+    assert.equal(nameInput.value, 'Sofia', 'Alternar gênero não deve sobrescrever nome digitado pelo jogador');
+    nameInput.onfocus();
+    assert.equal(nameInput.value, 'Sofia', 'Focar novamente não deve apagar nome personalizado já digitado');
+    assert.equal(getEl('characterConfirmBtn').onclick(), true, 'Confirmar nome personalizado Sofia deve funcionar');
+    assert.equal(App.state.playerName, 'Sofia', 'Nome salvo deve ser Sofia');
+    assert.equal(App.state.playerGender, 'male', 'Gênero salvo deve ser male');
+    Onb.completeLoadingTransition();
+
+    // Caso 2: Usuário recorrente (setupCompleted: true, characterCreated: true) carregado do localStorage
+    Onb.skipAll();
+    elements.clear();
+    storage.set('crystal-campaign-v4', JSON.stringify({
+      version: 4,
+      settings: { music: 0.5, fx: 0.5 },
+      completed: [1, 2],
+      current: 3,
+      records: { 1: { stars: 3, points: 300 } },
+      hasSave: true,
+      setupCompleted: true,
+      characterCreated: true,
+      playerName: 'Heitor',
+      playerGender: 'male'
+    }));
+
+    await import(`../js/app.js?charDefaults2=${Date.now()}`);
+    App = globalThis.CrystalApp;
+    Onb = globalThis.CrystalOnboarding;
+    Onb.finishSplash();
+    assert.equal(Onb.wizardActive, false, 'Usuário recorrente não deve abrir Wizard automaticamente');
+    assert.equal(Onb.characterScreenActive, false, 'Usuário recorrente não deve abrir seletor automaticamente na splash');
+
+    // Clicar em Novo Jogo reabre o seletor com nome padrão Alex (ou Marina ao trocar)
+    getEl('newGameButton').onclick();
+    assert.equal(Onb.characterScreenActive, true, 'Novo Jogo para usuário recorrente deve abrir o seletor de personagem');
+    assert.equal(getEl('characterCreationScreen').hidden, false, '#characterCreationScreen deve ficar visível');
+    assert.equal(getEl('playerNameInput').value, 'Alex', 'Novo Jogo para usuário recorrente deve pré-selecionar o nome padrão Alex');
+  } finally {
+    globalThis.CrystalOnboarding?.skipAll?.();
+    E.setPlayerProfile?.({ name: 'Protagonista', gender: 'male' });
+    if (globalThis.CaveChapter1 && origStartCutscene) {
+      globalThis.CaveChapter1.startCutsceneAndFase1 = origStartCutscene;
+    }
+    globalThis.CrystalAssetsReady = origAssetsReady;
+    globalThis.localStorage = origStorage;
+    globalThis.document.getElementById = origGetById;
+    globalThis.document.activeElement = origActiveElement;
     globalThis.CrystalApp = origApp;
     globalThis.CrystalOnboarding = origOnboarding;
   }
@@ -3406,6 +3600,144 @@ test('Ajustes Visuais v2: Enquadramento Portrait Marina, Idle Calmo + Piscada In
     assert.equal(Cave.fase1IntroGuideAnim, null, 'Guia da Fase 1 deve sumir imediatamente quando o jogador toca/arrasta um cristal');
   } finally {
     globalThis.document.createElement = origCreate;
+  }
+});
+
+test('Intro Projeto Brinque e Aprenda: ordem antes da UNEB, animação dos 3 círculos, acessibilidade e áudio infantil', async () => {
+  setupNodeDOM();
+  const fs = await import('node:fs');
+  const indexHtml = fs.readFileSync('index.html', 'utf8');
+  const pixelCss = fs.readFileSync('css/pixel.css', 'utf8');
+
+  // 1. Asset da logo e dimensões originais (700x210)
+  const logoPath = 'assets/credits/brinque-e-aprenda-logo.png';
+  assert.equal(existsSync(logoPath), true, 'Logo oficial brinque-e-aprenda-logo.png deve existir em assets/credits/');
+  const pngBuf = fs.readFileSync(logoPath);
+  assert.equal(pngBuf.readUInt32BE(16), 700, 'Largura do PNG da logo deve ser 700px');
+  assert.equal(pngBuf.readUInt32BE(20), 210, 'Altura do PNG da logo deve ser 210px');
+
+  // 2. Marcação HTML e precedência antes da intro da UNEB
+  const brinqueIdx = indexHtml.indexOf('id="brinqueSplashScreen"');
+  const unebIdx = indexHtml.indexOf('id="unebSplashScreen"');
+  assert.ok(brinqueIdx > 0 && unebIdx > brinqueIdx, '#brinqueSplashScreen deve aparecer antes de #unebSplashScreen no index.html');
+  assert.ok(indexHtml.includes('assets/credits/brinque-e-aprenda-logo.png'), 'index.html deve referenciar assets/credits/brinque-e-aprenda-logo.png');
+  assert.ok(
+    indexHtml.includes('ball-orange') && indexHtml.includes('ball-green') && indexHtml.includes('ball-blue'),
+    'Intro deve conter os 3 círculos animados (laranja, verde e azul)'
+  );
+
+  // 3. CSS de animação dos círculos e fallback acessível (reduce-motion)
+  assert.ok(pixelCss.includes('@keyframes brinqueBallOrange'), 'css/pixel.css deve animar o círculo laranja');
+  assert.ok(pixelCss.includes('@keyframes brinqueBallGreen'), 'css/pixel.css deve animar o círculo verde');
+  assert.ok(pixelCss.includes('@keyframes brinqueBallBlue'), 'css/pixel.css deve animar o círculo azul');
+  assert.ok(pixelCss.includes('.reduce-motion .brinque-logo-final'), 'css/pixel.css deve garantir logo visível em reduce-motion');
+
+  // 4. Síntese de áudio infantil + clique nas duas intros em sequência
+  const origAudioContext = globalThis.AudioContext;
+  const origCrystalAudio = globalThis.CrystalAudio;
+  const origCrystalMenuAudio = globalThis.CrystalMenuAudio;
+  const origStorage = globalThis.localStorage;
+  const origGetById = globalThis.document.getElementById;
+  const origApp = globalThis.CrystalApp;
+  const origOnboarding = globalThis.CrystalOnboarding;
+
+  let oscCount = 0;
+  class MockAudioContext {
+    constructor() {
+      this.state = 'running';
+      this.currentTime = 1.0;
+      this.sampleRate = 44100;
+      this.destination = {};
+    }
+    resume() { return Promise.resolve(); }
+    createGain() {
+      return {
+        gain: { value: 1, setValueAtTime() {}, setTargetAtTime() {}, exponentialRampToValueAtTime() {} },
+        connect() { return this; },
+        disconnect() {}
+      };
+    }
+    createDynamicsCompressor() {
+      return { threshold: { value: 0 }, ratio: { value: 1 }, connect() { return this; } };
+    }
+    createBuffer(ch, len) {
+      return { getChannelData: () => new Float32Array(len) };
+    }
+    createOscillator() {
+      oscCount++;
+      return {
+        type: 'sine',
+        frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+        connect() { return this; },
+        start() {},
+        stop() {},
+        disconnect() {},
+        onended: null
+      };
+    }
+  }
+  globalThis.AudioContext = MockAudioContext;
+
+  const storage = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+    setItem: (k, v) => storage.set(k, String(v)),
+    removeItem: (k) => storage.delete(k)
+  };
+  const elements = new Map();
+  const getEl = (id) => {
+    if (!elements.has(id)) {
+      const el = globalThis.document.createElement('div');
+      el.id = id;
+      el.hidden = id !== 'home';
+      el.focus = () => {};
+      elements.set(id, el);
+    }
+    return elements.get(id);
+  };
+  globalThis.document.getElementById = (id) => getEl(id);
+
+  try {
+    await import(`../js/audio.js?brinqueAudio=${Date.now()}`);
+    const CA = globalThis.CrystalAudio;
+    assert.equal(typeof CA.brinqueIntro, 'function', 'CrystalAudio.brinqueIntro deve existir');
+    assert.equal(typeof CA.brinqueChime, 'function', 'CrystalAudio.brinqueChime deve existir');
+
+    await import(`../js/app.js?brinqueFlow=${Date.now()}`);
+    const Onb = globalThis.CrystalOnboarding;
+    const App = globalThis.CrystalApp;
+
+    assert.equal(App.state.onboarding.brinqueSplashActive, true, 'Estado deve iniciar na intro Brinque e Aprenda');
+    assert.equal(App.state.onboarding.splashStep, 'brinque');
+    assert.ok(oscCount >= 10, 'CrystalAudio.brinqueIntro deve sintetizar múltiplas notas alegres dos 3 círculos');
+    assert.equal(CA._lastBrinqueIntro?.played, true, 'Áudio infantil da intro deve marcar played=true');
+
+    // Clique na intro Brinque e Aprenda avança para UNEB
+    getEl('brinqueSplashScreen').onclick();
+    assert.equal(App.state.onboarding.brinqueSplashActive, false);
+    assert.equal(App.state.onboarding.splashStep, 'uneb');
+    assert.equal(getEl('brinqueSplashScreen').hidden, true);
+    assert.equal(getEl('unebSplashScreen').hidden, false);
+
+    // Clique na intro da UNEB avança para Wizard
+    getEl('unebSplashScreen').onclick();
+    assert.equal(App.state.onboarding.splashActive, false);
+    assert.equal(App.state.onboarding.splashStep, 'done');
+    assert.equal(getEl('unebSplashScreen').hidden, true);
+    assert.equal(Onb.wizardActive, true);
+
+    const beforeChime = oscCount;
+    assert.equal(CA.brinqueChime(), true, 'CrystalAudio.brinqueChime deve tocar som curto quando acionado');
+    assert.ok(oscCount > beforeChime, 'brinqueChime deve sintetizar notas no AudioContext');
+  } finally {
+    globalThis.CrystalOnboarding?.skipAll?.();
+    globalThis.AudioContext = origAudioContext;
+    globalThis.CrystalAudio = origCrystalAudio;
+    globalThis.CrystalMenuAudio = origCrystalMenuAudio;
+    globalThis.localStorage = origStorage;
+    globalThis.document.getElementById = origGetById;
+    globalThis.CrystalApp = origApp;
+    globalThis.CrystalOnboarding = origOnboarding;
   }
 });
 
