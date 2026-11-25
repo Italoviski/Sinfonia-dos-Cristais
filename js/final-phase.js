@@ -858,7 +858,7 @@
         {
           speaker: 'Protagonista',
           portrait: 'portrait_protagonist',
-          text: 'Cheguei ao Portão das Gemas... O ar aqui é misterioso e os quatro relicários aguardam o poder de cada mundo!'
+          text: 'Uau... o Portão das Gemas! Dá até um friozinho na barriga ver os quatro espaços esperando a gente...'
         }
       ], () => {
         this.startSanctuaryPuzzleStep(1, false);
@@ -885,7 +885,7 @@
           hud: 'Fase Final - 1/4: Floresta (Araci)',
           speaker: 'Araci (Floresta)',
           portrait: 'portrait_araci',
-          text: 'Eu sou Araci! Para forjar a Esmeralda do Portão, corte 8 cristais puros no ar evitando os cristais sombrios!'
+          text: 'Cheguei trazendo o vento da mata! Mostra aquela agilidade toda e acorda a Esmeralda do Portão!'
         },
         2: {
           guardian: 'irece',
@@ -893,7 +893,7 @@
           hud: 'Fase Final - 2/4: Rio (Irecê)',
           speaker: 'Irecê (Rio)',
           portrait: 'portrait_irece',
-          text: 'Eu sou Irecê! As águas trazem uma nova melodia secreta! Repita as notas dos sinos de cristal na nova ordem!'
+          text: 'Agora é a vez das águas cantarem! Escuta com carinho — inventei uma melodia novinha pra você!'
         },
         3: {
           guardian: 'jurema',
@@ -902,7 +902,7 @@
           speaker: 'Jurema (Caatinga)',
           speakerPortrait: 'portrait_jurema',
           portrait: 'portrait_jurema',
-          text: 'Eu sou Jurema! As areias mudaram de resposta: acompanhe as cúpulas e encontre onde a Opala de Fogo se esconde!'
+          text: 'Prepara o olho, viu? As areias do sertão trocaram o truque — quero ver achar minha Opala agora!'
         },
         4: {
           guardian: 'ordem',
@@ -910,7 +910,7 @@
           hud: 'Fase Final - 4/4: Ordem Musical',
           speaker: 'Rainha da Ordem',
           portrait: 'portrait_ordem',
-          text: 'Agora estamos todas reunidas! Para o último desafio — o Puzzle Musical da Ordem —, cante no ritmo e toque os Cristais na Ordem!'
+          text: 'Chegou a minha vez, pequeno gafanhoto! Vamos fechar com chave de ouro no ritmo da Sinfonia!'
         }
       }[this.finalPuzzleIndex];
 
@@ -1229,12 +1229,13 @@
                 {
                   speaker: 'Protagonista',
                   portrait: 'portrait_protagonist',
-                  text: 'Hã?! O portão se abriu... mas lá dentro é o início da caverna! Eu voltei para o começo de tudo?!'
+                  text: 'Hã?! Espera aí... o portão abriu pro COMEÇO da caverna?! Eu dei a volta toda pra cair aqui de novo?!',
+                  shake: true
                 },
                 {
                   speaker: 'Rainha da Ordem',
                   portrait: 'portrait_ordem',
-                  text: '♪ Lá-lá-lá! ♪ Não fique confuso! Ouça minha canção e venha: siga-me para ver tudo o que você transformou!'
+                  text: '♪ Lá-lá-lá! ♪ Relaxa, pequeno gafanhoto! Escuta a música e vem comigo — você precisa ver o que mudou lá fora!'
                 }
               ], () => {
                 // Entra na "LAST DANCE": personagens correndo e fundo mostrando cada cenário resolvido e bonito!

@@ -721,7 +721,7 @@ test('Mundo do Rio: Plataforma de Fração (Nós 11-14) e Simon-Says Melódico d
 
   // ============================================================================
   // 1. Plataforma de Fração (Nó 11 / Fase 1 do Rio):
-  //    - Cristais inseridos não podem ser removidos (inFraction travado)
+  //    - Cristais inseridos podem ser manipulados, reorganizados e removidos para fora
   //    - Igualação de termos no topo e no fundo ativa o brilho rosa
   //    - Clique quebra a plataforma e produz cristal unitário purificado (N/N = 1)
   // ============================================================================
@@ -740,18 +740,24 @@ test('Mundo do Rio: Plataforma de Fração (Nós 11-14) e Simon-Says Melódico d
   assert.ok(fp.h >= 68, 'Altura da plataforma deve ser expandida para >= 68');
   assert.equal(fp.glowing, false, 'Plataforma não deve brilhar enquanto termos não forem iguais');
 
-  // Peça pré-inserida no topo está travada
+  // Peça pré-inserida no topo pode ser arrastada para fora (limpando inFraction) e devolvida ao topo
   const topPiece = Worlds.pieces.find((p) => p.inFraction === 'top');
   assert.ok(topPiece, 'Deve haver peça no topo da fração');
   assert.equal(topPiece.value, 2);
 
-  // Tentativa de arraste ou divisão não surte efeito em peças travadas na fração
   const initialX = topPiece.x;
   const initialY = topPiece.y;
-  const dragRes = Worlds.moveDraggedPieceWithCollision(topPiece, initialX + 50, initialY + 50);
-  assert.equal(dragRes.annulled, false);
-  assert.equal(topPiece.x, initialX, 'Peça na fração não deve mover de posição por arraste');
-  assert.equal(Worlds.trySplitCrystalOnTap(topPiece), false, 'Peça na fração não pode ser dividida por toque');
+  const dragOutRes = Worlds.moveDraggedPieceWithCollision(topPiece, initialX + 60, initialY);
+  assert.equal(dragOutRes.annulled, false);
+  assert.equal(topPiece.inFraction, null, 'Puxar peça para fora da fração deve limpar inFraction');
+  assert.equal(fp.topPieces.includes(topPiece), false, 'Peça removida não deve permanecer em topPieces');
+
+  // Devolve a peça ao topo da plataforma para seguir o fluxo 2/2
+  topPiece.x = fp.x;
+  topPiece.y = fp.topY;
+  Worlds.checkPieceDrop(topPiece);
+  assert.equal(topPiece.inFraction, 'top', 'Peça devolvida ao topo deve voltar a topPieces');
+  assert.equal(fp.topSum, 2);
 
   // Peça livre de valor 2 inserida na parte inferior da fração
   const freePiece = Worlds.pieces.find((p) => !p.shadow && !p.inFraction);

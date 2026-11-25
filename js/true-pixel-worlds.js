@@ -1615,36 +1615,41 @@
       },
       introDialogues: {
         1: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'A Floresta inteira está coberta por cinzas silenciosas...' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Ouça! A Guardiã da Esmeralda está cantando além dessas raízes petrificadas!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Usem o Altar de Esmeralda para despertar a força das sementes!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Atchim! Que cheiro de folha molhada... mas cadê o verde dessa floresta?!', protagState: 'shock' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Shhh! Escuta só... tem alguém cantando lá atrás dessas raízes gigantes!' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Por favor... a mata inteira adormeceu... me ajudem a acordar as raízes!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Ouvimos alto e claro! Bora lá, pequeno gafanhoto — olha os cristais ali!', pointRight: true }
         ],
         4: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'As raízes petrificadas estão cada vez mais densas por aqui!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Estamos quase no coração da mata! Vamos combinar luz, Citrino, Esmeralda e Fogo para abrir passagem!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Uau, essas raízes ficaram ENORMES! Parece que a floresta inteira travou aqui!', protagState: 'shock' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Sinal de que estamos coladinhos no coração da mata! Mostra o que você aprendeu!', pointRight: true }
         ],
         5: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Olhe no alto da copa! Um cristal gigante envolto por raízes prende a Guardiã da Floresta!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A fumaça me prendeu aqui dentro! Cortem os cristais puros no ar para libertar a mata!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Deslize para fatiar os cristais puros! Cuidado com os sombrios: cada sombra cortada tira 2 segundos do tempo!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Olha lá no alto!! Outro cristal gigante?!', shake: true, protagState: 'shock' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A fumaça me prendeu aqui em cima! Quebrem esse silêncio antes que a mata apague!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Segura firme aí em cima! Hora de mostrar reflexo de mestre, pequeno gafanhoto!' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A luz da Esmeralda dobrou nossa energia! As primeiras folhas voltaram a respirar!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Uou! Você viu?! As folhas começaram a abrir sozinhas!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Eu disse que você leva jeito! E isso foi só o aquecimento!' }
         ],
         2: [
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Isso! Ao repartir o Citrino Solar, cada raio encontra seu lugar na mata!' }
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Ah... esse cheirinho de mato fresco! O sol está voltando a passar pelas copas!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Continuem firmes! Mais uma barreira de raízes e chegaremos ao coração da Floresta!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Aí sim! Mais um empurrãozinho e a gente atravessa esse paredão de raízes!' }
         ],
         4: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O caminho se abriu! Agora vamos resgatar a Guardiã da Floresta na Fase 10!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Passagem livre!! E a música lá na frente ficou bem mais alta!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É agora! Vamos tirar a Guardiã da Floresta de lá!' }
         ],
         5: [
-          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Livre! Eu sou Araci, Guardiã da Floresta, e a Esmeralda voltou a pulsar!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Mais uma gema primordial acesa! Agora precisamos seguir até o Rio das Águas Claras!' }
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Ah, que alívio esticar as asas! Muito obrigada — eu sou Araci, Guardiã da Floresta!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Foi por pouco, hein! E a mata toda ficou linda de novo!', protagState: 'celebrate' },
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'Com a Esmeralda acesa, até os passarinhos voltaram a fofocar nas árvores!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Duas gemas já brilham no brasão! Próxima parada: o Rio das Águas Claras!' }
         ]
       },
       tutorialsByLevel: {
@@ -1827,43 +1832,49 @@
       },
       introDialogues: {
         1: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'As cachoeiras pararam de correr... a água parece pesada e escura.' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Veja aquela plataforma de pedra no centro da correnteza!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'É o Altar de Frações! Coloquem valores iguais em cima e embaixo para liberar a divisão!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Nossa, que ar fresquinho! Pena que a cachoeira parece congelada no tempo...' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Opa, olha aquela pedra brilhando no meio do rio! Nunca vi nada igual!', pointRight: true },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Psiu... a correnteza ficou presa em mim... devolvam o equilíbrio às águas!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Calma aí, já estamos indo! Deixa com a gente!' }
         ],
         2: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A correnteza acelera! Não importa a quantidade de peças: o valor total de cima e de baixo precisa ser idêntico!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Ei, a água começou a mexer de novo! Mas essa pedra ainda tá trancada...' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É porque a correnteza ficou exigente! Confia no olho e vai com tudo!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'As frações agora revelam caminhos para Equações Cristalinas! Divida primeiro para conectar depois!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Ih, o rio resolveu misturar tudo agora! Mas pra quem já domou a mata, isso é fichinha!' }
         ],
         4: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Um prisma imenso de Turmalina Paraíba está represando a nascente!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Estou presa no gelo turvo da cachoeira! Harmonizem as águas e o fogo com cuidado!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Aguente firme! Vamos libertar a nascente agora mesmo!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Espera... a nascente inteira tá presa naquele cristal azul gigante?!', protagState: 'shock' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Socorro... não consigo nem cantar com esse silêncio pesado em volta!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Aguenta só mais um pouquinho! A gente já tá quebrando a última trava!' }
         ],
         5: [
-          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Vocês alcançaram o coração da cascata! Agora, a música das águas nos libertará!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Cinco cristais sonoros estão flutuando sobre a água!' },
-          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Ouçam a melodia e toquem os cristais na ordem exata para harmonizar o rio!' }
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Vocês chegaram! Escutem... até as gotinhas estão afinando a voz!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Uau, os cristais estão flutuando sobre a água?! Que incrível!', protagState: 'celebrate' },
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Cantem comigo, nota por nota, e vamos fazer essa cachoeira dançar!' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Que limpidez! A fração se quebrou e a divisão fez a primeira gota pura correr!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'SPLASH! Ei, molhou minha bota — mas a água voltou a brilhar!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Hihi, água limpa dá sorte! Continua assim, pequeno gafanhoto!' }
         ],
         2: [
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Maravilhoso! Já consigo ouvir a espuma das corredeiras despertando!' }
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Que som gostoso... já dá até para ouvir as corredeiras rindo lá embaixo!' }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Equações e frações unificadas! A correnteza está ganhando força cristalina!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Olha só a força dessa correnteza! Você tá pegando o ritmo rápido demais!' }
         ],
         4: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Chegamos à grande queda d’água! Vamos libertar a Guardiã do Rio!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Conseguimos abrir a passagem! Olha o tamanho daquela cachoeira!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Bora lá! Tá na hora de ouvir a voz da Guardiã do Rio!' }
         ],
         5: [
-          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Obrigada! Eu sou Irecê, e as Águas Claras voltaram a cantar!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Resta apenas uma gema primordial! Vamos levar essa brisa até a Caatinga!' }
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Que acorde lindo! Obrigada de coração — eu sou Irecê, Guardiã das Águas Claras!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Nossa, sua música deixou o ar todo leve! A água tá transparente igual espelho!', protagState: 'celebrate' },
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'Quando a gente escuta com calma, até o rio vira canção. Leve essa brisa com você!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Só falta UMA Gema Primordial! Prepara o chapéu, que agora a gente vai pra Caatinga!' }
         ]
       },
       tutorialsByLevel: {
@@ -2024,36 +2035,43 @@
           { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Mas eu explico no caminho... Veja só, tem uns cristais ali! Quebre eles!', pointRight: true }
         ],
         2: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Veja os moldes elétricos nas rochas! Arraste dois cristais direto para dentro do molde: o 1º cria a borda e o 2º preenche o interior!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Ei, aquelas pedras tão dando choque?! Que brilho doido é esse?!', protagState: 'shock' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Hehe, é energia pura do sertão! Vai lá, pequeno gafanhoto — testa encaixar os cristais!', pointRight: true }
         ],
         3: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'As formas cristalinas também se atraem! Una duas formas prontas para revelar polígonos ainda maiores!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Espera aí... os cristais estão se encaixando igual quebra-cabeça?!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Bingo! E quanto mais eles se juntam, mais forte fica o brilho do sertão!' }
         ],
         4: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Chegamos aos mosaicos ancestrais! Triângulos formam Losangos e Hexágonos, e cabem dentro de equações!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Nossa, olha essa muralha de pedra... parece uma fortaleza antiga!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Última parede antes do santuário! Mostra pra esse calor quem é que manda!' }
         ],
         5: [
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Encontramos o Santuário da Caatinga! A Opala de Fogo Primordial está selada no Altar!' },
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'A tempestade de areia trancou minha canção! Usem todas as formas sagradas para purificar o núcleo!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É a última Gema Primordial! Vamos libertar o Altar!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Achei! A Opala de Fogo tá bem ali... espera, por que aquelas cúpulas estão mexendo?!', protagState: 'shock' },
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Haha, o sertão não entrega seus tesouros de graça! Quero ver você acompanhar a areia!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Olho vivo, pequeno gafanhoto! Se piscar, a Opala foge debaixo do nariz!' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O Círculo Sagrado despertou a primeira brisa dourada entre as chapadas!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Ufa! Bateu um ventinho bom agora... e olha, nasceu uma florzinha ali!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Eu te disse que a Caatinga é cheia de vida! Vamos continuar!' }
         ],
         2: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Quadrados, Retângulos e Trapézios alinhados! Você dominou a ordem das cores e facetas!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Uau, que encaixe bonito! Até as rochas deram uma suspirada de alívio!' }
         ],
         3: [
-          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'As cacimbas estão brilhando com seus encaixes! Continuem rumo ao santuário!' }
+          { speaker: 'Voz Misteriosa', portrait: 'portrait_mystery_silhouette', text: 'Eita, que dupla arretada! Já sinto a água voltando pras raízes daqui!' }
         ],
         4: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O Hexágono Solar abriu os portões do Santuário da Caatinga! Vamos despertar sua Guardiã!' }
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'A muralha caiu!! O caminho pro santuário tá aberto!', protagState: 'celebrate' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'É a reta final! Bora despertar a última Guardiã!' }
         ],
         5: [
-          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Viva! Eu sou Jurema, e a Caatinga inteira floresceu com mandacarus e água cristalina!' },
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Reunimos todas as 4 Gemas Primordiais! Voltemos à Caverna para abrir a Porta Ancestral!' }
+          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Oxente, até que enfim! Eu sou Jurema — e vocês devolveram o fogo bom do meu sertão!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Uau!! Os mandacarus floresceram tudo de uma vez! Que coisa mais linda!', protagState: 'celebrate' },
+          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Viu só? A Caatinga nunca foi deserto — só precisava de quem acreditasse na raiz dela!' },
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'AS QUATRO GEMAS ESTÃO ACESAS!! Volta pra Caverna, pequeno gafanhoto — a Porta Ancestral espera!', shake: true }
         ]
       },
       tutorialsByLevel: {
@@ -2270,17 +2288,17 @@
       },
       introDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'De volta ao Santuário da Caverna! As 4 Gemas Primordiais estão reunidas!' },
-          { speaker: 'Araci', portrait: 'portrait_araci', text: 'A força viva da Floresta pulsa neste altar!' },
-          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'As Águas Claras fluem em harmonia com cada cristal!' },
-          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'E o calor da Caatinga ilumina os quatro selos ancestrais!' },
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Vamos resolver a Grande Harmonia e abrir a Porta das Gemas!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'Voltamos para onde tudo começou... e olha o brasão brilhando inteiro!' },
+          { speaker: 'Araci', portrait: 'portrait_araci', text: 'A floresta inteira veio na ponta das minhas asas torcer por você.' },
+          { speaker: 'Irecê', portrait: 'portrait_irece', text: 'E cada gota do rio está pronta pro grande acorde final!' },
+          { speaker: 'Jurema', portrait: 'portrait_jurema', text: 'Pois bora abrir esse portão logo, que eu tô doida pra ver o que tem atrás!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Beleza!! Todo mundo junto — vamos completar a Sinfonia!', protagState: 'celebrate' }
         ]
       },
       postDialogues: {
         1: [
-          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'A Porta das Gemas se abriu! O Reino inteiro voltou a florescer!' },
-          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Conseguimos! A Sinfonia dos Cristais está completa!' }
+          { speaker: 'Ordem', portrait: 'portrait_ordem', text: 'O Portão se abriu!! O mundo inteiro voltou a cantar junto!' },
+          { speaker: 'Protagonista', portrait: 'portrait_protagonist', text: 'Conseguimos! De verdade, conseguimos!!', protagState: 'celebrate' }
         ]
       },
       tutorialsByLevel: {},
@@ -3610,12 +3628,20 @@
 
         this.spawnShatter((activeOpal.x + activeTarget.x) * 0.5, (activeOpal.y + activeTarget.y) * 0.5, 'opal', 6);
 
+        const hadTargetFrac = Boolean(activeTarget.inFraction);
+        const hadOpalFrac = Boolean(activeOpal.inFraction);
         if (activeTarget.value <= 0) {
+          if (activeTarget.inFraction) {
+            this._removePieceFromFraction(activeTarget);
+          }
           activeTarget.broken = true;
           activeTarget.dragging = false;
           if (this.draggedPiece === activeTarget) this.draggedPiece = null;
         }
         if (activeOpal.value <= 0) {
+          if (activeOpal.inFraction) {
+            this._removePieceFromFraction(activeOpal);
+          }
           activeOpal.broken = true;
           activeOpal.dragging = false;
           if (this.draggedPiece === activeOpal) this.draggedPiece = null;
@@ -3624,7 +3650,7 @@
           GameHUD.playSfx('shatter');
           this.clearTrembleStates();
         }
-        if (this.fractionPlatform && (activeTarget.inFraction || activeOpal.inFraction)) {
+        if (this.fractionPlatform && (hadTargetFrac || hadOpalFrac || activeTarget.inFraction || activeOpal.inFraction)) {
           this.layoutFractionPieces();
           this.updateFractionPlatformState();
         }
@@ -4992,8 +5018,9 @@
               this.layoutEquationPieces(this.pureEquation, 'pure');
             }
           }
-          if (!targetList.includes(dropped)) targetList.push(dropped);
-          targetList.sort((a, b) => a.x - b.x);
+          const activeTargetList = targetSlot === 'top' ? fp.topPieces : fp.bottomPieces;
+          if (!activeTargetList.includes(dropped)) activeTargetList.push(dropped);
+          activeTargetList.sort((a, b) => a.x - b.x);
           this.layoutFractionPieces();
           this.updateFractionPlatformState();
           GameHUD.playSfx('equationInsert');
@@ -5331,7 +5358,9 @@
         }
         const shadowCirclesNeeded = shadows.filter((s) => s.shape === 'circle').length;
         const openCircleMolds = (this.electricShapes || []).filter((es) => !es.used && es.shape === 'circle').length;
-        const existingPureCircles = pures.filter((p) => p.shape === 'circle').length;
+        const existingPureCircles = pures
+          .filter((p) => p.shape === 'circle')
+          .reduce((acc, p) => acc + (p.components?.length === 2 && p.components[0]?.shape === 'circle' && p.components[1]?.shape === 'circle' ? 2 : 1), 0);
         if (existingPureCircles + openCircleMolds < shadowCirclesNeeded) {
           return false;
         }
@@ -5859,6 +5888,7 @@
         demoIndex: 0,
         demoTimer: 1.0,
         playerIndex: 0,
+        inputIdleTimer: 0,
         phase: 'demo',
         phaseTimer: 0
       };
@@ -5885,6 +5915,7 @@
             this.riverMelody.phase = 'demo';
             this.riverMelody.demoIndex = 0;
             this.riverMelody.demoTimer = 1.0;
+            this.riverMelody.inputIdleTimer = 0;
           }
         }, false);
       } else {
@@ -5892,6 +5923,7 @@
         this.riverMelody.phase = 'demo';
         this.riverMelody.demoIndex = 0;
         this.riverMelody.demoTimer = 1.0;
+        this.riverMelody.inputIdleTimer = 0;
       }
     },
 
@@ -5902,6 +5934,7 @@
       rm.demoIndex = 0;
       rm.demoTimer = 1.0;
       rm.playerIndex = 0;
+      rm.inputIdleTimer = 0;
       rm.phase = 'demo';
       for (let i = 0; i < rm.crystals.length; i++) {
         const c = rm.crystals[i];
@@ -5933,6 +5966,7 @@
       const expectedNote = targetSeq[rm.playerIndex];
       const crystal = rm.crystals[gemIdx];
       if (!crystal) return false;
+      rm.inputIdleTimer = 0;
 
       if (gemIdx === expectedNote) {
         crystal.liftY = 14;
@@ -6042,8 +6076,13 @@
             }
             rm.phase = 'player_input';
             rm.playerIndex = 0;
+            rm.inputIdleTimer = 0;
           }
         }
+      } else if (rm.phase === 'player_input') {
+        rm.inputIdleTimer = (rm.inputIdleTimer || 0) + dt;
+      } else {
+        rm.inputIdleTimer = 0;
       }
     },
 
@@ -6051,19 +6090,22 @@
       const rm = this.riverMelody;
       if (!rm) return;
 
-      drawParchmentBox(ctx, 84, 23, 152, 15);
+      // Cabeçalho compacto à esquerda, sem sobrepor o botão Modo Calmo nem o cristal gigante central (x=148..204)
+      const titleRect = { x: 6, y: 22, w: 138, h: 14 };
+      drawParchmentBox(ctx, titleRect.x, titleRect.y, titleRect.w, titleRect.h);
       drawPixelTextCentered(
         ctx,
         `Sinfonia das Águas - Melodia ${rm.roundIndex + 1}/5`,
-        160,
-        27,
+        titleRect.x + titleRect.w / 2,
+        titleRect.y + 3,
         '#ffffff',
         '#000000',
-        144,
-        8
+        titleRect.w - 8,
+        7
       );
 
-      const cb = this.shellCalmBtnRect;
+      // Botão Modo Calmo compacto logo abaixo do título à esquerda (x=6..94, y=38..50)
+      const cb = this.riverCalmBtnRect || { x: 6, y: 38, w: 88, h: 12 };
       ctx.fillStyle = '#2c221e';
       ctx.fillRect(cb.x - 1, cb.y - 1, cb.w + 2, cb.h + 2);
       ctx.fillStyle = rm.calmMode ? '#1e40af' : '#234e52';
@@ -6074,12 +6116,25 @@
         ctx,
         rm.calmMode ? 'Modo Calmo: ON' : 'Modo Calmo: OFF',
         cb.x + cb.w / 2,
-        cb.y + 3,
+        cb.y + 2,
         '#d9fffb',
         '#082f49',
         cb.w - 4,
-        8
+        7
       );
+
+      // Selo GOD MODE compacto no canto superior direito (sem invadir o cristal gigante central)
+      if (GameHUD.godMode) {
+        const gm = { x: 256, y: 22, w: 58, h: 12 };
+        ctx.fillStyle = 'rgba(24, 14, 42, 0.88)';
+        ctx.fillRect(gm.x, gm.y, gm.w, gm.h);
+        ctx.fillStyle = '#ffea31';
+        ctx.fillRect(gm.x, gm.y, gm.w, 1);
+        ctx.fillRect(gm.x, gm.y + gm.h - 1, gm.w, 1);
+        ctx.fillRect(gm.x, gm.y, 1, gm.h);
+        ctx.fillRect(gm.x + gm.w - 1, gm.y, 1, gm.h);
+        drawPixelTextCentered(ctx, 'GOD MODE', gm.x + gm.w / 2, gm.y + 2, '#ffea31', '#000000', gm.w - 4, 7);
+      }
 
       const targetSeq = rm.masterSequence.slice(0, rm.roundIndex + 1);
       const expectedNote = rm.phase === 'player_input' ? targetSeq[rm.playerIndex] : -1;
@@ -6126,14 +6181,37 @@
       }
 
       if (rm.phase === 'demo') {
-        drawParchmentBox(ctx, 64, 128, 192, 16);
+        drawParchmentBox(ctx, 64, 134, 192, 15);
         const demoLabel = (rm.demoIndex === 0 && rm.demoTimer > 0)
           ? 'Observe o cristal de referência...'
           : 'Ouça com atenção a melodia...';
-        drawPixelTextCentered(ctx, demoLabel, 160, 132, '#ffea31', '#000000', 184, 8);
-      } else if (rm.phase === 'player_input') {
-        drawParchmentBox(ctx, 64, 128, 192, 16);
-        drawPixelTextCentered(ctx, `Toque os cristais na ordem! (${rm.playerIndex}/${rm.roundIndex + 1})`, 160, 132, '#ffea31', '#000000', 184, 8);
+        drawPixelTextCentered(ctx, demoLabel, 160, 138, '#ffea31', '#000000', 184, 8);
+      } else if (rm.phase === 'player_input' && (rm.inputIdleTimer || 0) >= 4.5) {
+        const idleElapsed = (rm.inputIdleTimer || 0) - 4.5;
+        const hintAlpha = clamp(idleElapsed / 0.6, 0, 1);
+
+        // Aviso suave apenas após inatividade prolongada (>= 4.5s)
+        ctx.save();
+        ctx.globalAlpha = hintAlpha;
+        drawParchmentBox(ctx, 74, 134, 172, 15);
+        drawPixelTextCentered(ctx, 'Toque os cristais na ordem!', 160, 138, '#ffea31', '#000000', 164, 8);
+        ctx.restore();
+
+        // Se o atraso acontecer no primeiro cristal da sequência, anima a mãozinha clicando sobre o cristal correto
+        if (rm.playerIndex === 0 && expectedNote >= 0 && rm.crystals[expectedNote] && typeof E.drawGhostHandHint === 'function') {
+          const targetCrystal = rm.crystals[expectedNote];
+          E.drawGhostHandHint(ctx, {
+            kind: 'tap',
+            fromX: targetCrystal.x,
+            fromY: targetCrystal.baseY - (targetCrystal.liftY || 0),
+            toX: targetCrystal.x,
+            toY: targetCrystal.baseY - (targetCrystal.liftY || 0),
+            t: idleElapsed,
+            duration: 1.4,
+            loop: true,
+            alpha: hintAlpha * 0.88
+          }, tq);
+        }
       }
     },
 
@@ -6194,6 +6272,9 @@
 
         score: 0,
         pureCuts: 0,
+        streak: 0,
+        maxStreak: 0,
+        streakGlowTimer: 0,
         maxCombo: 0,
         comboMultiplier: 1,
         lastCombo: 0,
@@ -6290,6 +6371,8 @@
       const fn = this.forestNinja;
       if (!fn) return;
       fn.strikes = 0;
+      fn.streak = 0;
+      fn.streakGlowTimer = 0;
       fn.stageTimeRemaining = fn.stageDuration;
       fn.flyingCrystals = [];
       fn.halvedCrystals = [];
@@ -6426,6 +6509,8 @@
         }
 
         fn.strikes++;
+        fn.streak = 0;
+        fn.streakGlowTimer = 0;
         fn.shakeTimer = 0.35;
         fn.stageTimeRemaining = Math.max(0, fn.stageTimeRemaining - 2.0);
         this.spawnShatter(crystal.x, crystal.y, 'rock', 14);
@@ -6509,13 +6594,16 @@
       }
 
       fn.pureCuts++;
+      fn.streak = (fn.streak || 0) + 1;
+      fn.maxStreak = Math.max(fn.maxStreak || 0, fn.streak);
+      fn.streakGlowTimer = 0.55;
       fn.score += 10;
       fn.strokePureCuts++;
       fn.strokeCrystals.push(crystal);
 
-      // Mecânica de combo clássica: acerto múltiplo de 2, 3 ou 4 cristais simultâneos / no mesmo golpe
+      // Mecânica de combo de Multi-Corte (em 1 único golpe: 2x, 3x, 4x, 5x+ sem limite artificial)
       if (fn.strokePureCuts >= 2) {
-        const comboCount = Math.min(fn.strokePureCuts, 4);
+        const comboCount = fn.strokePureCuts;
         fn.score += comboCount * 10;
         fn.maxCombo = Math.max(fn.maxCombo, comboCount);
         fn.comboMultiplier = comboCount;
@@ -6527,19 +6615,20 @@
         const avgY = fn.strokeCrystals.reduce((acc, c) => acc + c.y, 0) / fn.strokeCrystals.length;
 
         const bannerColors = {
-          2: { bg: '#064e3b', border: '#10b981', text: '#ffea31', star: '#fbbf24' },
-          3: { bg: '#065f46', border: '#34d399', text: '#67e8f9', star: '#38bdf8' },
-          4: { bg: '#4c1d95', border: '#a855f7', text: '#fde047', star: '#f43f5e' }
+          2: { border: '#10b981', text: '#ffea31', star: '#fbbf24' },
+          3: { border: '#34d399', text: '#67e8f9', star: '#38bdf8' },
+          4: { border: '#a855f7', text: '#fde047', star: '#f43f5e' },
+          5: { border: '#f472b6', text: '#ffffff', star: '#fde047' }
         };
-        const colScheme = bannerColors[comboCount] || bannerColors[2];
+        const colScheme = bannerColors[Math.min(comboCount, 5)] || bannerColors[2];
 
         fn.activeComboBanner = {
           text: comboTxt,
-          x: avgX,
-          y: avgY - 14,
-          scale: 1.5,
+          x: clamp(avgX, 44, W - 44),
+          y: clamp(avgY - 12, 46, H - 24),
+          scale: 1.0,
           alpha: 1.0,
-          timer: 1.5,
+          timer: 1.3,
           count: comboCount,
           colors: colScheme
         };
@@ -6550,29 +6639,29 @@
           x: avgX,
           y: avgY,
           r: 6,
-          maxR: 32 + comboCount * 14,
+          maxR: 28 + Math.min(comboCount, 6) * 10,
           color: colScheme.border,
           alpha: 1.0
         });
 
         fn.comboSparkles = fn.comboSparkles || [];
-        const numParticles = 8 + comboCount * 6;
+        const numParticles = 6 + Math.min(comboCount, 6) * 4;
         for (let p = 0; p < numParticles; p++) {
           const ang = (p / numParticles) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-          const spd = 35 + Math.random() * 55;
+          const spd = 32 + Math.random() * 48;
           fn.comboSparkles.push({
             x: avgX,
             y: avgY,
             vx: Math.cos(ang) * spd,
             vy: Math.sin(ang) * spd,
-            life: 0.7 + Math.random() * 0.4,
-            maxLife: 1.0,
+            life: 0.6 + Math.random() * 0.35,
+            maxLife: 0.95,
             color: p % 2 === 0 ? colScheme.text : colScheme.star
           });
         }
 
         // Tremor sutil e impactante de tela proporcional ao combo
-        fn.shakeTimer = 0.12 + comboCount * 0.06;
+        fn.shakeTimer = Math.min(0.42, 0.12 + comboCount * 0.05);
 
         if (global.CrystalAudio?.comboChime) {
           global.CrystalAudio.comboChime(comboCount);
@@ -6643,6 +6732,7 @@
       if (this.phase !== 'forest_ninja_game') return;
 
       if (fn.shakeTimer > 0) fn.shakeTimer = Math.max(0, fn.shakeTimer - dt);
+      if (fn.streakGlowTimer > 0) fn.streakGlowTimer = Math.max(0, fn.streakGlowTimer - dt);
 
       // Temporizador do badge de combo no canto superior direito
       if (fn.comboTimer > 0) {
@@ -6717,6 +6807,11 @@
         c.rot += c.vrot * dt;
 
         if (c.y > 195 && c.vy > 0) {
+          // Deixar qualquer cristal puro cair sem cortar zera imediatamente o Combo de Sequência (Streak)
+          if (!c.shadow && !c.sliced) {
+            fn.streak = 0;
+            fn.streakGlowTimer = 0;
+          }
           fn.flyingCrystals.splice(i, 1);
         }
       }
@@ -7079,15 +7174,32 @@
       // Exibição visível da pontuação da criança
       drawPixelText(ctx, `Pts: ${fn.score}`, 148, barBox.y + 4, '#92e8ff', '#000000', 48, 8);
 
-      // Indicador/Contador de Combo em Destaque no Canto Superior Direito (x: 230..292)
-      this.forestNinjaComboBadgeRect = { x: 230, y: barBox.y + 1, w: 62, h: 14 };
+      // Indicador/Contador de Sequência (Streak) contínuo no Canto Superior Direito (x: 228..294, sem limite de 4)
+      this.forestNinjaComboBadgeRect = { x: 228, y: barBox.y + 1, w: 66, h: 14 };
       const cbRect = this.forestNinjaComboBadgeRect;
-      const isComboActive = fn.comboTimer > 0 && fn.comboMultiplier >= 2;
+      const streakVal = Math.max(0, Math.floor(fn.streak || 0));
+      const pulseGlow = fn.streakGlowTimer > 0 && ((Math.floor(tq * 16) & 1) === 0);
       ctx.save();
-      if (isComboActive) {
-        const bgCol = fn.comboMultiplier >= 4 ? '#581c87' : (fn.comboMultiplier === 3 ? '#065f46' : '#854d0e');
-        const borderCol = fn.comboMultiplier >= 4 ? '#d8b4fe' : (fn.comboMultiplier === 3 ? '#6ee7b7' : '#fde047');
-        const textCol = fn.comboMultiplier >= 4 ? '#fef08a' : (fn.comboMultiplier === 3 ? '#a7f3d0' : '#fef9c3');
+      if (streakVal >= 1) {
+        let bgCol = '#064e3b', borderCol = '#34d399', textCol = '#a7f3d0', starCount = 0;
+        if (streakVal >= 20) {
+          bgCol = '#581c87';
+          borderCol = pulseGlow ? '#ffffff' : '#f0abfc';
+          textCol = '#fef08a';
+          starCount = 2;
+        } else if (streakVal >= 10) {
+          bgCol = '#164e63';
+          borderCol = pulseGlow ? '#ffffff' : '#67e8f9';
+          textCol = '#e0f2fe';
+          starCount = 2;
+        } else if (streakVal >= 5) {
+          bgCol = '#854d0e';
+          borderCol = pulseGlow ? '#ffffff' : '#fde047';
+          textCol = '#fef9c3';
+          starCount = 1;
+        } else if (pulseGlow) {
+          borderCol = '#a7f3d0';
+        }
         ctx.fillStyle = bgCol;
         ctx.fillRect(cbRect.x - 1, cbRect.y - 1, cbRect.w + 2, cbRect.h + 2);
         ctx.fillStyle = borderCol;
@@ -7096,10 +7208,14 @@
         ctx.fillRect(cbRect.x, cbRect.y, 1, cbRect.h);
         ctx.fillRect(cbRect.x + cbRect.w - 1, cbRect.y, 1, cbRect.h);
 
-        const comboLabel = `COMBO ${fn.comboMultiplier}x!`;
-        drawPixelTextCentered(ctx, comboLabel, cbRect.x + cbRect.w / 2, cbRect.y + 3, textCol, '#000000', cbRect.w - 4, 8);
-        drawStar(ctx, cbRect.x + 5, cbRect.y + 7, 2, '#ffffff', borderCol);
-        drawStar(ctx, cbRect.x + cbRect.w - 5, cbRect.y + 7, 2, '#ffffff', borderCol);
+        const streakLabel = `SEQ: ${streakVal}`;
+        drawPixelTextCentered(ctx, streakLabel, cbRect.x + cbRect.w / 2, cbRect.y + 3, textCol, '#000000', cbRect.w - 6, 8);
+        if (starCount >= 1) {
+          drawStar(ctx, cbRect.x + 5, cbRect.y + 7, 2, '#ffffff', borderCol);
+        }
+        if (starCount >= 2) {
+          drawStar(ctx, cbRect.x + cbRect.w - 5, cbRect.y + 7, 2, '#ffffff', borderCol);
+        }
       } else {
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(cbRect.x, cbRect.y, cbRect.w, cbRect.h);
@@ -7108,33 +7224,25 @@
         ctx.fillRect(cbRect.x, cbRect.y + cbRect.h - 1, cbRect.w, 1);
         ctx.fillRect(cbRect.x, cbRect.y, 1, cbRect.h);
         ctx.fillRect(cbRect.x + cbRect.w - 1, cbRect.y, 1, cbRect.h);
-        const comboLabel = fn.maxCombo >= 2 ? `MAX: ${fn.maxCombo}x` : 'COMBO: 1x';
-        drawPixelTextCentered(ctx, comboLabel, cbRect.x + cbRect.w / 2, cbRect.y + 3, '#94a3b8', '#000000', cbRect.w - 4, 8);
+        drawPixelTextCentered(ctx, 'SEQ: 0', cbRect.x + cbRect.w / 2, cbRect.y + 3, '#94a3b8', '#000000', cbRect.w - 4, 8);
       }
       ctx.restore();
 
-      // 5. Banner de COMBO (COMBO X2!, COMBO X3!, COMBO X4!)
+      // 5. Combo de Multi-Corte (em 1 golpe): texto flutuante limpo, compacto e SEM caixa opaca
       if (fn.activeComboBanner) {
         const cb = fn.activeComboBanner;
-        const bw = 96, bh = 18;
-        const bx = R(cb.x - bw / 2), by = R(cb.y - bh / 2);
+        const cxB = clamp(R(cb.x), 36, W - 36);
+        const cyB = clamp(R(cb.y), 44, H - 18);
         ctx.save();
         ctx.globalAlpha = clamp(cb.timer / 0.35, 0, 1);
 
-        const col = cb.colors || { bg: '#064e3b', border: '#10b981', text: '#ffea31', star: '#fbbf24' };
-        // Caixa temática de combo com efeito visual brilhante
-        ctx.fillStyle = col.bg;
-        ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-        ctx.fillStyle = col.border;
-        ctx.fillRect(bx, by, bw, 1);
-        ctx.fillRect(bx, by + bh - 1, bw, 1);
-        ctx.fillRect(bx, by, 1, bh);
-        ctx.fillRect(bx + bw - 1, by, 1, bh);
-
-        // Texto do combo
-        drawPixelTextCentered(ctx, cb.text, bx + bw / 2, by + 4, col.text, '#000000', bw - 10, 10);
-        drawStar(ctx, bx + 10, by + 9, 3, '#ffffff', col.star);
-        drawStar(ctx, bx + bw - 10, by + 9, 3, '#ffffff', col.star);
+        const col = cb.colors || { border: '#10b981', text: '#ffea31', star: '#fbbf24' };
+        // Apenas texto flutuante nítido com contorno preto e pequenas faíscas coloridas (sem fundo opaco)
+        drawPixelTextCentered(ctx, cb.text, cxB, cyB - 3, col.text, '#000000', 80, 7);
+        drawStar(ctx, cxB - 28, cyB, 2, '#ffffff', col.star);
+        drawStar(ctx, cxB + 28, cyB, 2, '#ffffff', col.star);
+        P1(ctx, cxB - 20, cyB - 4, col.border);
+        P1(ctx, cxB + 20, cyB - 4, col.border);
         ctx.restore();
       }
 
@@ -7340,10 +7448,11 @@
         }
         ctx.restore();
 
-        // Aviso / Combo no treino
+        // Aviso / Combo no treino (flutuante e sem caixa opaca)
         if (fn.activeComboBanner) {
-          drawParchmentBox(ctx, 110, arena.y + 6, 100, 15);
-          drawPixelTextCentered(ctx, fn.activeComboBanner.text, 160, arena.y + 9, '#15803d', null, 90, 8);
+          drawPixelTextCentered(ctx, fn.activeComboBanner.text, 160, arena.y + 8, '#ffea31', '#000000', 90, 7);
+          drawStar(ctx, 132, arena.y + 11, 2, '#ffffff', '#fbbf24');
+          drawStar(ctx, 188, arena.y + 11, 2, '#ffffff', '#fbbf24');
         } else if (fn.practiceBanner) {
           drawPixelTextCentered(ctx, fn.practiceBanner.text, 160, arena.y + 8, fn.practiceBanner.color, '#000000', 220, 8);
         }
@@ -7785,7 +7894,7 @@
         }
 
         if (this.phase === 'river_melody_game' && this.riverMelody) {
-          const cb = this.shellCalmBtnRect;
+          const cb = this.riverCalmBtnRect || this.shellCalmBtnRect;
           if (cb && x >= cb.x && x <= cb.x + cb.w && y >= cb.y && y <= cb.y + cb.h) {
             GameHUD.playSfx('click');
             this.riverMelody.calmMode = !this.riverMelody.calmMode;
@@ -7841,10 +7950,15 @@
         this._gestureCommitted = false;
 
         if (this.fractionPlatform?.glowing && !this.fractionPlatform.broken && this.isInsideFractionPlatform(x, y)) {
-          this.triggerFractionDivide();
-          this._gestureSnapshot = null;
-          this._gestureCommitted = false;
-          return;
+          // Se o clique não foi diretamente sobre um cristal dentro da fração (ou foi na barra central), divide na hora;
+          // se foi sobre um cristal, permite arrastá-lo para fora/reorganizar ou dividir com clique rápido (onUp).
+          const hitFracPiece = this.pieces.some((p) => !p.shadow && !p.broken && p.value > 0 && p.inFraction && Math.hypot(x - p.x, y - p.y) <= 14);
+          if (!hitFracPiece) {
+            this.triggerFractionDivide();
+            this._gestureSnapshot = null;
+            this._gestureCommitted = false;
+            return;
+          }
         }
 
         if (
@@ -7898,7 +8012,6 @@
         for (let i = this.pieces.length - 1; i >= 0; i--) {
           const p = this.pieces[i];
           if (!p.shadow && !p.broken && p.value > 0 && Math.hypot(x - p.x, y - p.y) <= 16) {
-            if (p.inFraction) continue;
             if (p.inEquation && eq && !eq.expanded) continue;
             GameHUD.playSfx(p.type === 'opal' ? 'opalGrab' : (p.type === 'rose' ? 'roseGrab' : 'quartzGrab'));
             this.draggedPiece = p;
@@ -7981,12 +8094,14 @@
           const res = this.moveDraggedPieceWithCollision(this.draggedPiece, x, y);
           if (res && res.annulled) return;
 
-          if (this.draggedPiece && this.fractionPlatform && !this.fractionPlatform.broken && !this.draggedPiece.inFraction && this.draggedPiece.type !== 'opal') {
+          if (this.draggedPiece && this.fractionPlatform && !this.fractionPlatform.broken && !this.draggedPiece.shape && this.draggedPiece.type !== 'opal') {
             const fp = this.fractionPlatform;
             const dp = this.draggedPiece;
             const inFrac = Math.abs(dp.x - fp.x) <= (fp.w * 0.5 + 8) && Math.abs(dp.y - fp.y) <= (fp.h * 0.5 + 10);
             if (inFrac) {
-              const forceBottom = Math.abs(dp.y - fp.y) <= 4 && (fp.topPieces?.length || 0) > 0 && (fp.bottomPieces?.length || 0) === 0;
+              const topOthers = (fp.topPieces || []).filter((k) => k !== dp && !k.broken && k.value > 0);
+              const botOthers = (fp.bottomPieces || []).filter((k) => k !== dp && !k.broken && k.value > 0);
+              const forceBottom = Math.abs(dp.y - fp.y) <= 4 && topOthers.length > 0 && botOthers.length === 0;
               fp.topHover = !forceBottom && dp.y < fp.y;
               fp.bottomHover = forceBottom || dp.y >= fp.y;
             } else {
@@ -8127,11 +8242,55 @@
           }
 
           if (wasQuickTap) {
+            if (p.inFraction && this.fractionPlatform?.glowing && !this.fractionPlatform.broken) {
+              this.triggerFractionDivide();
+              this.selectedPiece = null;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
+              return;
+            }
             if (p.inMoldId) {
               this.ejectCrystalFromMold(p);
               this.selectedPiece = null;
               this._gestureSnapshot = null;
               this._gestureCommitted = false;
+              return;
+            }
+            if (
+              this.selectedPiece &&
+              this.selectedPiece !== p &&
+              !this.selectedPiece.broken &&
+              !this.selectedPiece.shadow &&
+              this.selectedPiece.value > 0 &&
+              this.selectedPiece.shape &&
+              p.shape &&
+              this.getTessellationMatch(this.selectedPiece, p)
+            ) {
+              const prev = this.selectedPiece;
+              this.selectedPiece = null;
+              if (this.tryTessellateShapes(prev, p)) {
+                this._gestureSnapshot = null;
+                this._gestureCommitted = false;
+                if (this.phase === 'gameplay') {
+                  this.checkEquationSolved();
+                  this.triggerDefeatIfImpossible();
+                }
+                return;
+              }
+            }
+            const hasMergeableCircleMate = p.shape === 'circle' && !this.selectedPiece && this.pieces.some((other) => (
+              other !== p &&
+              !other.broken &&
+              !other.shadow &&
+              other.shape === 'circle' &&
+              other.value > 0 &&
+              Boolean(this.getTessellationMatch(p, other))
+            ));
+            if (hasMergeableCircleMate) {
+              this.selectedPiece = p;
+              this._gestureSnapshot = null;
+              this._gestureCommitted = false;
+              GameHUD.playSfx('click');
               return;
             }
             if (this.tryDisassembleShapeOnTap(p)) {
@@ -8165,7 +8324,7 @@
                 }
                 return;
               }
-              if (!prev.shape && !p.shape && prev.type === p.type && p.type !== 'opal' && (prev.value + p.value) <= 6) {
+              if (!prev.shape && !p.shape && prev.type === p.type && p.type !== 'opal' && (prev.value + p.value) <= getMaxPieceValue(p, prev.value + p.value)) {
                 if (this._mergeSameColorPieces(p, prev)) {
                   this._gestureSnapshot = null;
                   this._gestureCommitted = false;
@@ -8391,12 +8550,12 @@
           this.ordemCompanion.state = 'idle';
           this.openIntroIfAny();
         }
-      } else if (this.phase === 'intro_dialogue') {
+      } else if (this.phase === 'intro_dialogue' || this.phase === 'post_dialogue' || this.phase === 'post_musical_dlg') {
         const dlgIdx = DialogueBox.currentIndex ?? DialogueBox.idx ?? 0;
         const curLine = DialogueBox.isOpen && DialogueBox.queue ? DialogueBox.queue[dlgIdx] : null;
         if (curLine && curLine.protagState) {
-          this.protag.state = curLine.protagState === 'shock' ? 'shock' : 'idle';
-        } else if (this.worldKey === 'caatinga' && this.currentLevel === 1) {
+          this.protag.state = (curLine.protagState === 'shock' || curLine.protagState === 'celebrate') ? curLine.protagState : 'idle';
+        } else if (this.phase === 'intro_dialogue') {
           this.protag.state = 'idle';
         }
       } else if (this.phase === 'equation_magnetic' && this.magneticAnim) {
@@ -8803,10 +8962,10 @@
           flipX: Boolean(this.ordemCompanion.flipX)
         });
       }
-      if (this.worldKey === 'caatinga' && this.phase === 'intro_dialogue' && DialogueBox.isOpen && DialogueBox.queue) {
+      if (this.phase === 'intro_dialogue' && DialogueBox.isOpen && DialogueBox.queue) {
         const dlgIdx = DialogueBox.currentIndex ?? DialogueBox.idx ?? 0;
         const curLine = DialogueBox.queue[dlgIdx];
-        if (curLine && (curLine.protagState === 'panting' || curLine.protagState === 'shock')) {
+        if (curLine && (curLine.protagState === 'panting' || (this.worldKey === 'caatinga' && curLine.protagState === 'shock'))) {
           const f12 = Math.floor(tq * 12);
           const dropY = this.protag.y - 22 + (f12 % 5);
           P1(ctx, this.protag.x - 7, dropY, '#7be1f6');
